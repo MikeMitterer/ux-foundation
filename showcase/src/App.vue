@@ -32,6 +32,7 @@ import {
 import ShowcaseTopbar from "@/components/ShowcaseTopbar.vue";
 import ComponentsView from "@/views/ComponentsView.vue";
 import IconsView from "@/views/IconsView.vue";
+import MobileView from "@/views/MobileView.vue";
 import OwnComponentsView from "@/views/OwnComponentsView.vue";
 import PatternsView from "@/views/PatternsView.vue";
 import ScalesView from "@/views/ScalesView.vue";
@@ -52,6 +53,7 @@ const TABS = [
   "icons",
   "components",
   "own",
+  "mobile",
   "patterns",
 ] as const;
 
@@ -152,6 +154,12 @@ watch(
               :tab="t('nav.own')"
             >
               <OwnComponentsView />
+            </NTabPane>
+            <NTabPane
+              name="mobile"
+              :tab="t('nav.mobile')"
+            >
+              <MobileView />
             </NTabPane>
             <NTabPane
               name="patterns"

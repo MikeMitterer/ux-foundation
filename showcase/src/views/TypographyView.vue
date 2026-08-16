@@ -99,18 +99,11 @@ const ROLES = [
 
 <style scoped lang="scss">
 .label {
-  font-size: var(--font-xs);
-  font-weight: 500;
-  letter-spacing: 0.025em;
-  text-transform: uppercase;
-  color: rgb(var(--text-muted));
-  margin-bottom: var(--space-3);
+  @include abschnitts-label;
 }
 
 .hint {
-  max-width: 70ch;
-  margin-bottom: var(--space-3);
-  color: rgb(var(--text-secondary));
+  @include erklaerung;
 }
 
 .family {

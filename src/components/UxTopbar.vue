@@ -87,17 +87,13 @@ const slots = useSlots()
   color: rgb(var(--text-bar));
 
   &__inner {
-    max-width: var(--content-max);
+    /* Derselbe Streifen wie der Inhalt — sonst steht die Navigation über
+       einem Inhalt, der anders endet als sie. */
+    @include content-frame(0);
     height: 100%;
-    margin: 0 auto;
-    padding: 0 var(--space-4);
     display: flex;
     align-items: center;
     gap: var(--space-4);
-
-    @media (min-width: 768px) {
-      padding: 0 var(--space-6);
-    }
   }
 
   &__brand {
@@ -135,7 +131,7 @@ const slots = useSlots()
     font-weight: 600;
     letter-spacing: -0.015em;
 
-    @media (min-width: 640px) {
+    @include up(sm) {
       display: inline;
     }
   }

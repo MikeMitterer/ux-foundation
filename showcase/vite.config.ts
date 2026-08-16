@@ -29,7 +29,7 @@ export default defineConfig({
       scss: {
         // Mixins und Farb-Helfer stehen in jeder Komponente zur Verfügung,
         // ohne dass jede SFC dieselbe `@use`-Zeile trägt.
-        additionalData: '@use "@ux/styles/shared" as *;\n',
+        additionalData: '@use "@ux/styles/shared" as *;\n@use "@/styles/parts" as *;\n',
       },
     },
   },

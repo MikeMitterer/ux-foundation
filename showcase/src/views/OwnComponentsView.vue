@@ -142,19 +142,11 @@ function setTarget(position: Position, value: number): void {
 
 <style scoped lang="scss">
 .label {
-  font-size: var(--font-xs);
-  font-weight: 500;
-  letter-spacing: 0.025em;
-  text-transform: uppercase;
-  color: rgb(var(--text-muted));
-  margin-bottom: var(--space-3);
+  @include abschnitts-label;
 }
 
 .hint {
-  max-width: 70ch;
-  margin-bottom: var(--space-3);
-  color: rgb(var(--text-secondary));
-  line-height: 1.6;
+  @include erklaerung;
 }
 
 .grid {

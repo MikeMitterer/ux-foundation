@@ -6,16 +6,18 @@
  * fängt der letzte Test hier ab, und zwar bevor es jemand ausliefert.
  */
 import { readFileSync } from 'node:fs'
-import { fileURLToPath, URL } from 'node:url'
+import { resolve } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
 import { DEFAULT_DARK_THEME, DEFAULT_LIGHT_THEME, isThemeId, THEME_IDS, THEMES } from '@ux/index'
 
-const tokensCss = readFileSync(
-  fileURLToPath(new URL('../src/styles/tokens.css', import.meta.url)),
-  'utf8',
-)
+/*
+ * Über das Arbeitsverzeichnis und nicht über `import.meta.url`: Die Tests
+ * laufen unter `happy-dom`, und dort ist `import.meta.url` keine Datei-URL —
+ * `fileURLToPath` wirft dann „The URL must be of scheme file".
+ */
+const tokensCss = readFileSync(resolve(process.cwd(), 'src/styles/tokens.css'), 'utf8')
 
 /** Alle Themes, für die die Token-Datei tatsächlich eine Palette definiert. */
 function themesInCss(): string[] {

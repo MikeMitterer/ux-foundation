@@ -39,6 +39,12 @@
    */
   min-height: 100dvh;
 
+  /* Grundfläche und Textfarbe gehören hierher und nicht in jede App: Ohne sie
+     schimmert bei Überdehnung am Rand die Farbe des Browsers durch. */
+  background-color: rgb(var(--surface-page));
+  color: rgb(var(--text-primary));
+  transition: background-color 0.15s ease, color 0.15s ease;
+
   &__main {
     /* Wächst in die Lücke — das ist der ganze Trick. */
     flex: 1 1 auto;

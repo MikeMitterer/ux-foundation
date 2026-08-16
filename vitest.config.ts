@@ -17,7 +17,12 @@ export default defineConfig({
     alias: { '@ux': fileURLToPath(new URL('./src', import.meta.url)) },
   },
   test: {
-    environment: 'node',
+    /*
+     * `happy-dom` statt `node`: Ein Test hängt Komponenten ein, um das
+     * Toast-Verhalten zu prüfen — dafür braucht es ein Dokument. Die reinen
+     * Logik-Tests laufen darin genauso.
+     */
+    environment: 'happy-dom',
     include: ['tests/**/*.spec.ts'],
   },
 })

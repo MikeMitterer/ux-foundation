@@ -82,8 +82,15 @@ const themeOptions = computed(() =>
 
 <style scoped lang="scss">
 .theme-select {
-  /* Breit genug für den längsten Namen, damit die Zeile beim Wechsel nicht
-     springt — und schmal genug, dass sie auf dem Telefon nicht drückt. */
-  width: 9.5rem;
+  /*
+   * Breit genug für den längsten Namen („mangolila"), damit die Zeile beim
+   * Wechsel nicht springt — mehr wäre verschenkter Platz. Die Liste selbst
+   * darf breiter werden (`consistent-menu-width: false`).
+   */
+  width: 7.5rem;
+
+  @include below(sm) {
+    width: 6rem;
+  }
 }
 </style>

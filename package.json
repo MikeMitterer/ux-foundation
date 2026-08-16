@@ -41,9 +41,11 @@
   "devDependencies": {
     "@types/node": "^26.2.0",
     "@vitejs/plugin-vue": "^6.0.0",
+    "@vue/test-utils": "^2.4.11",
     "eslint": "^9.33.0",
     "eslint-plugin-vue": "^10.4.0",
     "globals": "^17.11.0",
+    "happy-dom": "^20.11.2",
     "naive-ui": "^2.42.0",
     "sass": "^1.102.0",
     "typescript": "^5.9.2",

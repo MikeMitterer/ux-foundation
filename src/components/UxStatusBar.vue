@@ -143,9 +143,10 @@ const hasBackend = computed(() => props.backendHost.length > 0)
             class="ux-statusbar__dot"
             :class="`ux-statusbar__dot--${backendState}`"
           />
-          <span :class="{ 'ux-statusbar__host--offline': backendState === 'offline' }">{{
-            backendHost
-          }}</span>
+          <span
+            class="ux-statusbar__host"
+            :class="{ 'ux-statusbar__host--offline': backendState === 'offline' }"
+          >{{ backendHost }}</span>
           <span
             v-if="backendVersion"
             class="ux-statusbar__backend-version"
@@ -170,19 +171,14 @@ const hasBackend = computed(() => props.backendHost.length > 0)
   font-size: 11px;
 
   &__inner {
-    max-width: var(--content-max);
-    margin: 0 auto;
-    padding: var(--space-2) var(--space-4);
+    /* Derselbe Streifen wie Kopfzeile und Inhalt — nachprüfbar dadurch, dass
+       linke und rechte Kante bei jeder Breite übereinstimmen. */
+    @include content-frame(var(--space-2));
     display: flex;
     align-items: center;
     gap: var(--space-2);
     /* Darf umbrechen — auf schmalen Schirmen zweizeilig statt abgeschnitten. */
     flex-wrap: wrap;
-
-    @media (min-width: 768px) {
-      padding-left: var(--space-6);
-      padding-right: var(--space-6);
-    }
   }
 
   &__left {
@@ -193,10 +189,24 @@ const hasBackend = computed(() => props.backendHost.length > 0)
     min-width: 0;
   }
 
+  /*
+   * Was zuerst weicht, ist nicht beliebig — der Skill gibt die Reihenfolge vor:
+   * erst Zierrat (Herkunftszeile, Trennpunkte), dann Zusatzangaben (Adressen,
+   * Fremdversionen). Nie weichen: der aktive Kontext, der Zustand und die
+   * Handlung.
+   *
+   * Gemessen bei 375 px ohne diese Regeln: drei Zeilen, 83 px hoch. Erlaubt
+   * sind zwei.
+   */
   &__brand {
     display: flex;
     align-items: center;
     gap: 0.25rem;
+
+    /* Zierrat — geht zuerst. */
+    @include below(sm) {
+      display: none;
+    }
   }
 
   &__app {
@@ -218,7 +228,7 @@ const hasBackend = computed(() => props.backendHost.length > 0)
 
   /* Trennpunkte entfallen unterhalb sm — dort ist der Platz zu knapp. */
   &__sep {
-    @media (max-width: 639px) {
+    @include below(sm) {
       display: none;
     }
   }
@@ -234,8 +244,13 @@ const hasBackend = computed(() => props.backendHost.length > 0)
     margin-left: auto;
   }
 
+  /* Zusatzangabe — steht auch auf der Statusseite. */
   &__version {
     font-variant-numeric: tabular-nums;
+
+    @include below(sm) {
+      display: none;
+    }
   }
 
   &__backend {
@@ -252,10 +267,44 @@ const hasBackend = computed(() => props.backendHost.length > 0)
     &:hover {
       color: rgb(var(--text-bar-secondary));
     }
+
+    /*
+     * Unterhalb sm bleibt vom Knopf nur der Punkt übrig — sieben mal sieben
+     * Pixel, das trifft niemand. Verlangt sind 44 × 44.
+     *
+     * Die Fläche wächst deshalb über ein Pseudo-Element und nicht über
+     * `min-height`: Letzteres drückt die Zeilenhöhe auf und machte aus einer
+     * schmalen Leiste eine 61 Pixel hohe. So bleibt sie bei 34 und ist
+     * trotzdem zu treffen.
+     */
+    @include below(sm) {
+      position: relative;
+
+      &::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        right: 0;
+        width: 44px;
+        height: 44px;
+        transform: translateY(-50%);
+      }
+    }
   }
 
+  /* Fremdversion und Adresse sind Zusatzangaben; der Punkt bleibt. */
   &__backend-version {
     font-variant-numeric: tabular-nums;
+
+    @include below(sm) {
+      display: none;
+    }
+  }
+
+  &__host {
+    @include below(sm) {
+      display: none;
+    }
   }
 
   &__dot {

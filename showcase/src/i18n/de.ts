@@ -23,6 +23,7 @@ export const de = {
     icons: 'Symbole',
     components: 'Naive UI',
     own: 'Eigene',
+    mobile: 'Mobil',
     patterns: 'Verhalten',
   },
 
@@ -101,6 +102,33 @@ export const de = {
     name: 'Name',
     value: 'Wert',
     change: 'Veränderung',
+  },
+
+  demo: {
+    dashboard: 'Übersicht',
+    rebalancing: 'Ausgleichen',
+    instruments: 'Papiere',
+    settings: 'Einstellungen',
+  },
+
+  mobile: {
+    heading: 'Mobil-Verhalten der Kopfzeile',
+    /*
+     * Ohne Klammeraffen formuliert: vue-i18n liest ihn als Marker für eine
+     * verknüpfte Nachricht und bricht beim Kompilieren ab — sichtbar nur im
+     * Browser, nicht im Build.
+     */
+    hint: 'Drei echte Fenster, keine verkleinerten Nachbauten: Media-Abfragen richten sich nach dem Fenster, und ein iframe hat ein eigenes. Eine Miniatur zeigte die Regeln der vollen Breite und bewiese damit das Gegenteil.',
+    phone: 'Telefon — nur Symbole, keine Wortmarke',
+    small: 'unter md — Symbole, Wortmarke wieder da',
+    desktop: 'ab md — Beschriftungen sichtbar',
+    ruleLabels:
+      'Unterhalb md fällt die Beschriftung weg, nicht der Menüpunkt. Vier Symbole passen auf jedes Telefon.',
+    ruleWordmark: 'Unterhalb sm fällt zusätzlich die Wortmarke; die Plakette bleibt.',
+    ruleHamburger:
+      'Kein Hamburger. Er wird erst nötig, wenn die Punkte auch als Symbole nicht mehr in eine Zeile passen — das ist meist ein Zeichen, dass zu viel im Hauptmenü steht.',
+    ruleA11y:
+      'Die Beschriftung verschwindet nur sichtbar. Für Hilfstechnik bleibt sie stehen — ein Symbol ohne Namen ist ein Knopf ohne Namen.',
   },
 
   own: {
