@@ -122,6 +122,10 @@ typecheck: ## vue-tsc über Fundament und Schaufenster
 test: ## Vitest — einmalig
 	@npm run test
 
+.PHONY: test-watch
+test-watch: ## Vitest — Watch-Modus
+	@npm run test-watch
+
 .PHONY: clean
 clean: ## dist-showcase/, .vite/, Build-Info löschen
 	@rm -rf dist-showcase .vite showcase/*.tsbuildinfo *.tsbuildinfo

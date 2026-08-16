@@ -111,28 +111,52 @@ watch(
             animated
             @update:value="setTab($event)"
           >
-            <NTabPane name="themes" :tab="t('nav.themes')">
+            <NTabPane
+              name="themes"
+              :tab="t('nav.themes')"
+            >
               <ThemesView />
             </NTabPane>
-            <NTabPane name="tokens" :tab="t('nav.tokens')">
+            <NTabPane
+              name="tokens"
+              :tab="t('nav.tokens')"
+            >
               <TokensView />
             </NTabPane>
-            <NTabPane name="scales" :tab="t('nav.scales')">
+            <NTabPane
+              name="scales"
+              :tab="t('nav.scales')"
+            >
               <ScalesView />
             </NTabPane>
-            <NTabPane name="typography" :tab="t('nav.typography')">
+            <NTabPane
+              name="typography"
+              :tab="t('nav.typography')"
+            >
               <TypographyView />
             </NTabPane>
-            <NTabPane name="icons" :tab="t('nav.icons')">
+            <NTabPane
+              name="icons"
+              :tab="t('nav.icons')"
+            >
               <IconsView />
             </NTabPane>
-            <NTabPane name="components" :tab="t('nav.components')">
+            <NTabPane
+              name="components"
+              :tab="t('nav.components')"
+            >
               <ComponentsView />
             </NTabPane>
-            <NTabPane name="own" :tab="t('nav.own')">
+            <NTabPane
+              name="own"
+              :tab="t('nav.own')"
+            >
               <OwnComponentsView />
             </NTabPane>
-            <NTabPane name="patterns" :tab="t('nav.patterns')">
+            <NTabPane
+              name="patterns"
+              :tab="t('nav.patterns')"
+            >
               <PatternsView />
             </NTabPane>
           </NTabs>

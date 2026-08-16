@@ -22,7 +22,8 @@
     "preview": "vite preview --config showcase/vite.config.ts",
     "lint": "eslint . --ext .vue,.ts --cache",
     "typecheck": "vue-tsc -b showcase/tsconfig.json --force",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test-watch": "vitest"
   },
   "peerDependencies": {
     "naive-ui": "^2.42.0",

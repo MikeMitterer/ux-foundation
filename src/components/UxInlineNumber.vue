@@ -143,6 +143,22 @@ function onKeydown(event: KeyboardEvent): void {
   -->
   <div class="inline-number">
     <!--
+      Hält Breite und Höhe der Zelle — in beiden Zuständen dieselbe.
+
+      Ohne ihn schrumpft der Rahmen auf seinen Inhalt, und ein
+      `input[type=number]` bringt eine andere Eigenbreite mit als der Text
+      daneben: Beim Klick in die Zelle sprang die ganze Spalte. `appearance:
+      textfield` behebt das nicht — es nimmt nur die Spinner-Pfeile.
+
+      Anzeige und Eingabefeld liegen deshalb absolut darüber und tragen selbst
+      nichts zur Größe bei.
+    -->
+    <span
+      class="inline-number__sizer tabular-nums"
+      aria-hidden="true"
+    >{{ display }}</span>
+
+    <!--
       Kein Kasten um die Eingabe: nur eine Linie unter der Zahl. Der Wert bleibt
       dort stehen, wo er auch im Ruhezustand steht — die Zeile springt nicht.
       Die Spinner-Pfeile sind ausgeblendet, sie wären in einer schmalen
@@ -195,15 +211,31 @@ function onKeydown(event: KeyboardEvent): void {
 .inline-number {
   position: relative;
 
+  /* Gemeinsame Maße — der Platzhalter muss exakt so breit bauen, wie die
+     beiden sichtbaren Zustände es täten. */
+  &__sizer,
   &__field,
   &__display {
-    display: block;
-    width: 100%;
-    min-width: 0;
     padding: 0.125rem 0.375rem;
     border: 0;
     border-bottom: 1px solid transparent;
     text-align: right;
+    font: inherit;
+  }
+
+  &__sizer {
+    display: block;
+    visibility: hidden;
+    /* Nie umbrechen: Ein Umbruch im Platzhalter änderte die Höhe der Zeile. */
+    white-space: nowrap;
+  }
+
+  &__field,
+  &__display {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    min-width: 0;
   }
 
   &__field {
