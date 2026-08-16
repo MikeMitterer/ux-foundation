@@ -69,7 +69,21 @@ const emit = defineEmits<{
 /** Trennpunkte nur zwischen tatsächlich vorhandenen Angaben. */
 const hasContext = computed(() => props.context.length > 0)
 const hasDataAge = computed(() => props.dataAge.length > 0)
-const hasBackend = computed(() => props.backendHost.length > 0)
+/**
+ * Der Zustandsbereich erscheint, sobald es etwas über die Gegenstelle zu sagen
+ * gibt.
+ *
+ * Nicht an der Adresse festgemacht: Eine App, die über einen Proxy spricht,
+ * zeigt keine — verlöre damit aber den farbigen Punkt, und der ist das
+ * Wichtigste daran. Umgekehrt schweigt der Bereich, solange nichts bekannt
+ * ist: Ein grauer Punkt ohne Aussage ist schlechter als keiner.
+ */
+const hasBackend = computed(
+  () =>
+    props.backendHost.length > 0 ||
+    props.backendState !== 'unknown' ||
+    props.backendStateLabel.length > 0,
+)
 </script>
 
 <template>
@@ -144,9 +158,19 @@ const hasBackend = computed(() => props.backendHost.length > 0)
             :class="`ux-statusbar__dot--${backendState}`"
           />
           <span
+            v-if="backendHost"
             class="ux-statusbar__host"
             :class="{ 'ux-statusbar__host--offline': backendState === 'offline' }"
           >{{ backendHost }}</span>
+          <!--
+            Ohne Adresse trägt die Beschriftung den Zustand: Farbe darf nie der
+            einzige Träger einer Information sein.
+          -->
+          <span
+            v-else-if="backendStateLabel"
+            class="ux-statusbar__host"
+            :class="{ 'ux-statusbar__host--offline': backendState === 'offline' }"
+          >{{ backendStateLabel }}</span>
           <span
             v-if="backendVersion"
             class="ux-statusbar__backend-version"
