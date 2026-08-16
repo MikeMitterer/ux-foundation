@@ -50,7 +50,13 @@ export function useIsCompact(): Readonly<Ref<boolean>> {
   }
 
   onMounted(() => {
-    query = window.matchMedia(`(max-width: ${COMPACT_BREAKPOINT_PX - 1}px)`)
+    /*
+     * `- 0.02` statt `- 1`: Bei Zoom und auf Geräten mit gebrochenem
+     * Pixelverhältnis kommen Breiten wie 767.5 vor. Mit `max-width: 767px`
+     * fiele so ein Fenster durch beide Raster — es wäre weder schmal noch
+     * breit, und die Ansicht kippte an einer anderen Stelle als das Layout.
+     */
+    query = window.matchMedia(`(max-width: ${COMPACT_BREAKPOINT_PX - 0.02}px)`)
     update(query)
     query.addEventListener('change', update)
   })

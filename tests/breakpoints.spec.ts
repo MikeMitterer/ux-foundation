@@ -55,6 +55,21 @@ describe('BREAKPOINTS', () => {
 })
 
 describe('useIsCompact', () => {
+  it('fragt knapp unterhalb der Grenze, nicht einen ganzen Pixel darunter', () => {
+    // Aus StockInfo übernommen: Bei Zoom und auf Geräten mit gebrochenem
+    // Pixelverhältnis kommen Breiten wie 767.5 vor. Mit `max-width: 767px`
+    // fällt so ein Fenster durch beide Raster — weder schmal noch breit.
+    let gefragt = ''
+    vi.stubGlobal('matchMedia', (query: string) => {
+      gefragt = query
+      return { matches: false, addEventListener: () => {}, removeEventListener: () => {} }
+    })
+
+    mountWithCompact()
+
+    expect(gefragt).toBe(`(max-width: ${COMPACT_BREAKPOINT_PX - 0.02}px)`)
+  })
+
   // `nextTick`, weil der erste Wert aus `onMounted` kommt — vor dem Einhängen
   // kann niemand messen, wie breit das Fenster ist.
   it('meldet schmale Fenster', async () => {
