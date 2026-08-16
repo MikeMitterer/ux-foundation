@@ -1,5 +1,9 @@
 /**
- * Farb-Token der sechs Themes.
+ * Farb-Token der Themes — diese Datei ist die **Quelle**.
+ *
+ * Wie viele es sind, steht nicht in diesem Kommentar: Die Zahl wäre die erste,
+ * die veraltet. Verbindlich ist `THEME_IDS` in `theme/themes.ts`, und ein Test
+ * hält beide zusammen.
  *
  * Ein Theme legt nur die **Umgebung** fest — Flächen, Text, Ränder, Akzent.
  * Die Farben der Assetklassen und die Statusfarben tragen Bedeutung und
@@ -7,9 +11,9 @@
  * müsste man die Zuordnung bei jedem Wechsel neu lernen.
  *
  * Die Werte stehen als RGB-Tripel ohne Funktion (`10 10 10` statt `#0a0a0a`).
- * Nur so greifen Tailwinds Deckkraft-Zusätze (`bg-card/70`); mit Hex-Werten
- * bleiben solche Flächen unsichtbar. Wer sie direkt verwendet, schreibt
- * `rgb(var(--surface-card))`.
+ * Nur so lässt sich Deckkraft nachträglich anlegen —
+ * `rgb(var(--surface-card) / .7)` beziehungsweise `token(--surface-card, .7)`
+ * aus `_shared.scss`; mit Hex-Werten bleiben solche Flächen unsichtbar.
  *
  * Die Assetfarben sind je Theme gegen dessen Fläche geprüft (Nachbarpaare,
  * ΔE ≥ 8 bei Farbfehlsichtigkeit, ≥ 15 bei Normalsicht). In den hellen Themes
@@ -573,6 +577,12 @@
   --asset-moneymarket: 167 139 250;
   --asset-cash: 52 211 153;
 
+  /*
+   * Eigene, kräftigere Stufen statt der gemeinsamen: Auf dem fast schwarzen
+   * Grund dieses Themes wirken die gedämpften Töne stumpf. Das ist die
+   * Ausnahme — bedeutungstragende Farben bleiben sonst über alle Themes
+   * gleich, sonst müsste man die Zuordnung bei jedem Wechsel neu lernen.
+   */
   --status-ok: 52 211 153;
   --status-near: 251 191 36;
   --status-out: 248 113 113;

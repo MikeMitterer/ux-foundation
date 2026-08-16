@@ -9,10 +9,19 @@
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { UxInlineNumber } from '@ux/index'
+import { UxInlineNumber, UxNavItem, type NavIconName } from '@ux/index'
 import ShowcaseSection from '@/components/ShowcaseSection.vue'
 
 const { t, n } = useI18n()
+
+/** Ein Menüpunkt, der sich anklicken lässt — sonst sieht man den Wechsel nicht. */
+const navPunkte: { name: NavIconName; key: string }[] = [
+  { name: 'dashboard', key: 'dashboard' },
+  { name: 'instruments', key: 'instruments' },
+  { name: 'fx', key: 'fx' },
+  { name: 'settings', key: 'settings' },
+]
+const aktiverPunkt = ref<NavIconName>('dashboard')
 
 interface Position {
   symbol: string
@@ -130,6 +139,34 @@ function setTarget(position: Position, value: number): void {
 
     <div>
       <h3 class="label">
+        {{ t('own.navHeading') }}
+      </h3>
+      <p class="hint">
+        {{ t('own.navHint') }}
+      </p>
+
+      <!--
+        Auf der Leisten-Fläche statt auf der Seite: Der Punkt holt seine
+        Textfarben aus den Leisten-Token, und auf hellem Grund sähe man den
+        Kontrast falsch.
+      -->
+      <div class="navdemo">
+        <UxNavItem
+          v-for="punkt in navPunkte"
+          :key="punkt.key"
+          :icon="punkt.name"
+          :label="t(`demo.${punkt.key}`)"
+          :active="punkt.name === aktiverPunkt"
+          @select="aktiverPunkt = punkt.name"
+        />
+      </div>
+      <p class="hint">
+        {{ t('own.navResize') }}
+      </p>
+    </div>
+
+    <div>
+      <h3 class="label">
         {{ t('own.barsHeading') }}
       </h3>
       <ul class="notes">
@@ -194,5 +231,18 @@ function setTarget(position: Position, value: number): void {
   color: rgb(var(--text-secondary));
   line-height: 1.6;
   list-style: disc;
+}
+
+/* Leisten-Fläche, damit die Textfarben des Punkts dort stehen, wo sie hingehören. */
+.navdemo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid rgb(var(--border-bar));
+  border-radius: var(--radius-lg);
+  background: rgb(var(--surface-header));
 }
 </style>

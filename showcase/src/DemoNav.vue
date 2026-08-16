@@ -10,7 +10,14 @@ import { computed, ref, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { NConfigProvider, darkTheme, type GlobalThemeOverrides } from 'naive-ui'
 
-import { buildNaiveOverrides, NAV_ICON_NAMES, THEMES, UxIcon, UxTopbar } from '@ux/index'
+import {
+  buildNaiveOverrides,
+  THEMES,
+  UxIcon,
+  UxNavItem,
+  UxTopbar,
+  type NavIconName,
+} from '@ux/index'
 import { useTheme } from '@/composables/useTheme'
 
 const { t } = useI18n()
@@ -28,8 +35,16 @@ watch(
   { immediate: true },
 )
 
-/** Vier Punkte — der Richtwert des Skills liegt bei drei bis fünf. */
-const punkte = NAV_ICON_NAMES.map((name) => ({ name, label: t(`demo.${name}`) }))
+/**
+ * Vier Punkte — der Richtwert des Skills liegt bei drei bis fünf.
+ *
+ * Bewusst eine Auswahl statt aller Symbole: Der Satz im Paket deckt inzwischen
+ * die Bereiche mehrerer Apps ab, und sieben Punkte nebeneinander würden hier
+ * genau die Regel verletzen, die dieser Abschnitt vorführt.
+ */
+const punkte: { name: NavIconName; label: string }[] = (
+  ['dashboard', 'instruments', 'fx', 'settings'] as const
+).map((name) => ({ name, label: t(`demo.${name}`) }))
 </script>
 
 <template>
@@ -50,63 +65,20 @@ const punkte = NAV_ICON_NAMES.map((name) => ({ name, label: t(`demo.${name}`) })
       </template>
 
       <template #nav>
-        <a
+        <!--
+          `UxNavItem` statt nachgebauter Punkte: Beschriftung ab `md`,
+          verstecktes Label für Hilfstechnik und der Unterstrich am aktiven
+          Punkt stecken in der Komponente. Hier lagen dieselben Regeln vorher
+          ein drittes Mal — nach StockPortfolio und StockInfo.
+        -->
+        <UxNavItem
           v-for="(punkt, index) in punkte"
           :key="punkt.name"
-          class="item"
-          :class="{ 'item--active': index === 0 }"
-          href="#"
-          @click.prevent
-        >
-          <UxIcon :name="punkt.name" />
-          <!-- Unterhalb md fällt die Beschriftung weg, nicht der Punkt. -->
-          <span class="item__label">{{ punkt.label }}</span>
-          <!-- Für Hilfstechnik bleibt sie: ein Symbol ohne Namen ist ein
-               Knopf ohne Namen. -->
-          <span class="visually-hidden">{{ punkt.label }}</span>
-          <span
-            v-if="index === 0"
-            class="item__underline"
-          />
-        </a>
+          :icon="punkt.name"
+          :label="punkt.label"
+          :active="index === 0"
+        />
       </template>
     </UxTopbar>
   </NConfigProvider>
 </template>
-
-<style scoped lang="scss">
-.item {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.375rem var(--space-3);
-  border-radius: var(--radius-sm);
-  font-size: var(--font-sm);
-  color: rgb(var(--text-bar-secondary));
-  text-decoration: none;
-
-  &--active {
-    color: rgb(var(--text-bar));
-  }
-
-  &__label {
-    display: none;
-
-    @include up(md) {
-      display: inline;
-    }
-  }
-
-  /* Ein Strich, kein Kasten — der konkurriert nicht mit den Karten darunter. */
-  &__underline {
-    position: absolute;
-    right: var(--space-2);
-    bottom: -9px;
-    left: var(--space-2);
-    height: 2px;
-    border-radius: var(--radius-full);
-    background: rgb(var(--accent));
-  }
-}
-</style>

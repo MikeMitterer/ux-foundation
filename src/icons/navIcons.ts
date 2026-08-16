@@ -45,6 +45,9 @@ export type NavIconName =
   | 'rebalancing'
   | 'instruments'
   | 'settings'
+  | 'exchanges'
+  | 'fx'
+  | 'analysis'
 
 export const NAV_ICONS: Record<NavIconName, IconDefinition> = {
   /* Übersicht — drei aufsteigende Balken. */
@@ -88,6 +91,34 @@ export const NAV_ICONS: Record<NavIconName, IconDefinition> = {
       { circle: { cx: 9, cy: 6, r: 2 }, filled: true },
       { circle: { cx: 15, cy: 12, r: 2 }, filled: true },
       { circle: { cx: 7, cy: 18, r: 2 }, filled: true },
+    ],
+  },
+
+  /* Börsen — Kurstafel: Rahmen mit einer Linie darin. */
+  exchanges: {
+    viewBox: '0 0 24 24',
+    paths: [
+      { d: 'M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z' },
+      { d: 'M7 13l3-3.5 2.5 2.5L17 8' },
+    ],
+  },
+
+  /*
+   * Devisen — zwei gegenläufige Pfeile mit *unterschiedlicher* Länge.
+   * Gleich lange wären das Ausgleichen-Symbol; hier geht es um Tausch zwischen
+   * zwei Größen, nicht um deren Angleichung.
+   */
+  fx: {
+    viewBox: '0 0 24 24',
+    paths: [{ d: 'M4 7h13l-3-3M20 17H7l3 3' }],
+  },
+
+  /* Analyse — Lupe mit Zeiger: Suchen und Auswerten in einem Zeichen. */
+  analysis: {
+    viewBox: '0 0 24 24',
+    paths: [
+      { circle: { cx: 11, cy: 11, r: 7 } },
+      { d: 'M21 21l-4.35-4.35M11 8v3l2 2' },
     ],
   },
 }

@@ -60,11 +60,44 @@ const themeOptions = computed(() =>
     href="#/themes"
   >
     <template #badge>
-      <UxIcon
-        name="dashboard"
-        :size="16"
-        :stroke-width="2.5"
-      />
+      <!--
+        Dasselbe Motiv wie in `public/favicon.svg` — drei Schichten, die
+        unterste am breitesten. Dort trägt die Datei die Kachel selbst, hier
+        liefert sie das Fundament.
+
+        Bewusst **kein** Navigationssymbol: Die vier Motive der Menüpunkte sind
+        vergeben, und die Kopfzeile trüge sonst dasselbe Zeichen zweimal.
+      -->
+      <svg
+        viewBox="0 0 24 24"
+        width="16"
+        height="16"
+        fill="rgb(var(--brand-contrast))"
+      >
+        <rect
+          x="5"
+          y="14.5"
+          width="14"
+          height="3.5"
+          rx="1.2"
+        />
+        <rect
+          x="7"
+          y="9.5"
+          width="10"
+          height="3.5"
+          rx="1.2"
+          opacity="0.75"
+        />
+        <rect
+          x="9"
+          y="4.5"
+          width="6"
+          height="3.5"
+          rx="1.2"
+          opacity="0.5"
+        />
+      </svg>
     </template>
 
     <template #nav>

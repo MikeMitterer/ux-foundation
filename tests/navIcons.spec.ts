@@ -13,6 +13,16 @@ describe('NAV_ICONS', () => {
     expect(NAV_ICON_NAMES.sort()).toEqual(Object.keys(NAV_ICONS).sort())
   })
 
+  it('kennt die wiederkehrenden Bereiche beider Apps', () => {
+    // Wiederkehrende Menüpunkte tragen über alle Apps dasselbe Symbol — das
+    // ist der Punkt, an dem eine Sammlung zusammenwächst oder auseinanderfällt.
+    // StockPortfolio bringt die ersten vier, StockInfo die letzten drei.
+    for (const name of ['dashboard', 'rebalancing', 'instruments', 'settings',
+                        'exchanges', 'fx', 'analysis'] as const) {
+      expect(NAV_ICONS[name], name).toBeDefined()
+    }
+  })
+
   it('hat je Symbol eine Zeichenfläche und mindestens einen Pfad', () => {
     for (const name of NAV_ICON_NAMES) {
       const icon = NAV_ICONS[name]

@@ -49,6 +49,7 @@ export { default as UxIcon } from './icons/UxIcon.vue'
 
 export { default as UxAppShell } from './components/UxAppShell.vue'
 export { default as UxTopbar } from './components/UxTopbar.vue'
+export { default as UxNavItem } from './components/UxNavItem.vue'
 export { default as UxStatusBar } from './components/UxStatusBar.vue'
 export { default as UxInlineNumber } from './components/UxInlineNumber.vue'
 export type { BackendState } from './components/UxStatusBar.vue'

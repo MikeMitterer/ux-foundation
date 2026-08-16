@@ -115,6 +115,9 @@ export const de = {
     rebalancing: 'Ausgleichen',
     instruments: 'Papiere',
     settings: 'Einstellungen',
+    exchanges: 'Börsen',
+    fx: 'Devisen',
+    analysis: 'Analyse',
   },
 
   mobile: {
@@ -148,6 +151,11 @@ export const de = {
     targetSum: 'Summe der Ziele',
     edit: 'Bearbeiten',
     clear: 'Leeren',
+    navHeading: 'Menüpunkt',
+    navHint:
+      'UxNavItem — Symbol und Beschriftung, darunter der Strich am aktiven Punkt. Ein eingefärbter Kasten würde mit den Karten darunter konkurrieren, ein Strich tut das nicht. Navigiert wird nicht hier: Die eine App hat einen Router, die andere Hash-Tabs — die Adresse kommt herein, das Ereignis geht hinaus.',
+    navResize:
+      'Fenster unter 768 px ziehen: Die Beschriftung fällt weg, der Punkt bleibt. Für Vorleseprogramme bleibt sie erhalten — ein Symbol ohne Namen ist ein Knopf ohne Namen.',
     barsHeading: 'Kopf- und Statuszeile',
     topbarNote:
       'Die Kopfzeile oben ist UxTopbar: Plakette mit festem Markenverlauf, Wortmarke als HTML-Text in --font-display, rechts nur, was keine Navigation ist.',
