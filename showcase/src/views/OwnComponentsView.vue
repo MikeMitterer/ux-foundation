@@ -10,9 +10,22 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { UxInlineNumber, UxNavItem, type NavIconName } from '@ux/index'
+import SectionIndex, { type IndexItem } from '@/components/SectionIndex.vue'
+import ShowcaseBlock from '@/components/ShowcaseBlock.vue'
 import ShowcaseSection from '@/components/ShowcaseSection.vue'
 
 const { t, n } = useI18n()
+
+/**
+ * Was dieser Abschnitt zeigt — **eine** Quelle für die Sprungleiste oben und
+ * die Blöcke darunter. Zwei Listen liefen auseinander, sobald ein Baustein
+ * dazukommt.
+ */
+const BLOECKE = [
+  { anchor: 'own-inline', label: 'UxInlineNumber' },
+  { anchor: 'own-nav', label: 'UxNavItem' },
+  { anchor: 'own-bars', label: 'UxTopbar · UxStatusBar' },
+] as const satisfies readonly IndexItem[]
 
 /** Ein Menüpunkt, der sich anklicken lässt — sonst sieht man den Wechsel nicht. */
 const navPunkte: { name: NavIconName; key: string }[] = [
@@ -59,14 +72,16 @@ function setTarget(position: Position, value: number): void {
     :title="t('own.heading')"
     :hint="t('own.hint')"
   >
-    <div>
-      <h3 class="label">
-        {{ t('own.inlineHeading') }}
-      </h3>
-      <p class="hint">
-        {{ t('own.inlineHint') }}
-      </p>
+    <SectionIndex
+      :items="BLOECKE"
+      :label="t('index.label')"
+    />
 
+    <ShowcaseBlock
+      :id="BLOECKE[0].anchor"
+      :title="t('own.inlineHeading')"
+      :hint="t('own.inlineHint')"
+    >
       <table class="grid">
         <thead>
           <tr>
@@ -135,16 +150,13 @@ function setTarget(position: Position, value: number): void {
           </tr>
         </tfoot>
       </table>
-    </div>
+    </ShowcaseBlock>
 
-    <div>
-      <h3 class="label">
-        {{ t('own.navHeading') }}
-      </h3>
-      <p class="hint">
-        {{ t('own.navHint') }}
-      </p>
-
+    <ShowcaseBlock
+      :id="BLOECKE[1].anchor"
+      :title="t('own.navHeading')"
+      :hint="t('own.navHint')"
+    >
       <!--
         Auf der Leisten-Fläche statt auf der Seite: Der Punkt holt seine
         Textfarben aus den Leisten-Token, und auf hellem Grund sähe man den
@@ -163,17 +175,17 @@ function setTarget(position: Position, value: number): void {
       <p class="hint">
         {{ t('own.navResize') }}
       </p>
-    </div>
+    </ShowcaseBlock>
 
-    <div>
-      <h3 class="label">
-        {{ t('own.barsHeading') }}
-      </h3>
+    <ShowcaseBlock
+      :id="BLOECKE[2].anchor"
+      :title="t('own.barsHeading')"
+    >
       <ul class="notes">
         <li>{{ t('own.topbarNote') }}</li>
         <li>{{ t('own.statusbarNote') }}</li>
       </ul>
-    </div>
+    </ShowcaseBlock>
   </ShowcaseSection>
 </template>
 

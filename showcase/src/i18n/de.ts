@@ -140,6 +140,10 @@ export const de = {
       'Die Beschriftung verschwindet nur sichtbar. Für Hilfstechnik bleibt sie stehen — ein Symbol ohne Namen ist ein Knopf ohne Namen.',
   },
 
+  index: {
+    label: 'In diesem Abschnitt',
+  },
+
   own: {
     heading: 'Eigene Komponenten',
     hint: 'Was dieses Paket selbst mitbringt. Zwei davon stehen gerade auf dem Bildschirm — die Kopfzeile oben und die Statuszeile unten.',

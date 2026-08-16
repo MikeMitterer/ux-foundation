@@ -22,9 +22,21 @@ import {
   type DataTableColumns,
 } from 'naive-ui'
 
+import SectionIndex, { type IndexItem } from '@/components/SectionIndex.vue'
 import ShowcaseSection from '@/components/ShowcaseSection.vue'
 
 const { t } = useI18n()
+
+/**
+ * Was dieser Abschnitt zeigt — eine Quelle für die Sprungleiste oben und die
+ * Karten darunter.
+ */
+const BLOECKE = [
+  { anchor: 'naive-buttons', label: 'Button · Dialog' },
+  { anchor: 'naive-inputs', label: 'Input · Select · Switch' },
+  { anchor: 'naive-feedback', label: 'Tag · Alert' },
+  { anchor: 'naive-table', label: 'DataTable' },
+] as const satisfies readonly IndexItem[]
 
 const dialogOpen = ref(false)
 const textValue = ref('')
@@ -64,7 +76,14 @@ const rows: Row[] = [
     :title="t('components.heading')"
     :hint="t('components.hint')"
   >
+    <SectionIndex
+      :items="BLOECKE"
+      :label="t('index.label')"
+    />
+
     <NCard
+      :id="BLOECKE[0].anchor"
+      class="card"
       :title="t('components.buttons')"
       size="small"
     >
@@ -86,6 +105,8 @@ const rows: Row[] = [
     </NCard>
 
     <NCard
+      :id="BLOECKE[1].anchor"
+      class="card"
       :title="t('components.inputs')"
       size="small"
     >
@@ -105,6 +126,8 @@ const rows: Row[] = [
     </NCard>
 
     <NCard
+      :id="BLOECKE[2].anchor"
+      class="card"
       :title="t('components.feedback')"
       size="small"
     >
@@ -130,6 +153,8 @@ const rows: Row[] = [
     </NCard>
 
     <NCard
+      :id="BLOECKE[3].anchor"
+      class="card"
       :title="t('components.table')"
       size="small"
     >
@@ -154,6 +179,11 @@ const rows: Row[] = [
 </template>
 
 <style scoped lang="scss">
+/* Sonst verschwindet der Kartenkopf unter der klebenden Kopfzeile. */
+.card {
+  scroll-margin-top: calc(3.5rem + var(--space-6));
+}
+
 .row {
   display: flex;
   flex-wrap: wrap;
