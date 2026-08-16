@@ -1,0 +1,67 @@
+{
+  "name": "@mikemitterer/ux-foundation",
+  "version": "0.1.0",
+  "description": "Gemeinsames Fundament der Oberflächen — Farb-Token, Skalen, Reset, Schriften, Symbole und die Naive-UI-Brücke",
+  "license": "MIT",
+  "author": "Mike Mitterer <office@mikemitterer.at>",
+  "type": "module",
+  "files": [
+    "src"
+  ],
+  "exports": {
+    ".": "./src/index.ts",
+    "./styles/tokens.css": "./src/styles/tokens.css",
+    "./styles/reset.css": "./src/styles/reset.css",
+    "./styles/fonts.css": "./src/styles/fonts.css",
+    "./styles/shared": "./src/styles/_shared.scss",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "dev": "vite --config showcase/vite.config.ts",
+    "build": "vue-tsc -b showcase/tsconfig.json && vite build --config showcase/vite.config.ts",
+    "preview": "vite preview --config showcase/vite.config.ts",
+    "lint": "eslint . --ext .vue,.ts --cache",
+    "typecheck": "vue-tsc -b showcase/tsconfig.json --force",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "naive-ui": "^2.42.0",
+    "vue": "^3.5.0"
+  },
+  "peerDependenciesMeta": {
+    "naive-ui": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@fontsource-variable/inter": "^5.3.0",
+    "@fontsource-variable/space-grotesk": "^5.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "@vitejs/plugin-vue": "^6.0.0",
+    "eslint": "^9.33.0",
+    "eslint-plugin-vue": "^10.4.0",
+    "globals": "^17.11.0",
+    "naive-ui": "^2.42.0",
+    "sass": "^1.102.0",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.39.1",
+    "vite": "^6.3.5",
+    "vitest": "^3.2.4",
+    "vue": "^3.5.18",
+    "vue-i18n": "^11.1.6",
+    "vue-tsc": "^3.0.5"
+  },
+  "publishConfig": {
+    "access": "restricted"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MikeMitterer/ux-foundation.git"
+  },
+  "sideEffects": [
+    "*.css",
+    "*.scss"
+  ]
+}

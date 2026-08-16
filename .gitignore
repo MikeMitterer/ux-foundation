@@ -1,0 +1,16 @@
+node_modules/
+dist/
+dist-showcase/
+.vite/
+coverage/
+*.tsbuildinfo
+
+# Symlinks auf die zentralen Konventions-Repos — via `make setup` erzeugt
+.libs/
+
+.DS_Store
+.env
+.env.local
+
+# IDE
+.idea/
