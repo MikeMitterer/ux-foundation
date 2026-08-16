@@ -107,13 +107,23 @@ watch(
           </p>
 
           <!--
-          `key` an der Sprache: Naive UI berechnet die Position des
-          Schiebebalkens einmal beim Einhängen. Ändern sich die Beschriftungen,
-          bleibt er stehen, wo er war — und zwar bis irgendetwas anderes eine
-          Neuberechnung auslöst.
-        -->
+            `key` an Sprache **und** Bereich. Naive UI rechnet einmal beim
+            Einhängen und kommt nicht mit, wenn sich darunter etwas ändert, das
+            es nicht beobachtet:
+
+            Bei einem Sprachwechsel werden die Beschriftungen länger oder
+            kürzer, der Schiebebalken bleibt aber stehen, wo er war.
+
+            Beim Bereichswechsel tauscht der ganze *Satz* an Reitern. Ohne den
+            Schlüssel blieb die alte Reiter-Fläche im Dokument stehen — sichtbar
+            als zwei Abschnitte übereinander, während oben schon der neue Reiter
+            markiert war.
+
+            Vertretbar, weil die Reiter keinen Zustand halten: Welcher offen
+            ist, steht in der Adresse.
+          -->
           <NTabs
-            :key="locale"
+            :key="`${locale}-${activeArea}`"
             :value="section"
             type="line"
             animated
