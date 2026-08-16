@@ -70,8 +70,15 @@ describe('useIsCompact', () => {
     expect(gefragt).toBe(`(max-width: ${COMPACT_BREAKPOINT_PX - 0.02}px)`)
   })
 
-  // `nextTick`, weil der erste Wert aus `onMounted` kommt — vor dem Einhängen
-  // kann niemand messen, wie breit das Fenster ist.
+  it('steht schon beim ersten Bild richtig', () => {
+    // Ohne `nextTick`: Käme der erste Wert erst aus `onMounted`, zeigte die
+    // Ansicht für ein Bild die Tabelle und kippte dann auf Karten. Das sieht
+    // man, und in Tests zwingt es jeden Aufrufer zu einem `await`.
+    pretendNarrow(true)
+
+    expect(mountWithCompact().text()).toBe('schmal')
+  })
+
   it('meldet schmale Fenster', async () => {
     pretendNarrow(true)
     const wrapper = mountWithCompact()

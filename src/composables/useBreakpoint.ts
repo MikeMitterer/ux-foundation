@@ -41,24 +41,27 @@ export const COMPACT_BREAKPOINT_PX = BREAKPOINTS.md
  * in jeder Komponente: So kippen Ansicht und Layout-Klassen gemeinsam.
  */
 export function useIsCompact(): Readonly<Ref<boolean>> {
-  const isCompact = ref<boolean>(false)
+  /*
+   * `- 0.02` statt `- 1`: Bei Zoom und auf Geräten mit gebrochenem
+   * Pixelverhältnis kommen Breiten wie 767.5 vor. Mit `max-width: 767px`
+   * fiele so ein Fenster durch beide Raster — es wäre weder schmal noch
+   * breit, und die Ansicht kippte an einer anderen Stelle als das Layout.
+   */
+  const query = matchMediaOrNull(`(max-width: ${COMPACT_BREAKPOINT_PX - 0.02}px)`)
 
-  let query: MediaQueryList | null = null
+  /*
+   * Sofort gemessen, nicht erst beim Einhängen: Käme der erste Wert aus
+   * `onMounted`, zeigte die Ansicht für ein Bild die Tabelle und kippte dann
+   * auf Karten. Das sieht man.
+   */
+  const isCompact = ref<boolean>(query?.matches ?? false)
 
   function update(event: MediaQueryList | MediaQueryListEvent): void {
     isCompact.value = event.matches
   }
 
   onMounted(() => {
-    /*
-     * `- 0.02` statt `- 1`: Bei Zoom und auf Geräten mit gebrochenem
-     * Pixelverhältnis kommen Breiten wie 767.5 vor. Mit `max-width: 767px`
-     * fiele so ein Fenster durch beide Raster — es wäre weder schmal noch
-     * breit, und die Ansicht kippte an einer anderen Stelle als das Layout.
-     */
-    query = window.matchMedia(`(max-width: ${COMPACT_BREAKPOINT_PX - 0.02}px)`)
-    update(query)
-    query.addEventListener('change', update)
+    query?.addEventListener('change', update)
   })
 
   onUnmounted(() => {
@@ -66,4 +69,15 @@ export function useIsCompact(): Readonly<Ref<boolean>> {
   })
 
   return readonly(isCompact)
+}
+
+/**
+ * `matchMedia`, wo es das gibt.
+ *
+ * Auf dem Server und in mancher Testumgebung fehlt es — dort gilt „nicht
+ * schmal", weil eine Seite ohne Fenster keine Breite hat.
+ */
+function matchMediaOrNull(query: string): MediaQueryList | null {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return null
+  return window.matchMedia(query)
 }
