@@ -59,3 +59,11 @@ export {
 } from './composables/useStateNotification'
 export { useNotifier, type Notifier, type NotifyOptions } from './composables/useNotifier'
 export { minutesSince, useMinutesSince } from './composables/useRelativeTime'
+export { browserLocale, detectLocale, persistLocale } from './composables/localeDetection'
+export { safeStorage } from './composables/safeStorage'
+export {
+  BREAKPOINTS,
+  COMPACT_BREAKPOINT_PX,
+  useIsCompact,
+  type BreakpointName,
+} from './composables/useBreakpoint'

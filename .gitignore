@@ -4,6 +4,7 @@ dist-showcase/
 .vite/
 coverage/
 *.tsbuildinfo
+.eslintcache
 
 # Symlinks auf die zentralen Konventions-Repos — via `make setup` erzeugt
 .libs/

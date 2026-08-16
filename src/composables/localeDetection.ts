@@ -16,6 +16,8 @@
  * in der Leiste, nie zwischen den Menüpunkten.
  */
 
+import { safeStorage } from './safeStorage'
+
 /**
  * Bildet eine Browsersprache auf die verfügbaren ab.
  *
@@ -52,13 +54,9 @@ export function detectLocale<T extends string>(
   fallback: T,
   storageKey: string,
 ): T {
-  try {
-    const gespeichert = window.localStorage?.getItem(storageKey)
-    if (gespeichert && (verfuegbar as readonly string[]).includes(gespeichert)) {
-      return gespeichert as T
-    }
-  } catch {
-    /* Privater Modus: schon der Zugriff wirft. Dann eben die des Browsers. */
+  const gespeichert = safeStorage.read(storageKey)
+  if (gespeichert && (verfuegbar as readonly string[]).includes(gespeichert)) {
+    return gespeichert as T
   }
   return browserLocale(verfuegbar, fallback)
 }
@@ -74,9 +72,6 @@ export function detectLocale<T extends string>(
  */
 export function persistLocale(locale: string, storageKey: string): void {
   document.documentElement.lang = locale
-  try {
-    window.localStorage?.setItem(storageKey, locale)
-  } catch {
-    /* Kein Speicher: Die Wahl gilt dann für diese Sitzung. */
-  }
+  // Kein Speicher: Die Wahl gilt dann für diese Sitzung.
+  safeStorage.write(storageKey, locale)
 }

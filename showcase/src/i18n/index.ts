@@ -7,23 +7,21 @@
  */
 import { createI18n } from 'vue-i18n'
 
+import { detectLocale } from '@ux/index'
+
 import { de, type MessageSchema } from './de'
 
+const AVAILABLE_LOCALES = ['de'] as const
 const FALLBACK_LOCALE = 'de'
+const STORAGE_KEY = 'ux-foundation.showcase.locale'
 
-/** Ermittelt die Start-Locale: Browser-Sprache, sonst Rückfall. */
-function detectLocale(): string {
-  const available = ['de']
-  for (const lang of navigator.languages ?? [navigator.language]) {
-    const base = lang.split('-')[0]
-    if (available.includes(base)) return base
-  }
-  return FALLBACK_LOCALE
-}
-
+/*
+ * Die Erkennung kommt aus dem Paket, das dieses Schaufenster vorführt — hier
+ * eine eigene zu schreiben wäre die peinlichste Stelle für eine Kopie.
+ */
 export const i18n = createI18n<[MessageSchema], 'de'>({
   legacy: false,
-  locale: detectLocale(),
+  locale: detectLocale(AVAILABLE_LOCALES, FALLBACK_LOCALE, STORAGE_KEY),
   fallbackLocale: FALLBACK_LOCALE,
   messages: { de },
 })
