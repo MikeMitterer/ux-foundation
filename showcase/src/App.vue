@@ -39,25 +39,31 @@ import ScalesView from "@/views/ScalesView.vue";
 import ThemesView from "@/views/ThemesView.vue";
 import TokensView from "@/views/TokensView.vue";
 import TypographyView from "@/views/TypographyView.vue";
-import { useHashTab } from "@/composables/useHashTab";
+import { AREAS, useSections } from "@/composables/useSections";
 import { useTheme } from "@/composables/useTheme";
 
 const { t, locale } = useI18n();
+
+/** Welcher Abschnitt welche Ansicht zeigt. */
+const ANSICHTEN = {
+  themes: ThemesView,
+  tokens: TokensView,
+  scales: ScalesView,
+  typography: TypographyView,
+  icons: IconsView,
+  components: ComponentsView,
+  own: OwnComponentsView,
+  mobile: MobileView,
+  patterns: PatternsView,
+};
 const { current } = useTheme();
 
-const TABS = [
-  "themes",
-  "tokens",
-  "scales",
-  "typography",
-  "icons",
-  "components",
-  "own",
-  "mobile",
-  "patterns",
-] as const;
+const { section, setSection, activeArea } = useSections();
 
-const { active, setTab } = useHashTab(TABS, "themes");
+/** Nur die Reiter des gerade offenen Bereichs. */
+const sichtbareAbschnitte = computed(
+  () => AREAS.find((area) => area.id === activeArea.value)?.sections ?? [],
+);
 
 const isDark = computed(() => THEMES[current.value].isDark);
 const naiveOverrides = ref<GlobalThemeOverrides>({});
@@ -108,64 +114,18 @@ watch(
         -->
           <NTabs
             :key="locale"
-            :value="active"
+            :value="section"
             type="line"
             animated
-            @update:value="setTab($event)"
+            @update:value="setSection($event)"
           >
             <NTabPane
-              name="themes"
-              :tab="t('nav.themes')"
+              v-for="id in sichtbareAbschnitte"
+              :key="id"
+              :name="id"
+              :tab="t(`nav.${id}`)"
             >
-              <ThemesView />
-            </NTabPane>
-            <NTabPane
-              name="tokens"
-              :tab="t('nav.tokens')"
-            >
-              <TokensView />
-            </NTabPane>
-            <NTabPane
-              name="scales"
-              :tab="t('nav.scales')"
-            >
-              <ScalesView />
-            </NTabPane>
-            <NTabPane
-              name="typography"
-              :tab="t('nav.typography')"
-            >
-              <TypographyView />
-            </NTabPane>
-            <NTabPane
-              name="icons"
-              :tab="t('nav.icons')"
-            >
-              <IconsView />
-            </NTabPane>
-            <NTabPane
-              name="components"
-              :tab="t('nav.components')"
-            >
-              <ComponentsView />
-            </NTabPane>
-            <NTabPane
-              name="own"
-              :tab="t('nav.own')"
-            >
-              <OwnComponentsView />
-            </NTabPane>
-            <NTabPane
-              name="mobile"
-              :tab="t('nav.mobile')"
-            >
-              <MobileView />
-            </NTabPane>
-            <NTabPane
-              name="patterns"
-              :tab="t('nav.patterns')"
-            >
-              <PatternsView />
+              <component :is="ANSICHTEN[id]" />
             </NTabPane>
           </NTabs>
         </main>

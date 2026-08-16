@@ -5,9 +5,13 @@
  * Bewusst nicht nachgebaut: Eine Schaufenster-App, die ihre eigene Kopfzeile
  * zeichnet, beweist nichts über die Komponente, die sie zeigen soll.
  *
- * Die Abschnitte stecken in Reitern und nicht hier: Sieben Menüpunkte lägen
- * über dem Richtwert von drei bis fünf, und es sind ohnehin keine
- * Arbeitsbereiche, sondern Kapitel einer Seite.
+ * Drei Bereiche statt neun Abschnitte: Der Richtwert liegt bei drei bis fünf
+ * Menüpunkten. Die Abschnitte stecken darunter in Reitern — genau die Form,
+ * die der Skill für so etwas vorsieht.
+ *
+ * Die Punkte sind echt und nicht nachgestellt: Nur so zeigt sich das
+ * Mobil-Verhalten beim Ziehen am Browserrand und nicht bloß eingerahmt im
+ * Mobil-Abschnitt.
  *
  * Der Theme-Umschalter steht hier **entgegen** der Regel, dass er in die
  * Einstellungen gehört. Diese App handelt von Themes — er ist ihr
@@ -25,9 +29,13 @@ import { NSelect } from 'naive-ui'
 
 import { THEME_IDS, THEMES, UxIcon, UxTopbar, type ThemeId } from '@ux/index'
 import { useTheme } from '@/composables/useTheme'
+import { AREAS, useSections, type Area } from '@/composables/useSections'
 
 const { t } = useI18n()
 const { current, setTheme } = useTheme()
+const { activeArea, openArea } = useSections()
+
+const istAktiv = (area: Area): boolean => area.id === activeArea.value
 
 /**
  * Auswahlliste mit Farbtupfer je Theme.
@@ -59,6 +67,28 @@ const themeOptions = computed(() =>
       />
     </template>
 
+    <template #nav>
+      <button
+        v-for="area in AREAS"
+        :key="area.id"
+        type="button"
+        class="item"
+        :class="{ 'item--active': istAktiv(area) }"
+        @click="openArea(area)"
+      >
+        <UxIcon :name="area.icon" />
+        <!-- Unterhalb md fällt die Beschriftung weg, nicht der Punkt. -->
+        <span class="item__label">{{ t(`areas.${area.id}`) }}</span>
+        <!-- Für Hilfstechnik bleibt sie stehen: ein Symbol ohne Namen ist ein
+             Knopf ohne Namen. -->
+        <span class="visually-hidden">{{ t(`areas.${area.id}`) }}</span>
+        <span
+          v-if="istAktiv(area)"
+          class="item__underline"
+        />
+      </button>
+    </template>
+
     <template #actions>
       <NSelect
         :value="current"
@@ -81,6 +111,50 @@ const themeOptions = computed(() =>
 </template>
 
 <style scoped lang="scss">
+.item {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem var(--space-3);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font: inherit;
+  font-size: var(--font-sm);
+  color: rgb(var(--text-bar-secondary));
+  cursor: pointer;
+  white-space: nowrap;
+
+  &:hover {
+    color: rgb(var(--text-bar));
+    background: rgb(var(--surface-raised) / 0.5);
+  }
+
+  &--active {
+    color: rgb(var(--text-bar));
+  }
+
+  &__label {
+    display: none;
+
+    @include up(md) {
+      display: inline;
+    }
+  }
+
+  /* Ein Strich, kein Kasten — der konkurriert nicht mit den Karten darunter. */
+  &__underline {
+    position: absolute;
+    right: var(--space-2);
+    bottom: -9px;
+    left: var(--space-2);
+    height: 2px;
+    border-radius: var(--radius-full);
+    background: rgb(var(--accent));
+  }
+}
+
 .theme-select {
   /*
    * Breit genug für den längsten Namen („mangolila"), damit die Zeile beim

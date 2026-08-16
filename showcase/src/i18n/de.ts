@@ -15,6 +15,12 @@ export const de = {
       'Alles auf dieser Seite kommt aus dem Paket und nicht aus der App. Wer den Anstrich oben rechts wechselt, sieht dieselben Bausteine in jedem Theme — genau dafür ist die Seite da.',
   },
 
+  areas: {
+    basics: 'Grundlagen',
+    components: 'Komponenten',
+    behaviour: 'Verhalten',
+  },
+
   nav: {
     themes: 'Themes',
     tokens: 'Farb-Token',
