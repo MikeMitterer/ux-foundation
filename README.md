@@ -144,7 +144,7 @@ Make-Target — sie haben eine eigene Kommandozeile:
 ```bash
 python3 scripts/theme-tokens.py --help
 python3 scripts/theme-tokens.py repair src/styles/tokens.css     # Probelauf
-python3 scripts/theme-tokens.py export src/styles/tokens.css     # für themes.md
+python3 scripts/theme-tokens.py export src/styles/tokens.css     # alle Paletten lesen
 ```
 
 `build` und `repair` lösen absichtlich verschieden: Beim Erzeugen werden beide

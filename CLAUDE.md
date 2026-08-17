@@ -63,9 +63,13 @@ Dieses Repo führt bewusst ein paar Tests, die keinen Code prüfen, sondern
   TypeScript lesen; auseinanderlaufen dürfen sie trotzdem nicht.
 
 **Wer eine zweite Quelle anlegt, legt im selben Zug den Test dazu.** Ohne ihn
-ist es keine Spiegelung, sondern eine Kopie mit Verfallsdatum. Das gilt auch für
-`references/themes.md` im Skill: erzeugt mit `theme-tokens.py export`, niemals
-von Hand — bei Abweichung gilt `tokens.css`.
+ist es keine Spiegelung, sondern eine Kopie mit Verfallsdatum.
+
+Wo kein Test möglich ist, gibt es auch keine zweite Quelle. Der Skill führte
+einmal eine Liste aller Paletten (`references/themes.md`); sie ist entfernt,
+weil eine Datei außerhalb dieses Repos von hier aus nicht bewacht werden kann.
+Wer die Werte im Zusammenhang lesen will, erzeugt sie sich mit
+`theme-tokens.py export` — verbindlich ist `tokens.css`.
 
 ## Fallen in diesem Repo
 

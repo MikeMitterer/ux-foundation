@@ -3,9 +3,9 @@
 
 Vier Unterbefehle:
 
-  check   Misst jedes Theme einer Token-Datei gegen die Grenzwerte aus
-          themes.md. Beantwortet „hält das noch?", ohne dass jemand jede
-          Palette von Hand durchrechnet.
+  check   Misst jedes Theme einer Token-Datei gegen die Grenzwerte in
+          `REGELN` weiter unten. Beantwortet „hält das noch?", ohne dass
+          jemand jede Palette von Hand durchrechnet.
 
   repair  Hebt die leisen Textstufen bestehender Themes auf 4.5:1 an, ohne
           Farbton und Sättigung anzutasten.
@@ -13,10 +13,16 @@ Vier Unterbefehle:
   build   Erzeugt einen Token-Block aus einer HSL-Vorgabe und *löst* dabei die
           Werte, an denen ein Grenzwert hängt, statt sie zu raten.
 
-  export  Gibt die Paletten als Markdown für references/themes.md aus. Die
-          Referenz ist die Quelle, aus der andere Apps ihre Werte übernehmen —
-          von Hand gepflegt läuft sie irgendwann von der geprüften Datei weg
-          und liefert dann genau die Werte, die hier gerade korrigiert wurden.
+  export  Gibt alle Paletten als Markdown auf die Standardausgabe — zum
+          Nebeneinanderlesen, wenn einen die Werte im Zusammenhang
+          interessieren.
+
+          Ausdrücklich **nicht**, um daraus eine zweite Liste anzulegen. Der
+          Skill `ux-standards` führte einmal eine (`references/themes.md`);
+          sie ist entfernt, weil eine Datei außerhalb dieses Repos von keinem
+          Test bewacht werden kann und deshalb sicher irgendwann etwas
+          anderes behauptet als `tokens.css`. Genau so ist es passiert.
+          Wer die Werte braucht, erzeugt sie sich hiermit neu.
 
 Warum HSL und nicht Hex: Ein Theme wird über Farbton und Sättigung entworfen,
 und genau die sieht man einem Hex-Wert nicht an. Ein real vorgekommener Fall:
@@ -113,8 +119,8 @@ def als_hex(c: Farbe) -> str:
 # ─── Token-Datei lesen ──────────────────────────────────────────────────────
 
 # Rückfallkette: Wer ein Leisten-Token nicht setzt, bekommt diese Fläche.
-# Steht so in themes.md und muss hier stehen, sonst meldet der Prüfer für jedes
-# Theme ohne eigene Leisten fälschlich „fehlt".
+# Steht so in `tokens.css` an den Token selbst und muss hier stehen, sonst
+# meldet der Prüfer für jedes Theme ohne eigene Leisten fälschlich „fehlt".
 RUECKFALL = {
     "--surface-header": "--surface-page",
     "--surface-statusbar": "--surface-card",
@@ -382,9 +388,9 @@ def _ersetze(text: str, theme: str, token: str, neu: Farbe) -> str:
 
 # ─── Ausgeben ───────────────────────────────────────────────────────────────
 
-# Reihenfolge und Gruppierung der Zeilen im Referenz-Block. Bewusst dieselbe
-# wie in references/themes.md, damit sich zwei Stände zeilenweise vergleichen
-# lassen — ein Diff ist die halbe Prüfung.
+# Reihenfolge und Gruppierung der Zeilen im ausgegebenen Block. Bewusst fest
+# und nicht nach Fundstelle: Nur so lassen sich zwei Stände — vor und nach
+# einer Änderung — zeilenweise vergleichen. Ein Diff ist die halbe Prüfung.
 AUSGABE_ZEILEN = [
     ("--surface-page", "--surface-card"),
     ("--surface-raised", "--surface-sunken"),
@@ -397,13 +403,13 @@ AUSGABE_ZEILEN = [
 
 
 def befehl_export(pfad: Path) -> int:
-    """Gibt die Paletten als Markdown-Blöcke für references/themes.md aus.
+    """Gibt die Paletten als Markdown-Blöcke auf die Standardausgabe.
 
-    Der Grund für diesen Unterbefehl: Die Referenz ist die Quelle, aus der
-    andere Apps ihre Paletten übernehmen — „gleicher Name, gleiche Farbe".
-    Wird sie von Hand gepflegt, läuft sie irgendwann von der geprüften Datei
-    weg, und dann liefert sie anderen Apps genau die Werte, die hier gerade
-    korrigiert wurden. Genau so ist es einmal passiert.
+    Der Grund für diesen Unterbefehl: Wer alle Werte im Zusammenhang lesen
+    will, soll sie sich **erzeugen** statt sie irgendwo abzulegen. Eine
+    abgelegte Liste läuft von der geprüften Datei weg und liefert dann genau
+    die Werte, die hier gerade korrigiert wurden — so ist es einmal passiert,
+    und deshalb gibt es die frühere `references/themes.md` nicht mehr.
 
     Ausgegeben werden nur die Werte, die ein Theme **selbst** setzt. Was über
     den Rückfall kommt, gehört nicht in die Palette — es stünde dort als
@@ -515,15 +521,15 @@ BEISPIEL_REZEPT = """{
 def main() -> int:
     parser = argparse.ArgumentParser(
         prog="theme-tokens.py",
-        description="Themes prüfen und erzeugen — nach den Regeln aus references/themes.md.",
+        description="Themes prüfen und erzeugen — nach den Grenzwerten in REGELN.",
         epilog=(
             "Beispiele:\n"
-            "  theme-tokens.py check src/theme/_tokens.scss --zonen\n"
-            "  theme-tokens.py repair src/theme/_tokens.scss            # Probelauf\n"
-            "  theme-tokens.py repair src/theme/_tokens.scss --schreiben\n"
-            "  theme-tokens.py export src/theme/_tokens.scss   # für references/themes.md\n"
+            "  theme-tokens.py check src/styles/tokens.css --zonen\n"
+            "  theme-tokens.py repair src/styles/tokens.css            # Probelauf\n"
+            "  theme-tokens.py repair src/styles/tokens.css --schreiben\n"
+            "  theme-tokens.py export src/styles/tokens.css   # alle Paletten lesen\n"
             "  theme-tokens.py beispiel > rezept.json\n"
-            "  theme-tokens.py build rezept.json >> src/theme/_tokens.scss\n\n"
+            "  theme-tokens.py build rezept.json >> src/styles/tokens.css\n\n"
             "`check` liefert Exit-Code 1, sobald ein harter Grenzwert reißt — damit\n"
             "taugt es als Make-Target oder Vor-dem-Commit-Prüfung.\n\n"
             "`build` und `repair` unterscheiden sich absichtlich: Beim Erzeugen werden\n"
@@ -546,7 +552,7 @@ def main() -> int:
     p_repair.add_argument("--schreiben", action="store_true",
                           help="Änderungen anwenden statt nur anzeigen")
 
-    p_export = unter.add_parser("export", help="Paletten als Markdown für references/themes.md ausgeben")
+    p_export = unter.add_parser("export", help="alle Paletten als Markdown ausgeben")
     p_export.add_argument("datei", type=Path, help="SCSS- oder CSS-Datei mit den Token")
 
     p_build = unter.add_parser("build", help="Token-Block aus einer HSL-Vorgabe erzeugen")
