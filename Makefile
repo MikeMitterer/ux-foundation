@@ -27,6 +27,12 @@ THEME_INDENT_TARGET ?= $(shell printf '%7s' '')
 
 TOKENS := src/styles/tokens.css
 
+# Geteilte Check-Scripte für `make status`. `PROJECT_TOOLS` ist ein
+# System-Setting wie DEV_MAKE und BASH_LIBS und wird vorausgesetzt — der
+# Rückfall auf den Symlink deckt nicht-interaktive Shells ab, die kein
+# Profil einlesen (Jenkins). Angelegt wird er von `make setup`.
+PROJECT_TOOLS ?= $(WORKSPACE)/.libs/ProjectTools/src
+
 # ─── Hilfe ───────────────────────────────────────────────────────────────────
 
 .PHONY: help
@@ -53,6 +59,7 @@ info: ## Umgebungsvariablen anzeigen
 	@echo "    $(YELLOW)WORKSPACE$(RESET)    = $(BLUE)$(WORKSPACE)$(RESET)"
 	@echo "    $(YELLOW)DEV_MAKE$(RESET)     = $(BLUE)$${DEV_MAKE:-<nicht gesetzt>}$(RESET)"
 	@echo "    $(YELLOW)BASH_LIBS$(RESET)    = $(BLUE)$${BASH_LIBS:-<nicht gesetzt>}$(RESET)"
+	@echo "    $(YELLOW)PROJECT_TOOLS$(RESET)= $(BLUE)$(PROJECT_TOOLS)$(RESET)"
 	@echo "    $(YELLOW)Paket$(RESET)        = $(BLUE)$$(node -p "require('./package.json').name" 2>/dev/null)$(RESET)"
 	@echo
 
@@ -95,6 +102,18 @@ precheck: ## Umgebung prüfen — BASH_LIBS gesetzt?
 setup: ## Symlinks (.libs/) + Abhängigkeiten installieren
 	@./scripts/setup-libs.sh --install
 	@npm install --no-audit --no-fund
+
+##@ Status
+
+# Die Logik liegt in ProjectTools, nicht hier: Was „Status" heißt, ist über
+# alle Projekte dasselbe. Dieses Makefile setzt nur zusammen, welche Checks
+# dieses Projekt braucht — hier genau einer, weil es ein einzelnes Repo ohne
+# laufende Dienste ist. Kommt ein Netzwerk-Check dazu, steht er als zweite
+# Zeile darunter.
+
+.PHONY: status
+status: ## Projekt-Status — Repo und offene Issues
+	@bash $(PROJECT_TOOLS)/bash/repo-status.sh --show
 
 ##@ Entwicklung
 
