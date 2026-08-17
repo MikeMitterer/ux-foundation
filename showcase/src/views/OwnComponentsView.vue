@@ -9,7 +9,7 @@
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { UxInlineNumber, UxNavItem, type NavIconName } from '@ux/index'
+import { UxInfoHint, UxInlineNumber, UxNavItem, type NavIconName } from '@ux/index'
 import SectionIndex, { type IndexItem } from '@/components/SectionIndex.vue'
 import ShowcaseBlock from '@/components/ShowcaseBlock.vue'
 import ShowcaseSection from '@/components/ShowcaseSection.vue'
@@ -24,6 +24,7 @@ const { t, n } = useI18n()
 const BLOECKE = [
   { anchor: 'own-inline', label: 'UxInlineNumber' },
   { anchor: 'own-nav', label: 'UxNavItem' },
+  { anchor: 'own-hint', label: 'UxInfoHint' },
   { anchor: 'own-bars', label: 'UxTopbar · UxStatusBar' },
 ] as const satisfies readonly IndexItem[]
 
@@ -56,11 +57,18 @@ function recalcSum(): void {
   targetSum.value = positions.value.reduce((sum, entry) => sum + entry.target, 0)
 }
 
-function setUnits(position: Position, value: number): void {
-  position.units = value
+/*
+ * `null` kann hier nicht auftreten — beide Spalten geben einen zahligen
+ * Leerwert vor. Die Signatur nimmt es trotzdem entgegen, weil das Ereignis es
+ * seit dem Zustand „nicht gesetzt" mitbringt; still auf `0` zu fallen wäre
+ * genau der Datenverlust, den die Komponente vermeiden soll.
+ */
+function setUnits(position: Position, value: number | null): void {
+  if (value !== null) position.units = value
 }
 
-function setTarget(position: Position, value: number): void {
+function setTarget(position: Position, value: number | null): void {
+  if (value === null) return
   position.target = value
   recalcSum()
 }
@@ -179,6 +187,27 @@ function setTarget(position: Position, value: number): void {
 
     <ShowcaseBlock
       :id="BLOECKE[2].anchor"
+      :title="t('own.hintHeading')"
+      :hint="t('own.hintHint')"
+    >
+      <!--
+        Am Begriff, nicht in einer Hilfeseite: Der Hinweis steht dort, wo die
+        Frage entsteht. Zum Überfahren mit der Maus.
+      -->
+      <p class="hintdemo">
+        {{ t('own.hintTerm') }}
+        <UxInfoHint
+          :text="t('own.hintText')"
+          more-href="#/patterns"
+          :more-label="t('own.hintMore')"
+          setting-href="#/scales"
+          :setting-label="t('own.hintSetting')"
+        />
+      </p>
+    </ShowcaseBlock>
+
+    <ShowcaseBlock
+      :id="BLOECKE[3].anchor"
       :title="t('own.barsHeading')"
     >
       <ul class="notes">
@@ -196,6 +225,15 @@ function setTarget(position: Position, value: number): void {
 
 .hint {
   @include erklaerung;
+}
+
+// Der Begriff mit seinem Fragezeichen — eine Zeile, das „?" hängt daneben.
+.hintdemo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--font-sm);
 }
 
 .grid {

@@ -160,6 +160,14 @@ export const de = {
       'UxNavItem — Symbol und Beschriftung, darunter der Strich am aktiven Punkt. Ein eingefärbter Kasten würde mit den Karten darunter konkurrieren, ein Strich tut das nicht. Navigiert wird nicht hier: Die eine App hat einen Router, die andere Hash-Tabs — die Adresse kommt herein, das Ereignis geht hinaus.',
     navResize:
       'Fenster unter 768 px ziehen: Die Beschriftung fällt weg, der Punkt bleibt. Für Vorleseprogramme bleibt sie erhalten — ein Symbol ohne Namen ist ein Knopf ohne Namen.',
+    hintHeading: 'Erklärung am Begriff',
+    hintHint:
+      'UxInfoHint — zwei, drei Sätze dort, wo die Frage entsteht. Wer einen Begriff liest und stutzt, sucht keine Hilfeseite. Im Hinweis stehen bis zu zwei Verweise in einer Zeile: links die Vertiefung, rechts die Stellschraube. Beide sind echte Adressen aus der App — das Paket kennt weder Routen noch Katalog.',
+    hintTerm: 'Investitionsreserve',
+    hintText:
+      'Der Anteil, der bewusst nicht investiert wird — als Puffer für Nachkäufe. Er zählt beim Ausgleichen nicht als Position.',
+    hintMore: 'Mehr dazu →',
+    hintSetting: 'Zur Einstellung →',
     barsHeading: 'Kopf- und Statuszeile',
     topbarNote:
       'Die Kopfzeile oben ist UxTopbar: Plakette mit festem Markenverlauf, Wortmarke als HTML-Text in --font-display, rechts nur, was keine Navigation ist.',
