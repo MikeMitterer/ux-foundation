@@ -49,7 +49,11 @@ withDefaults(
     sobald die Maus ihn erreicht — und die Verweise darin wären nicht
     anklickbar.
   -->
-  <NTooltip trigger="hover" keep-alive-on-hover :style="{ maxWidth: '22rem' }">
+  <NTooltip
+    trigger="hover"
+    keep-alive-on-hover
+    :style="{ maxWidth: '22rem' }"
+  >
     <template #trigger>
       <!--
         Klein und blass: Der Hinweis darf die Zahl daneben nicht überstrahlen.
@@ -57,16 +61,39 @@ withDefaults(
         `button`, denn ein `a` ohne `href` ist für die Tastatur nicht
         erreichbar.
       -->
-      <a v-if="moreHref" class="ux-hint__trigger" :href="moreHref" :aria-label="text">?</a>
-      <button v-else class="ux-hint__trigger" type="button" :aria-label="text">?</button>
+      <a
+        v-if="moreHref"
+        class="ux-hint__trigger"
+        :href="moreHref"
+        :aria-label="text"
+      >?</a>
+      <button
+        v-else
+        class="ux-hint__trigger"
+        type="button"
+        :aria-label="text"
+      >
+        ?
+      </button>
     </template>
 
     <div class="ux-hint__body">
       {{ text }}
 
-      <div v-if="(moreHref && moreLabel) || (settingHref && settingLabel)" class="ux-hint__links">
-        <a v-if="moreHref && moreLabel" class="ux-hint__link" :href="moreHref">{{ moreLabel }}</a>
-        <a v-if="settingHref && settingLabel" class="ux-hint__link" :href="settingHref">
+      <div
+        v-if="(moreHref && moreLabel) || (settingHref && settingLabel)"
+        class="ux-hint__links"
+      >
+        <a
+          v-if="moreHref && moreLabel"
+          class="ux-hint__link"
+          :href="moreHref"
+        >{{ moreLabel }}</a>
+        <a
+          v-if="settingHref && settingLabel"
+          class="ux-hint__link"
+          :href="settingHref"
+        >
           {{ settingLabel }}
         </a>
       </div>

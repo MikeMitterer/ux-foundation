@@ -17,14 +17,14 @@ Symbole und die Naive-UI-Brücke.
 ## Wofür das Paket da ist
 
 Hier liegt, was **kein Urteil enthält** und deshalb in keiner App ein zweites
-Mal entstehen darf: dreizehn Farbpaletten, die Skalen, der Reset, die
+Mal entstehen darf: die Farbpaletten, die Skalen, der Reset, die
 Schrifteinbindung, die wiederkehrenden Navigationssymbole und die Brücke, die
 aus den Token die Naive-UI-Overrides baut.
 
 Der Anlass war konkret. Dieselben Werte lagen als Prosa in einem Skill und
 wurden von jeder App nachgebaut — und alles, was nachgebaut wird, zieht ein
 Ticket, einen Plan, ein Review und neue Fehler nach sich. Beim ersten Messen
-verfehlten **neun von dreizehn** Paletten die eigene Kontrastregel, und die
+verfehlten **neun** Paletten die eigene Kontrastregel, und die
 Referenz war von der geprüften Datei weggelaufen, während beide dieselbe Zahl
 behaupteten.
 
@@ -87,13 +87,18 @@ installiert es nicht und importiert `buildNaiveOverrides` nicht.
 
 | Pfad | Inhalt |
 |---|---|
-| `src/styles/tokens.css` | dreizehn Paletten, Skalen, Marken-Token |
+| `src/styles/tokens.css` | die Paletten — `THEME_IDS` führt sie —, Skalen, Marken-Token |
 | `src/styles/reset.css` | ersetzt Tailwinds Preflight — knapp gehalten, damit Naive UI nicht streitet |
 | `src/styles/fonts.css` | Inter und Space Grotesk, variabel, nur `latin` |
 | `src/styles/_shared.scss` | Mixins und Farb-Helfer; erzeugt selbst **kein** CSS |
 | `src/theme/themes.ts` | `THEME_IDS`, `THEMES`, `isThemeId`, Vorgaben |
 | `src/theme/naive.ts` | Token → `GlobalThemeOverrides` |
 | `src/icons/` | die wiederkehrenden Navigationssymbole |
+| `src/components/` | Rahmen, Kopf- und Statuszeile, Menüpunkt, Theme-Auswahl, Erklärung am Begriff, Zahl im Fließtext |
+| `src/composables/` | Umschaltpunkte, Sprach-Erkennung, Speicher-Zugriff, Meldungen, relative Zeit |
+
+Was davon nach außen geht, steht in `src/index.ts` — die Liste dort ist die
+Auslieferung, nicht diese Tabelle.
 
 **Zur Richtung der Naive-Brücke:** Die Token sind die Quelle, Naive UI der
 Verbraucher — nicht umgekehrt. `useThemeVars()` funktioniert nur innerhalb

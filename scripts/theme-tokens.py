@@ -4,8 +4,8 @@
 Vier Unterbefehle:
 
   check   Misst jedes Theme einer Token-Datei gegen die Grenzwerte aus
-          themes.md. Beantwortet „hält das noch?", ohne dass jemand dreizehn
-          Paletten von Hand durchrechnet.
+          themes.md. Beantwortet „hält das noch?", ohne dass jemand jede
+          Palette von Hand durchrechnet.
 
   repair  Hebt die leisen Textstufen bestehender Themes auf 4.5:1 an, ohne
           Farbton und Sättigung anzutasten.
