@@ -39,7 +39,7 @@ steht im `ux-standards`-Skill und braucht einen Menschen, der es liest.
 ## Einbinden
 
 ```bash
-npm i @mikemitterer/ux-foundation
+npm i @mmit/ux-foundation
 ```
 
 Stylesheets einzeln importieren, damit eine App auch nur Teile übernehmen kann.
@@ -48,9 +48,9 @@ Reset:
 
 ```ts
 // main.ts
-import '@mikemitterer/ux-foundation/styles/fonts.css'
-import '@mikemitterer/ux-foundation/styles/tokens.css'
-import '@mikemitterer/ux-foundation/styles/reset.css'
+import '@mmit/ux-foundation/styles/fonts.css'
+import '@mmit/ux-foundation/styles/tokens.css'
+import '@mmit/ux-foundation/styles/reset.css'
 ```
 
 Die SCSS-Helfer (`token()`, `up()`, `below()`, `muted()`, `truncate`,
@@ -61,7 +61,7 @@ in jeder Komponente zur Verfügung:
 // vite.config.ts
 css: {
   preprocessorOptions: {
-    scss: { additionalData: '@use "@mikemitterer/ux-foundation/styles/shared" as *;\n' },
+    scss: { additionalData: '@use "@mmit/ux-foundation/styles/shared" as *;\n' },
   },
 },
 ```
@@ -73,7 +73,7 @@ sonst versucht Vite das Paket vorzubündeln und stolpert über die
 `.vue`-Dateien:
 
 ```ts
-optimizeDeps: { exclude: ['@mikemitterer/ux-foundation'] },
+optimizeDeps: { exclude: ['@mmit/ux-foundation'] },
 ```
 
 Naive UI ist eine **optionale** Peer-Dependency. Wer die Brücke nicht braucht,
@@ -160,8 +160,30 @@ rund vier bei `slate`.
 
 ## Veröffentlichen
 
-Private Registry, deshalb `access: restricted` in der `package.json`. Ohne die
-Angabe legt npm bei einem `@scope` standardmäßig ein **öffentliches** Paket an.
+Das Paket liegt **privat auf npmjs.org** — der Standard-Registry, ohne
+`registry`-Eintrag in der `package.json`. Privat macht es allein diese Zeile:
+
+```json
+"publishConfig": { "access": "restricted" }
+```
+
+Ohne sie legt npm bei einem `@scope` standardmäßig ein **öffentliches** Paket
+an.
+
+Die Wahl fiel bewusst gegen GitHub Packages, obwohl das Repo dort liegt: Eine
+einbindende App braucht bei npmjs nur einen Lese-Token für die Standard-
+Registry. Bei GitHub Packages käme in jeder App zusätzlich eine
+`@mmit:registry=…`-Zeile dazu — mehr Teile, die je App richtig stehen
+müssen.
+
+**Der Scope muss dem npm-Konto entsprechen.** `@mmit` ist der Benutzer-Scope
+von `mmit` — nachzusehen mit `npm whoami`. Genau daran scheiterte der erste
+Versuch: Das Paket hieß `@mikemitterer/…`, angemeldet war aber `mmit`, und npm
+antwortete mit `402 Payment Required — You must sign up for private packages`.
+
+**Der Preis ist ein npm-Abo.** Ein privates Paket unter einem Benutzer-Scope
+verlangt auf npmjs.org einen bezahlten Plan für **dieses Konto** (npm Pro). Ein
+bezahlter GitHub-Plan hilft dort nicht — anderer Anbieter, andere Rechnung.
 
 ```bash
 make publish-dry              # zeigt, was hochginge

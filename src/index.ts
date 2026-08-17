@@ -14,14 +14,14 @@
  * importiert, damit eine App auch nur Teile übernehmen kann:
  *
  * ```ts
- * import '@mikemitterer/ux-foundation/styles/fonts.css'
- * import '@mikemitterer/ux-foundation/styles/tokens.css'
- * import '@mikemitterer/ux-foundation/styles/reset.css'
+ * import '@mmit/ux-foundation/styles/fonts.css'
+ * import '@mmit/ux-foundation/styles/tokens.css'
+ * import '@mmit/ux-foundation/styles/reset.css'
  * ```
  *
  * ```scss
  * // vite.config.ts → css.preprocessorOptions.scss.additionalData
- * @use '@mikemitterer/ux-foundation/styles/shared' as *;
+ * @use '@mmit/ux-foundation/styles/shared' as *;
  * ```
  */
 

@@ -87,8 +87,17 @@ Wer die Werte im Zusammenhang lesen will, erzeugt sie sich mit
 
 ## Veröffentlichen
 
-Private Registry, deshalb `access: restricted` in der `package.json` — ohne die
-Angabe legt npm bei einem `@scope` standardmäßig ein **öffentliches** Paket an.
+Privat auf **npmjs.org**, also ohne `registry` in `publishConfig` — die
+Standard-Registry. Privat macht allein `access: restricted`; ohne die Angabe
+legt npm bei einem `@scope` standardmäßig ein **öffentliches** Paket an.
+
+Gegen GitHub Packages entschieden, obwohl das Repo dort liegt: Bei npmjs
+genügt einer einbindenden App ein Lese-Token für die Standard-Registry, bei
+GitHub Packages käme je App eine `@scope:registry`-Zeile dazu.
+
+Das setzt ein npm-Abo für **dieses Konto** voraus. Fehlt es, endet
+`npm publish` mit `402 Payment Required`; ein GitHub-Plan hilft dort nicht,
+und ein Org-Plan deckt nur den Org-Scope ab.
 
 Ein Registry-Token gehört in einem Docker-Build über einen
 BuildKit-Secret-Mount hinein, **nie** als `ARG` oder `ENV`: Sonst steht es für
