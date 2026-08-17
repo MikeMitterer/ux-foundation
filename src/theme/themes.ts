@@ -11,6 +11,7 @@ export const THEME_IDS = [
   'amber',
   'petrol',
   'classic',
+  'macos',
   'slate',
   'ocean',
   'forest',
@@ -50,6 +51,11 @@ export const THEMES: Record<ThemeId, ThemeInfo> = {
     id: 'classic',
     isDark: true,
     preview: { page: '#0a0a0a', card: '#171717', ink: '#f5f5f5', accent: '#1d74dd' },
+  },
+  macos: {
+    id: 'macos',
+    isDark: true,
+    preview: { page: '#1c1c1e', card: '#2c2c2e', ink: '#ffffff', accent: '#0a74e0' },
   },
   slate: {
     id: 'slate',

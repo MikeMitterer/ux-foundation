@@ -238,7 +238,13 @@ const hasBackend = computed(
   }
 
   &__origin {
-    color: rgb(var(--accent));
+    /*
+     * Der Akzent **der Leiste**, nicht der des Inhalts: Ein Blau, auf dem
+     * weiße Schrift trägt, ist als Schrift auf einer dunklen Leiste zu
+     * dunkel. Wo ein Theme nichts anderes sagt, fällt das Token auf
+     * `--accent` zurück — für die meisten ändert sich damit nichts.
+     */
+    color: rgb(var(--text-bar-accent));
     text-decoration: none;
 
     &:hover {

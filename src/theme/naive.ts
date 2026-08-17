@@ -53,6 +53,15 @@ export function buildNaiveOverrides(): GlobalThemeOverrides {
   const border = token('--border-default')
   const accent = token('--accent')
 
+  /*
+   * Was über dem Inhalt schwebt, bekommt einen Schatten — sonst klebt ein
+   * Dialog auf der Seite und wird als Teil des Inhalts gelesen. Naive bringt
+   * eigene Schatten mit, die auf dunklen Paletten praktisch unsichtbar sind;
+   * die Stufen aus `tokens.css` sind nach Helligkeit des Inhalts gestaffelt.
+   */
+  const shadowSm = cssValue('--shadow-sm')
+  const shadowLg = cssValue('--shadow-lg')
+
   return {
     common: {
       /*
@@ -86,6 +95,15 @@ export function buildNaiveOverrides(): GlobalThemeOverrides {
       errorColor: token('--status-out'),
       successColor: token('--status-ok'),
       warningColor: token('--status-near'),
+
+      /*
+       * Naives eigene Stufen. `boxShadow2` und `3` treiben unter anderem
+       * Auswahllisten und Datumsfelder — die schweben wie ein Menü, nicht wie
+       * ein Dialog.
+       */
+      boxShadow1: shadowSm,
+      boxShadow2: shadowSm,
+      boxShadow3: shadowLg,
     },
     DataTable: {
       thColor: 'transparent',
@@ -100,9 +118,129 @@ export function buildNaiveOverrides(): GlobalThemeOverrides {
       color: surfaceCard,
       borderColor: border,
     },
+    /*
+     * Ein Dialog steckt in einer Karte (`preset="card"`), und deren Schatten
+     * kommt aus dem Card-Theme — `Modal.boxShadow` allein bleibt deshalb
+     * wirkungslos, das war beim ersten Versuch zu sehen. Gesetzt wird er
+     * darum am **Peer**: So trägt die Karte *im Dialog* die starke Stufe,
+     * während die Karten im Inhalt bei der leisen bleiben.
+     */
+    Modal: {
+      boxShadow: shadowLg,
+      color: surfaceRaised,
+      peers: {
+        Card: { boxShadow: shadowLg },
+      },
+    },
+    Dialog: {
+      color: surfaceRaised,
+    },
+    // Toasts und Meldungen schweben knapp über der Seite.
+    Notification: {
+      boxShadow: shadowSm,
+      color: surfaceRaised,
+    },
+    Message: {
+      boxShadow: shadowSm,
+    },
+    // Menüs, Hinweise und der „?"-Tooltip.
+    Popover: {
+      boxShadow: shadowSm,
+      color: surfaceRaised,
+    },
     Input: {
       color: surfaceRaised,
       border: `1px solid ${border}`,
+    },
+  }
+}
+
+/**
+ * Overrides für Bedienelemente, die **auf einer Leiste** sitzen.
+ *
+ * Kopf- und Statuszeile holen ihre Farben aus eigenen Token — genau deshalb
+ * darf ein Theme die Leisten umkehren und hellen Inhalt zwischen dunkle Ränder
+ * setzen. Naive UI weiß davon nichts: Es bekommt über
+ * {@link buildNaiveOverrides} die Farben des **Inhalts**, und ein Knopf in der
+ * Kopfzeile trägt damit dunkle Schrift auf dunkler Leiste.
+ *
+ * Gemessen in `sepia` (heller Inhalt, dunkle Leisten): Der Knopf
+ * „Aktualisieren" kam auf **1,38:1** — unsichtbar. Mit diesen Overrides holt
+ * er seine Schrift und seinen Rand aus `--text-bar` und `--border-bar` und
+ * liegt damit dort, wo auch die Menüpunkte liegen.
+ *
+ * Verwendet wird das über einen zweiten `NConfigProvider` **um die rechte
+ * Gruppe der Leiste** — nicht global, sonst bekäme der ganze Inhalt die
+ * Leisten-Farben:
+ *
+ * ```vue
+ * <template #actions>
+ *   <NConfigProvider :theme-overrides="barOverrides">
+ *     <NButton …>
+ *   </NConfigProvider>
+ * </template>
+ * ```
+ *
+ * Muss wie die andere Brücke aufgerufen werden, **nachdem** `data-theme` steht.
+ */
+export function buildBarNaiveOverrides(): GlobalThemeOverrides {
+  const textBar = token('--text-bar')
+  const textBarSecondary = token('--text-bar-secondary')
+  const textBarMuted = token('--text-bar-muted')
+  const borderBar = token('--border-bar')
+  const surfaceHeader = token('--surface-header')
+  const raisedOnBar = token('--surface-raised', 0.5)
+
+  return {
+    common: {
+      borderRadius: cssValue('--radius-sm'),
+      borderRadiusSmall: cssValue('--radius-sm'),
+
+      textColorBase: textBar,
+      textColor1: textBar,
+      textColor2: textBar,
+      textColor3: textBarMuted,
+      borderColor: borderBar,
+      dividerColor: borderBar,
+      // Popover und Menüs, die aus der Leiste aufklappen, bleiben auf ihrer Fläche.
+      cardColor: surfaceHeader,
+      modalColor: surfaceHeader,
+      popoverColor: surfaceHeader,
+      bodyColor: surfaceHeader,
+      inputColor: surfaceHeader,
+    },
+    Button: {
+      /*
+       * Die Fläche bleibt durchsichtig: Die Leiste ist der Grund, und ein
+       * eigener Kasten darauf sähe aus wie ein zweiter Anstrich. Was der Knopf
+       * braucht, ist lesbare Schrift und ein sichtbarer Rand.
+       */
+      color: 'transparent',
+      textColor: textBar,
+      textColorHover: textBar,
+      textColorPressed: textBar,
+      textColorFocus: textBar,
+      textColorDisabled: textBarMuted,
+      border: `1px solid ${borderBar}`,
+      borderHover: `1px solid ${textBarSecondary}`,
+      borderPressed: `1px solid ${textBarSecondary}`,
+      borderFocus: `1px solid ${textBarSecondary}`,
+      borderDisabled: `1px solid ${borderBar}`,
+
+      /*
+       * Die rahmenlose Spielart (`quaternary`) trägt dieselbe Abstufung wie ein
+       * Menüpunkt: leise im Ruhezustand, volle Textfarbe beim Überfahren, und
+       * eine leicht erhobene Fläche statt eines Rahmens. So steht rechts kein
+       * Kasten, der lauter ruft als die Punkte links.
+       */
+      textColorText: textBarSecondary,
+      textColorTextHover: textBar,
+      textColorTextPressed: textBar,
+      textColorTextFocus: textBar,
+      textColorTextDisabled: textBarMuted,
+      colorQuaternary: 'transparent',
+      colorQuaternaryHover: raisedOnBar,
+      colorQuaternaryPressed: raisedOnBar,
     },
   }
 }

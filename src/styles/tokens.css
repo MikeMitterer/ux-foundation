@@ -88,6 +88,20 @@
   --text-bar-muted: var(--text-muted);
   --text-bar-secondary: var(--text-secondary);
   --border-bar: var(--border-default);
+
+  /*
+   * Der Akzent **auf** der Leiste — der Verweis auf die Herkunft in der
+   * Statuszeile ist der einzige heute.
+   *
+   * Ohne dieses Token griff er auf `--accent`, und der ist für die
+   * Inhaltsfläche gewählt: Ein Blau, auf dem weiße Schrift trägt, ist als
+   * Schrift auf einer dunklen Leiste zu dunkel. Gemessen in `macos` 2.88:1,
+   * verlangt sind 4.5:1.
+   *
+   * Der Rückfall ist der Akzent selbst — ein Theme, das die Leisten nicht
+   * umkehrt und keinen eigenen Ton braucht, setzt hier nichts.
+   */
+  --text-bar-accent: var(--accent);
 }
 
 /* ─── Marke — themeunabhängig ────────────────────────────────────────────── */
@@ -132,6 +146,41 @@
 :root[data-theme='paper'],
 :root[data-theme='mono'] {
   --brand-word: 28 95 168; /* #1c5fa8 — 5,3:1 bzw. 5,4:1 */
+}
+
+/* ─── Schatten — zwei Stufen, nach Helligkeit des Inhalts ────────────────── */
+/*
+ * Was über dem Inhalt schwebt, braucht einen Schatten: Ein Dialog oder ein
+ * Toast ohne ihn klebt auf der Seite, und man liest ihn als Teil des Inhalts
+ * statt als etwas darüber. Der Rand allein trägt das nicht — er ist in den
+ * meisten Paletten zu leise, um eine Ebene zu behaupten.
+ *
+ * Zwei Stufen, mehr nicht:
+ *   `--shadow-sm`  Toasts, Meldungen, Menüs und Hinweise — schwebt knapp.
+ *   `--shadow-lg`  Dialoge — liegt deutlich über allem, mit abgedunkelter Fläche.
+ *
+ * **Umgeschaltet wird nach dem Inhalt, nicht nach den Leisten** — anders als
+ * bei `--brand-word` weiter oben. Ein Schatten fällt auf die Fläche, über der
+ * das Element schwebt, und das ist der Inhalt. Deshalb stehen hier vier
+ * Themes: `paper` und `mono` sind hell, `sepia` und `meadow` tragen hellen
+ * Inhalt zwischen dunklen Leisten.
+ *
+ * Die Deckkraft ist auf dunklen Flächen rund dreimal so hoch. Schwarz auf
+ * Anthrazit ist fast nicht zu sehen; derselbe Wert, der auf Papier schon zu
+ * kräftig wirkt, verschwindet dort spurlos.
+ */
+
+:root {
+  --shadow-sm: 0 4px 16px rgb(0 0 0 / 0.45);
+  --shadow-lg: 0 16px 48px rgb(0 0 0 / 0.6), 0 2px 8px rgb(0 0 0 / 0.4);
+}
+
+:root[data-theme='paper'],
+:root[data-theme='mono'],
+:root[data-theme='sepia'],
+:root[data-theme='meadow'] {
+  --shadow-sm: 0 4px 16px rgb(0 0 0 / 0.12);
+  --shadow-lg: 0 16px 48px rgb(0 0 0 / 0.18), 0 2px 8px rgb(0 0 0 / 0.1);
 }
 
 /* ─── amber — dunkel, warmes Bernstein ──────────────────────────────────── */
@@ -586,6 +635,64 @@
   --status-ok: 52 211 153;
   --status-near: 251 191 36;
   --status-out: 248 113 113;
+}
+
+/* ─── macos — dunkel, Systemfarben von macOS, Leisten heller als der Inhalt ─ */
+/*
+ * Für alle, die die App neben ihren übrigen Fenstern stehen haben: Die Flächen
+ * sind die Grautöne, die macOS im dunklen Erscheinungsbild selbst verwendet
+ * (`systemGray6` bis `systemGray4`), die Ränder sein `separator`, der Akzent
+ * sein `systemBlue`. Damit fällt die App im Stapel nicht auf — und genau das
+ * ist hier der Zweck.
+ *
+ * Die Leisten liegen **heller** als der Inhalt, weil die Werkzeugleiste eines
+ * macOS-Fensters über dem Fensterinhalt liegt und nicht darunter. Dieselbe
+ * Behandlung wie `carbon`, aber in weit weicherem Kontrast.
+ *
+ * Zwei Stellen weichen bewusst vom System ab:
+ *
+ * - **Der Akzent ist etwas tiefer als `systemBlue` (`#0a84ff`).** Auf dem
+ *   Original erreicht weiße Schrift nur 3,65:1; macOS umgeht das, weil dort
+ *   selten Text auf der Akzentfläche steht, unsere Hauptknöpfe tun genau das.
+ *   Ein paar Prozent Helligkeit sieht niemand, eine graue Schrift auf blauem
+ *   Knopf sieht jeder.
+ * - **Die leisen Textstufen sind heller als `secondaryLabel`/`tertiaryLabel`.**
+ *   Die arbeiten mit Deckkraft auf wechselndem Grund; unsere Token sind feste
+ *   Farben und müssen auch auf `--surface-raised` tragen.
+ */
+
+:root[data-theme='macos'] {
+  --surface-page: 28 28 30;
+  --surface-card: 44 44 46;
+  --surface-raised: 58 58 60;
+  --surface-sunken: 18 18 20;
+
+  --surface-header: 50 50 52;
+  --surface-statusbar: 50 50 52;
+
+  --text-primary: 255 255 255;
+  --text-secondary: 199 199 204;
+  --text-muted: 165 165 170;
+
+  --border-default: 84 84 88;
+  --border-subtle: 58 58 60;
+  --border-bar: 99 99 102;
+
+  --accent: 10 116 224;
+  --accent-contrast: 255 255 255;
+
+  /*
+   * Als Schrift auf der Leiste ein helleres Blau: Der Akzent oben ist tief
+   * genug für weiße Schrift *auf* ihm und käme als Schrift *neben* ihm nur auf
+   * 2.88:1. Dieser Ton liegt bei 5.56:1.
+   */
+  --text-bar-accent: 100 170 255;
+
+  --asset-stocks: 100 170 255;
+  --asset-bonds: 255 132 178;
+  --asset-metals: 255 199 89;
+  --asset-moneymarket: 191 154 255;
+  --asset-cash: 100 220 160;
 }
 
 /* ─── meadow — hell, kühles Grün, Leisten mit Farbschleier ───────────────── */
