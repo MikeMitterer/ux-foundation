@@ -2,7 +2,7 @@
 
 | Repo | Status | Time-box | Scope | GH-Issue |
 |---|---|---|---|---|
-| ux-foundation (Deliverable) + alle Apps | review | ~4 h | Token + Komponente + Prüfskript | — |
+| ux-foundation (Deliverable) + alle Apps | done | ~4 h | Token + Komponente + Prüfskript | — |
 
 **Löst:** Verify #7 aus **T-13**. In den Themes, die hellen Inhalt zwischen
 dunkle Leisten setzen (`sepia`, `meadow`), liegen Wortmarke, Akzent-Verweis und
@@ -23,14 +23,14 @@ Legende: ✅ live bestätigt · ⚠️ mit Einschränkung · ◑ teilweise · �
 
 | # | Where | Look for | AI | Human |
 |---|---|---|:--:|---|
-| 1 | `make check-themes` | misst gegen die **gerenderte** Leiste (Deckkraft über der Inhaltsfläche), nicht gegen `--surface-header` | ✅ [^1] | |
-| 2 | `make check-themes` | meldet `sepia` und `meadow` als Verstoß, solange sie nicht korrigiert sind — der Lauf muss also erst rot werden | ✅ [^2] | |
-| 3 | Theme `sepia`, Statuszeile | „powered by"-Verweis ≥ 4.5:1 gegen die gerenderte Leiste | ✅ [^3] | |
-| 4 | Theme `sepia`, Kopfzeile | Wortmarken-Hälfte „Info" ≥ 4.5:1 | ✅ [^3] | |
-| 5 | Theme `sepia`, Statuszeile | Trennpunkte, Version, Ampel-Beschriftung ≥ 4.5:1 | ✅ [^3] | |
-| 6 | Theme `meadow`, beide Leisten | dieselben fünf Messungen halten | ✅ [^4] | |
-| 7 | alle übrigen Themes | keine Verschlechterung — der Lauf bleibt sonst grün | ✅ [^5] | |
-| 8 | StockInfo und StockPortfolio | beide erben die Korrektur, ohne eigene Werte zu setzen | ➖ [^6] | |
+| 1 | `make check-themes` | misst gegen die **gerenderte** Leiste (Deckkraft über der Inhaltsfläche), nicht gegen `--surface-header` | ✅ [^1] | ✅ |
+| 2 | `make check-themes` | meldet `sepia` und `meadow` als Verstoß, solange sie nicht korrigiert sind — der Lauf muss also erst rot werden | ✅ [^2] | ✅ |
+| 3 | Theme `sepia`, Statuszeile | „powered by"-Verweis ≥ 4.5:1 gegen die gerenderte Leiste | ✅ [^3] | ✅ |
+| 4 | Theme `sepia`, Kopfzeile | Wortmarken-Hälfte „Info" ≥ 4.5:1 | ✅ [^3] | ✅ |
+| 5 | Theme `sepia`, Statuszeile | Trennpunkte, Version, Ampel-Beschriftung ≥ 4.5:1 | ✅ [^3] | ✅ |
+| 6 | Theme `meadow`, beide Leisten | dieselben fünf Messungen halten | ✅ [^4] | ✅ |
+| 7 | alle übrigen Themes | keine Verschlechterung — der Lauf bleibt sonst grün | ✅ [^5] | ✅ |
+| 8 | StockInfo und StockPortfolio | beide erben die Korrektur, ohne eigene Werte zu setzen | ➖ [^6] | ✅ [^7] |
 
 [^1]: `theme-tokens.py` liest jetzt `--surface-header-alpha` / `--surface-statusbar-alpha`
     und mischt die Leiste über `--surface-page`. Gegenprobe gegen die Browser-Messung
@@ -67,6 +67,15 @@ Legende: ✅ live bestätigt · ⚠️ mit Einschränkung · ◑ teilweise · �
     nur die Voraussetzung: Keine der beiden Apps setzt `--text-bar-accent`,
     `--brand-word` oder `--text-bar-muted` selbst, sie erben also, sobald sie das
     Paket binden.
+
+[^7]: Vom Menschen freigegeben, ohne dass die Vererbung hier messbar war — siehe
+    Fußnote 6. Der Punkt ist damit **abgenommen, nicht nachgewiesen**: Sobald
+    StockInfo das Paket bindet, gehört eine Messung dorthin. Festgehalten, damit
+    es später nicht als geprüft gelesen wird.
+
+**Human-Spalte am 2026-08-17 auf Zuruf eingetragen** („T-14 ist von mir aus
+erledigt, betrachte alle Human-Einträge als OK"). Die Spalte füllt sonst allein
+der Mensch; hier steht sie stellvertretend, mit dieser Zeile als Herkunft.
 
 **Vorabcheck 2026-08-17 — Zustand *vor* der Korrektur.** Bleibt stehen: Er ist
 der Beleg für #2 und die Vergleichsgröße für die Werte in den Fußnoten oben.
