@@ -78,7 +78,7 @@ const slots = useSlots()
   position: sticky;
   top: 0;
   z-index: 10;
-  height: 3.5rem;
+  height: var(--topbar-height);
   /* Leicht durchscheinend: Beim Scrollen schimmert der Inhalt darunter durch,
      statt hart abgeschnitten zu werden. */
   background: rgb(var(--surface-header) / 0.85);

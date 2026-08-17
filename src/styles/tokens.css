@@ -63,6 +63,32 @@
    * anders endet als sie.
    */
   --content-max: 1400px;
+
+  /*
+   * Höhe der Kopfzeile. Sie steht hier und nicht in `UxTopbar`, weil mehr als
+   * die Leiste selbst sie braucht: Alles, was oben klebt oder oben aufgeht,
+   * muss wissen, wo sie endet.
+   */
+  --topbar-height: 3.5rem;
+
+  /*
+   * Oberkante der Toasts. Naive UI setzt sie von sich aus auf 12 Pixel — also
+   * über die klebende Kopfzeile. Da Fehler stehen bleiben, bis sie weggeklickt
+   * werden, liegt deren rechte Gruppe sonst dauerhaft unter einer Meldung.
+   *
+   * **Ausweichen muss die Meldung den Bedienelementen, nicht der Leiste.**
+   * Die Leiste zentriert ihren Inhalt: Gemessen enden Menüpunkte und rechte
+   * Gruppe bei 44 von 56 Pixeln, darunter ist die Leiste leer. Eine Meldung,
+   * die erst unterhalb der ganzen Leiste beginnt, verschenkt diesen Streifen
+   * ohne Gewinn — verdeckt wird dort nichts mehr.
+   *
+   * **Der Wert ist der Container, nicht die Meldung.** Naive legt darauf noch
+   * einmal 12 Pixel eigenen Abstand. 2.25 rem ergeben damit eine Oberkante bei
+   * 48 Pixeln: vier unter dem tiefsten Bedienelement, acht über der Unterkante
+   * der Leiste. Die vier Pixel sind der Spielraum für einen etwas höheren Knopf
+   * in einer anderen App.
+   */
+  --toast-top: calc(var(--topbar-height) - 1.25rem);
 }
 
 /* ─── Leisten — je Theme überschreibbar ──────────────────────────────────── */

@@ -36,20 +36,36 @@ export interface Notifier {
 }
 
 /**
- * Liefert `notify` mit vorverdrahteter API und Anzeigedauer.
+ * Liefert `notify` mit vorverdrahteter API, Anzeigedauer und Zählertext.
  *
  * Muss in `setup()` aufgerufen werden — `useNotification` braucht den
  * Komponenten-Kontext.
  *
- * @param seconds Sekunden bis zum Ausblenden; `0` lässt den Toast stehen.
- *                Als Ref, damit eine Änderung in den Einstellungen sofort greift.
+ * Titel und Fließtext stehen je Meldung, die Beschriftung des Zählers nicht:
+ * Sie lautet in einer App überall gleich. Deshalb steht sie hier und nicht in
+ * `NotifyOptions` — sonst gäbe jede Ansicht dieselbe Zeichenkette erneut mit,
+ * und eine davon wäre irgendwann anders formuliert.
+ *
+ * ```ts
+ * const { notify } = useNotifier(seconds, (n) => t('toast.closesIn', { n }))
+ * ```
+ *
+ * @param seconds        Sekunden bis zum Ausblenden; `0` lässt den Toast stehen.
+ *                       Als Ref, damit eine Änderung in den Einstellungen sofort
+ *                       greift.
+ * @param countdownLabel Bereits übersetzte Beschriftung des Zählers. Ein Paket
+ *                       hat keinen Katalog — deshalb kommt sie herein, und
+ *                       zwar ohne Rückfall auf eine fest verdrahtete Sprache.
  */
-export function useNotifier(seconds: Ref<number>): Notifier {
+export function useNotifier(
+  seconds: Ref<number>,
+  countdownLabel: (remaining: number) => string,
+): Notifier {
   const notification = useNotification()
 
   return {
     notify(active, options) {
-      useStateNotification(notification, active, { ...options, seconds })
+      useStateNotification(notification, active, { ...options, seconds, countdownLabel })
     },
   }
 }

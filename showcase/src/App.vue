@@ -14,7 +14,6 @@ import { computed, nextTick, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import {
   NConfigProvider,
-  NNotificationProvider,
   NTabPane,
   NTabs,
   darkTheme,
@@ -27,6 +26,7 @@ import {
   buildNaiveOverrides,
   THEMES,
   UxAppShell,
+  UxNotificationProvider,
   UxStatusBar,
 } from "@ux/index";
 import ShowcaseTopbar from "@/components/ShowcaseTopbar.vue";
@@ -94,8 +94,13 @@ watch(
       Der Provider muss über allem stehen, was `useNotification()` aufruft —
       sonst findet der Toast keinen Anker und Naive UI meldet es nur in der
       Konsole.
+
+      `UxNotificationProvider` statt `NNotificationProvider`: Er bringt den
+      Versatz unter die Bedienelemente der Kopfzeile mit. Ohne ihn öffnete der
+      erste Toast über dem Theme-Umschalter oben rechts — dem einen
+      Bedienelement, das diese App ausmacht.
     -->
-    <NNotificationProvider :max="3">
+    <UxNotificationProvider>
       <UxAppShell>
         <template #topbar>
           <ShowcaseTopbar />
@@ -156,7 +161,7 @@ watch(
           />
         </template>
       </UxAppShell>
-    </NNotificationProvider>
+    </UxNotificationProvider>
   </NConfigProvider>
 </template>
 

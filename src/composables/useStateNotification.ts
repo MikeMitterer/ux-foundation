@@ -32,6 +32,17 @@ export interface StateNotificationOptions {
    * Als Ref, damit eine Änderung in den Einstellungen sofort greift.
    */
   seconds: Ref<number>
+  /**
+   * Beschriftung des Zählers, bereits übersetzt — „schließt in 4 s".
+   *
+   * Kommt herein statt fest zu stehen, und ohne deutschen Rückfall: Ein Paket
+   * hat keinen Katalog, und ein fest verdrahtetes Wort ist in der zweiten
+   * Sprache sofort falsch. Pflicht statt optional, damit das Vergessen beim
+   * Übersetzen auffällt und nicht erst im englischen Bildschirmfoto.
+   *
+   * @param remaining Verbleibende ganze Sekunden, immer größer als 0.
+   */
+  countdownLabel: (remaining: number) => string
 }
 
 /**
@@ -61,7 +72,22 @@ export function useStateNotification(
     handle = null
   }
 
-  /** Zählt sichtbar herunter und blendet am Ende aus. */
+  /** Beschriftung des Zählers — `undefined`, solange keiner läuft. */
+  function metaText(remaining: number): string | undefined {
+    return remaining > 0 ? options.countdownLabel(remaining) : undefined
+  }
+
+  /**
+   * Zählt sichtbar herunter und blendet am Ende aus.
+   *
+   * Der **erste** Wert steht schon in den Anlegeoptionen und wird hier nicht
+   * noch einmal gesetzt. Das ist kein Feinschliff: Naive misst die Höhe der
+   * Meldung in einem `nextTick` nach dem Einhängen und lässt sie von dort
+   * aufklappen. Wer das Objekt vorher anfasst, löst ein Neuzeichnen aus, die
+   * Transition bricht ab — und die Meldung bleibt auf Höhe 0 stehen. Sichtbar
+   * wird das erst ab der zweiten: Sie legt sich dann über die erste, statt
+   * unter ihr einzureihen.
+   */
   function startTicker(): void {
     stopTicker()
     const total = Math.round(options.seconds.value)
@@ -69,9 +95,8 @@ export function useStateNotification(
 
     let remaining = total
     const show = (): void => {
-      if (handle) handle.meta = `schließt in ${remaining} s`
+      if (handle) handle.meta = metaText(remaining)
     }
-    show()
 
     ticker = setInterval(() => {
       remaining -= 1
@@ -119,6 +144,9 @@ export function useStateNotification(
           title: options.title,
           content: text,
           type: options.type,
+          // Der erste Zählerstand gehört hier herein und nicht in ein
+          // nachträgliches `handle.meta` — siehe `startTicker`.
+          meta: metaText(Math.round(options.seconds.value)),
           // Kein `duration`: Der Zähler unten macht das sichtbar und lässt sich
           // in den Einstellungen abschalten.
           closable: true,

@@ -186,6 +186,7 @@ export const de = {
     seconds: 'Anzeigedauer',
     secondsZero: 'bleibt stehen',
     secondsCount: 'blendet nach {n} s aus',
+    closesIn: 'schließt in {n} s',
     reset: 'Alle Zustände zurücksetzen',
     ruleState:
       'Der Toast erscheint, wenn der Zustand eintritt, und verschwindet, sobald die Ursache behoben ist.',
@@ -194,6 +195,13 @@ export const de = {
     ruleDismiss:
       'Weggeklickt bleibt weggeklickt, solange der Zustand anhält. Kehrt er wieder, meldet er sich erneut.',
     ruleZero: 'Anzeigedauer 0 heißt: stehen lassen. Fehler bleiben ohnehin, bis man sie wegklickt.',
+    ruleStack:
+      'Drei gleichzeitig sind das Höchstmaß — kommt eine vierte, weicht die älteste. Im ersten Durchlauf des Versuchs bleiben von fünf also drei.',
+    stackTitle: 'Meldung {n}',
+    stackBody: 'Die {n}. von {max} — gestaffelt ausgelöst, damit das Nachrücken sichtbar wird.',
+    stackTrigger: '{n} Meldungen nacheinander',
+    stackHint:
+      'Zwei Dinge sieht man nur im Stapel: wo die erste Meldung aufgeht — unter den Bedienelementen der Kopfzeile, nicht auf ihnen —, und was bei mehr Zuständen als Platz passiert. Fünf gegen ein Höchstmaß von drei ist mit Absicht zu viel.',
     statusbar: 'Statuszeile',
     statusbarHint:
       'Links Herkunft und Zustand der Daten, rechts der technische Stand. Der Punkt ist anklickbar — wer ein rotes Licht sieht, will wissen, woran es liegt.',
