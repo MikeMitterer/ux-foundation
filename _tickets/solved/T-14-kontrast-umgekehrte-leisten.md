@@ -30,7 +30,7 @@ Legende: ✅ live bestätigt · ⚠️ mit Einschränkung · ◑ teilweise · �
 | 5 | Theme `sepia`, Statuszeile | Trennpunkte, Version, Ampel-Beschriftung ≥ 4.5:1 | ✅ [^3] | ✅ |
 | 6 | Theme `meadow`, beide Leisten | dieselben fünf Messungen halten | ✅ [^4] | ✅ |
 | 7 | alle übrigen Themes | keine Verschlechterung — der Lauf bleibt sonst grün | ✅ [^5] | ✅ |
-| 8 | StockInfo und StockPortfolio | beide erben die Korrektur, ohne eigene Werte zu setzen | ➖ [^6] | ✅ [^7] |
+| 8 | StockInfo und StockPortfolio | beide erben die Korrektur, ohne eigene Werte zu setzen | ◑ [^6] | ✅ [^7] |
 
 [^1]: `theme-tokens.py` liest jetzt `--surface-header-alpha` / `--surface-statusbar-alpha`
     und mischt die Leiste über `--surface-page`. Gegenprobe gegen die Browser-Messung
@@ -62,16 +62,25 @@ Legende: ✅ live bestätigt · ⚠️ mit Einschränkung · ◑ teilweise · �
     Zusätzlich live gemessen: `classic`, `paper`, `carbon`, `mono`, `ocean` —
     nichts unter 4.5.
 
-[^6]: **Nicht prüfbar in diesem Repo.** StockInfo bindet `@mikemitterer/ux-foundation`
-    noch gar nicht ein, StockPortfolio liegt nicht in diesem Workspace. Belegt ist
-    nur die Voraussetzung: Keine der beiden Apps setzt `--text-bar-accent`,
-    `--brand-word` oder `--text-bar-muted` selbst, sie erben also, sobald sie das
-    Paket binden.
+[^6]: **Hier gemessen, dort gültig — nicht erneut zu messen.** Genau dafür gibt es
+    das Fundament: Die Werte stehen einmal in `tokens.css`, und eine App, die sie
+    nicht überschreibt, bekommt exakt die Zahlen aus den Fußnoten 3 bis 5. Eine
+    Wiederholung der Messung je App wäre die Doppelarbeit, die das Paket abschafft.
+    Zu prüfen war deshalb nur eines: ob eine App `--text-bar-accent`,
+    `--text-bar-muted` oder `--surface-header-alpha` selbst setzt. Tut sie es,
+    ist das ihre Entscheidung — und dann gehört die Messung dorthin, weil dort
+    der Wert entsteht. **`◑` und nicht `✅`, weil das nur für eine der beiden
+    Apps nachgesehen werden konnte:** StockInfo setzt keinen dieser Token (und
+    bindet das Paket bisher ohnehin nicht ein), StockPortfolio liegt nicht in
+    diesem Workspace.
 
-[^7]: Vom Menschen freigegeben, ohne dass die Vererbung hier messbar war — siehe
-    Fußnote 6. Der Punkt ist damit **abgenommen, nicht nachgewiesen**: Sobald
-    StockInfo das Paket bindet, gehört eine Messung dorthin. Festgehalten, damit
-    es später nicht als geprüft gelesen wird.
+[^7]: Freigegeben, und der Sache nach richtig: Vererbung ist hier keine Messung,
+    sondern eine Eigenschaft der Token-Datei. **Eine** Ausnahme gibt es, und sie
+    ist im Skill `ux-standards` so vorgesehen: Die Marken-Token gehören der App,
+    nicht dem Fundament — StockInfo trägt Koralle nach Pflaume statt Azur nach
+    Indigo. Das hiesige `--brand-word` erreicht StockInfo also **nicht**; dessen
+    eigener Wert lag im Vorabcheck bei 4.15:1 und muss dort gelöst werden. Das ist
+    kein Nachprüfen dieser Korrektur, sondern ein eigener Wert an einem eigenen Ort.
 
 **Human-Spalte am 2026-08-17 auf Zuruf eingetragen** („T-14 ist von mir aus
 erledigt, betrachte alle Human-Einträge als OK"). Die Spalte füllt sonst allein
@@ -219,8 +228,11 @@ kleinste Bewegung vom heutigen Wert richtig. Und wer `--text-bar-muted` anhebt,
 muss `--text-bar-secondary` im Blick behalten: Bei `meadow` wären sonst 6
 Helligkeitspunkte übrig geblieben.
 
-**Offen aus diesem Ticket:** #8 ist hier nicht prüfbar (siehe Fußnote) und
-wandert sinnvollerweise in das Ticket, das StockInfo an das Paket bindet.
+**Nichts offen.** #8 verlangt keine Wiederholung in den Apps — die Werte stehen
+einmal hier, und wer sie nicht überschreibt, bekommt die gemessenen Zahlen. Das
+einzige, was in einer App noch zu lösen ist, gehört ihr ohnehin selbst: die
+Marken-Token. StockInfo trägt eine eigene Wortmarkenfarbe (4.15:1 im
+Vorabcheck), und die erreicht dieses Ticket nicht — siehe Fußnote 7.
 
 **Commit:** `ux-foundation 2977311` — enthält neben dieser Korrektur weitere
 Arbeit desselben Arbeitstags (Inline-Zahl, Symbole, Naive-Brücke).
