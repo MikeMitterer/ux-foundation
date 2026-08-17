@@ -177,12 +177,17 @@ publish: ##R Paket in die private Registry veröffentlichen  [CONFIRM=yes]
 ##@ Versionierung
 
 .PHONY: version
-version: ## Aktuelle Version anzeigen (package.json + git tag)
+# Gelesen wird über `readProjectVersion`, nicht mit `node -p` aus der
+# package.json. Die Lib kennt die Reihenfolge der Versionsdateien
+# (package.json → pyproject.toml → VERSION) und ist dieselbe Quelle, aus der
+# auch `tag-*` schreibt. Eine eigene Extraktion hier wäre eine zweite Quelle,
+# die genau dann falsch liegt, wenn es darauf ankommt.
+version: ## Aktuelle Version anzeigen (Versionsdatei + git tag)
 	@echo
-	@VER=$$(node -p "require('./package.json').version" 2>/dev/null); \
+	@VER=$$(source "$${BASH_LIBS}/version.lib.sh" 2>/dev/null && readProjectVersion 2>/dev/null); \
 	 [[ -z "$$VER" ]] && VER='nicht gesetzt'; \
 	 TAG=$$(git describe --tags --abbrev=0 2>/dev/null || echo 'kein Tag'); \
-	 echo "    $(YELLOW)VERSION$(RESET)  = $(BLUE)$$VER$(RESET)"; \
+	 echo "    $(YELLOW)version$(RESET)  = $(BLUE)$$VER$(RESET)"; \
 	 echo "    $(YELLOW)git tag$(RESET)  = $(BLUE)$$TAG$(RESET)"
 	@echo
 
