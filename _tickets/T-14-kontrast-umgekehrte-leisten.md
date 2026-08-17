@@ -212,3 +212,8 @@ Helligkeitspunkte übrig geblieben.
 
 **Offen aus diesem Ticket:** #8 ist hier nicht prüfbar (siehe Fußnote) und
 wandert sinnvollerweise in das Ticket, das StockInfo an das Paket bindet.
+
+**Commit:** `ux-foundation 2977311` — enthält neben dieser Korrektur weitere
+Arbeit desselben Arbeitstags (Inline-Zahl, Symbole, Naive-Brücke).
+Prüfziele beim Abschluss: `make check-themes` Exit 0 · 127 Tests · Lint und
+Typecheck ohne Ausgabe.
