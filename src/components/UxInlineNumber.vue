@@ -14,7 +14,14 @@ import { computed, nextTick, ref } from 'vue'
  * zweiten Sprache sofort falsch.
  */
 const props = defineProps<{
-  value: number
+  /**
+   * Der Wert — `null` heißt **nicht gesetzt**.
+   *
+   * Das ist nicht dasselbe wie `0`: Eine TER, die niemand kennt, ist keine TER
+   * von null Prozent. Wer diesen Zustand nicht braucht, gibt wie bisher eine
+   * Zahl herein und merkt nichts davon.
+   */
+  value: number | null
   /** Formatierte Anzeige im Ruhezustand. */
   display: string
   precision?: number
@@ -32,8 +39,11 @@ const props = defineProps<{
    * Stück nicht auf null setzen. Bei einer geplanten Stückzahl dagegen heißt
    * leer genau das: kein Trade. Dort ist es zumutbar, „0" tippen zu müssen,
    * hier war es eine Schikane.
+   *
+   * `null` ist dabei ein zulässiger Leerwert: Dann bedeutet Leeren „nicht
+   * gesetzt" statt „null".
    */
-  emptyValue?: number
+  emptyValue?: number | null
   /** Tooltip im Ruhezustand — „Bearbeiten". */
   editLabel?: string
   /** Tooltip und zugänglicher Name des Löschkreuzes — „Leeren". */
@@ -49,7 +59,7 @@ const clearable = computed(
 )
 
 const emit = defineEmits<{
-  (event: 'commit', value: number): void
+  (event: 'commit', value: number | null): void
 }>()
 
 const editing = ref<boolean>(false)
@@ -72,7 +82,8 @@ const valueState = computed(() => {
 
 async function startEdit(): Promise<void> {
   if (props.disabled) return
-  draft.value = String(props.value)
+  // Ein nicht gesetzter Wert startet als leeres Feld, nicht als „null".
+  draft.value = props.value === null ? '' : String(props.value)
   editing.value = true
   await nextTick()
   inputRef.value?.focus()
@@ -86,11 +97,17 @@ async function startEdit(): Promise<void> {
  * `Number('')` wäre 0 — stiller Datenverlust in jeder Spalte, in der Leere
  * nichts bedeutet.
  */
-function parseDraft(): number {
+function parseDraft(): number | null {
   const raw = draft.value
   if (typeof raw === 'number') return raw
   const trimmed = raw.trim()
-  if (trimmed === '') return props.emptyValue ?? Number.NaN
+  /*
+   * Bewusst gegen `undefined` geprüft und nicht `??` verwendet: `null` ist
+   * seit dem Zustand „nicht gesetzt" ein **gültiger** Leerwert, und `??` hätte
+   * ihn wie eine fehlende Angabe behandelt — das Leeren wäre wirkungslos
+   * geblieben.
+   */
+  if (trimmed === '') return props.emptyValue !== undefined ? props.emptyValue : Number.NaN
   return Number(trimmed.replace(',', '.'))
 }
 
@@ -99,6 +116,12 @@ function commit(): void {
   editing.value = false
 
   const parsed = parseDraft()
+
+  // Leeren auf „nicht gesetzt": kein Wert zum Begrenzen, nur ein Zustand.
+  if (parsed === null) {
+    if (props.value !== null) emit('commit', null)
+    return
+  }
   if (!Number.isFinite(parsed)) return
 
   const clamped = Math.min(props.max ?? Number.MAX_SAFE_INTEGER, Math.max(props.min ?? 0, parsed))

@@ -223,6 +223,52 @@ describe('UxInlineNumber — Grenzen und Sonderfälle', () => {
     expect(wrapper.emitted('commit')).toBeUndefined()
   })
 
+  /*
+   * „Nicht gesetzt" ist ein eigener Zustand, nicht die Zahl 0.
+   *
+   * Anlass ist T-09 in StockInfo: Für Papiere ohne ETF-Quelle werden TER und
+   * Volatilität von Hand gepflegt, und eine TER, die niemand kennt, ist keine
+   * TER von null Prozent. Ohne `null` hätte die App eine zweite Zahl-in-der-
+   * Zeile daneben gebaut — genau das, was dieses Paket verhindern soll.
+   */
+  it('startet bei einem nicht gesetzten Wert mit leerem Feld', async () => {
+    const wrapper = makeWrapper({ value: null, display: '—', emptyValue: null })
+    const input = await openEditor(wrapper)
+
+    expect((input.element as HTMLInputElement).value).toBe('')
+  })
+
+  it('meldet null, wenn ein gesetzter Wert geleert wird', async () => {
+    const wrapper = makeWrapper({ value: 0.25, display: '0,25 %', emptyValue: null })
+    const input = await openEditor(wrapper)
+
+    await input.setValue('')
+    await input.trigger('blur')
+
+    expect(wrapper.emitted('commit')).toEqual([[null]])
+  })
+
+  it('meldet nichts, wenn ein nicht gesetzter Wert geleert wird', async () => {
+    // Sonst schriebe jeder Klick in die Zelle ein „null" zurück.
+    const wrapper = makeWrapper({ value: null, display: '—', emptyValue: null })
+    const input = await openEditor(wrapper)
+
+    await input.setValue('')
+    await input.trigger('blur')
+
+    expect(wrapper.emitted('commit')).toBeUndefined()
+  })
+
+  it('nimmt aus einem nicht gesetzten Wert wieder eine Zahl an', async () => {
+    const wrapper = makeWrapper({ value: null, display: '—', emptyValue: null })
+    const input = await openEditor(wrapper)
+
+    await input.setValue('0.25')
+    await input.trigger('blur')
+
+    expect(wrapper.emitted('commit')).toEqual([[0.25]])
+  })
+
   it('meldet nur einmal, wenn nach Enter noch ein blur folgt', async () => {
     const wrapper = makeWrapper()
     const input = await openEditor(wrapper)
