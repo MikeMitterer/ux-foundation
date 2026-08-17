@@ -1,6 +1,6 @@
 {
   "name": "@mikemitterer/ux-foundation",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Gemeinsames Fundament der Oberflächen — Farb-Token, Skalen, Reset, Schriften, Symbole und die Naive-UI-Brücke",
   "license": "MIT",
   "author": "Mike Mitterer <office@mikemitterer.at>",
