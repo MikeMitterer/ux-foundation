@@ -62,6 +62,11 @@ export const de = {
     space: 'Abstände',
     radius: 'Radien',
     fontSizes: 'Schriftgrößen',
+    shadows: 'Schatten',
+    shadowsHint:
+      'Zwei Stufen. Auf hellem Grund trägt der weiche Schatten, auf dunklem die haarfeine helle Kante — dort kann ein Schatten nur abdunkeln, und die Fläche ist schon fast schwarz. Zum Prüfen das Theme wechseln: Beide Kästen müssen in jedem Theme als „darüber" zu lesen sein.',
+    shadowToast: 'Toast, Meldung, Menü, Hinweis',
+    shadowDialog: 'Dialog',
   },
 
   typography: {
@@ -195,6 +200,8 @@ export const de = {
     ruleDismiss:
       'Weggeklickt bleibt weggeklickt, solange der Zustand anhält. Kehrt er wieder, meldet er sich erneut.',
     ruleZero: 'Anzeigedauer 0 heißt: stehen lassen. Fehler bleiben ohnehin, bis man sie wegklickt.',
+    ruleProgress:
+      'Die Restzeit läuft als Balken an der Unterkante ab, nicht als Text — das spart eine Zeile und lenkt weniger ab. Für Hilfstechnik steht sie weiterhin als Beschriftung am Balken.',
     ruleStack:
       'Drei gleichzeitig sind das Höchstmaß — kommt eine vierte, weicht die älteste. Im ersten Durchlauf des Versuchs bleiben von fünf also drei.',
     stackTitle: 'Meldung {n}',

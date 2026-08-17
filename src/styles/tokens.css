@@ -142,7 +142,7 @@
  * ist und an diese Variablen nicht herankommt.
  *
  * --brand-contrast steht neben --accent-contrast, nicht statt dessen: Letzteres
- * wechselt mit dem Theme und ist in acht von dreizehn nahezu schwarz. Auf einem
+ * wechselt mit dem Theme und ist in den meisten nahezu schwarz. Auf einem
  * Grund, der sich nicht mitändert, wäre das Zeichen dort kaum zu sehen.
  */
 
@@ -157,7 +157,7 @@
  * Abstufungen desselben Blaus, keine zwei Farben: Gemessen erreicht --brand-from
  * auf hellen Leisten nur 2,8:1 und --brand-to auf dunklen 2,0:1. Für Text bei
  * 18 px/600 sind 4,5:1 verlangt, also trägt keine der beiden Markenfarben über
- * alle dreizehn Themes. Dasselbe Vorgehen wie bei Status- und Kategoriefarben: eine
+ * alle Themes. Dasselbe Vorgehen wie bei Status- und Kategoriefarben: eine
  * helle und eine dunkle Stufe, Ton bleibt.
  *
  * Umgeschaltet wird nach der Leiste, nicht nach dem Inhalt — nur `paper` und
@@ -191,14 +191,31 @@
  * Themes: `paper` und `mono` sind hell, `sepia` und `meadow` tragen hellen
  * Inhalt zwischen dunklen Leisten.
  *
- * Die Deckkraft ist auf dunklen Flächen rund dreimal so hoch. Schwarz auf
- * Anthrazit ist fast nicht zu sehen; derselbe Wert, der auf Papier schon zu
- * kräftig wirkt, verschwindet dort spurlos.
+ * **Auf dunklen Flächen trägt die helle Kante, nicht der Schatten.** Das war
+ * hier zuerst anders gelöst — dreifache Deckkraft — und blieb unsichtbar. Der
+ * Grund ist kein zu kleiner Wert, sondern fehlender Spielraum: Ein Schatten
+ * kann nur abdunkeln, und die Seitenfläche ist bereits nahezu schwarz.
+ * Gemessen als Kontrast zwischen Fläche und beschattetem Grund erreichen die
+ * hellen Themes 1.31; die dunklen kämen selbst mit **vollständig deckendem**
+ * Schwarz nur auf 1.05 bis 1.23. Die helle Kante dreht das Vorzeichen um und
+ * bringt den Spielraum zurück: 18 Prozent ergeben 1.63 bis 1.78.
+ *
+ * Sie ist zugleich die **einzige** Stelle, an der sich die beiden Stufen auf
+ * dunklem Grund noch unterscheiden — der Unterschied im Schwarz ist dort nicht
+ * zu sehen. Deshalb trägt `lg` mit 26 Prozent (2.20 bis 2.36) eine deutlich
+ * kräftigere Kante als `sm`. Auf hellem Grund macht das der Schatten selbst,
+ * dort bleiben die Kanten weg.
+ *
+ * Deshalb steht auf dunklem Grund eine haarfeine helle Linie (`0 0 0 1px`)
+ * **vor** dem weichen Schatten: Sie behauptet die Kante, er die Tiefe. Auf
+ * hellem Grund entfällt sie — dort ist Weiß auf Weiß nichts, und der Schatten
+ * trägt von allein.
  */
 
 :root {
-  --shadow-sm: 0 4px 16px rgb(0 0 0 / 0.45);
-  --shadow-lg: 0 16px 48px rgb(0 0 0 / 0.6), 0 2px 8px rgb(0 0 0 / 0.4);
+  --shadow-sm: 0 0 0 1px rgb(255 255 255 / 0.18), 0 4px 16px rgb(0 0 0 / 0.45);
+  --shadow-lg: 0 0 0 1px rgb(255 255 255 / 0.26), 0 16px 48px rgb(0 0 0 / 0.6),
+    0 2px 8px rgb(0 0 0 / 0.4);
 }
 
 :root[data-theme='paper'],
