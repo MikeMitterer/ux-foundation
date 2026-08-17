@@ -35,7 +35,7 @@ export {
   type ThemeInfo,
 } from './theme/themes'
 
-export { buildNaiveOverrides } from './theme/naive'
+export { buildBarNaiveOverrides, buildNaiveOverrides } from './theme/naive'
 
 export {
   NAV_ICON_NAMES,
@@ -50,6 +50,7 @@ export { default as UxIcon } from './icons/UxIcon.vue'
 export { default as UxAppShell } from './components/UxAppShell.vue'
 export { default as UxTopbar } from './components/UxTopbar.vue'
 export { default as UxNavItem } from './components/UxNavItem.vue'
+export { default as UxInfoHint } from './components/UxInfoHint.vue'
 export { default as UxThemePicker } from './components/UxThemePicker.vue'
 export { default as UxStatusBar } from './components/UxStatusBar.vue'
 export { default as UxInlineNumber } from './components/UxInlineNumber.vue'
