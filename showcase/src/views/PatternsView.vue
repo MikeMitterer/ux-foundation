@@ -158,6 +158,7 @@ onBeforeUnmount(stapelZuruecksetzen)
       <li>{{ t('patterns.ruleContent') }}</li>
       <li>{{ t('patterns.ruleDismiss') }}</li>
       <li>{{ t('patterns.ruleZero') }}</li>
+      <li>{{ t('patterns.ruleProgress') }}</li>
       <li>{{ t('patterns.ruleStack') }}</li>
     </ul>
 

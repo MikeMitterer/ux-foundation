@@ -55,3 +55,57 @@ const CONTAINER_STYLE = { top: 'var(--toast-top)' }
     <slot />
   </NNotificationProvider>
 </template>
+
+<!--
+  Bewusst **ohne** `scoped`.
+
+  Der Toast hängt am `body`, nicht in dieser Komponente — ein Scope-Merkmal
+  erreicht ihn nicht. Dasselbe gilt für den Balken selbst: Er entsteht in
+  `useStateNotification` über `h()`, und was dort entsteht, trägt das Merkmal
+  ebenfalls nicht zuverlässig. `ux-standards` sieht für genau diesen Fall eine
+  bewusst globale Regel mit eigenem Präfix vor.
+
+  Diese Vorlage ist nicht nur Aussehen: `useStateNotification` blendet die
+  Meldung aus, wenn die Animation des Balkens durch ist. Fehlt sie, bleibt der
+  Toast stehen — deshalb steht dort ausdrücklich, dass dieser Provider und
+  nicht `NNotificationProvider` zu verwenden ist.
+
+  Die einzige Zeile, die eine **fremde** Klasse anfasst, ist `.n-notification`.
+  Sie setzt weder Fläche noch Farbe noch Maße — nur den Bezugsrahmen, den ein
+  absolut gesetztes Kind braucht. `tests/toastProgress.spec.ts` schlägt an,
+  falls Naive den Klassennamen einmal ändert; ohne den Test verschwände der
+  Balken bei einem Update still.
+-->
+<style lang="scss">
+.n-notification {
+  /* Bezugsrahmen für den Balken. `overflow` hält ihn in den runden Ecken. */
+  position: relative;
+  overflow: hidden;
+}
+
+.ux-toast-progress {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 2px;
+
+  /*
+   * Läuft von links nach rechts voll — dieselbe Leserichtung wie der Text
+   * darüber. `transform` statt `width`, weil nur Transformationen ohne
+   * Neuberechnung des Layouts laufen: bei einer Meldung nebensächlich, bei
+   * fünf gleichzeitig nicht mehr.
+   */
+  transform-origin: left;
+  animation: ux-toast-progress linear forwards;
+
+  /*
+   * Kein Ausschluss bei `prefers-reduced-motion`: Der Balken ist keine
+   * Zierbewegung, sondern die Anzeige selbst. Abgeschaltet bliebe er leer
+   * stehen und zeigte nie an, dass die Zeit läuft.
+   */
+}
+
+@keyframes ux-toast-progress {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+</style>

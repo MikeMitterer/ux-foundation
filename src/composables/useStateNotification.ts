@@ -9,17 +9,35 @@
  *
  * Deshalb hier beides: Der Toast erscheint, wenn der Zustand eintritt, und
  * verschwindet von selbst, sobald die Ursache behoben ist. Zusätzlich läuft
- * ein Zähler, nach dem er sich ausblendet, auch wenn der Zustand noch besteht
- * — sonst steht er einem beim Tippen dauerhaft im Weg. Wer ihn lieber stehen
- * hat, stellt den Zähler auf 0.
+ * ein Balken an seiner Unterkante mit, nach dem er sich ausblendet, auch wenn
+ * der Zustand noch besteht — sonst steht er einem beim Tippen dauerhaft im
+ * Weg. Wer ihn lieber stehen hat, stellt die Anzeigedauer auf 0.
+ *
+ * **Gehört unter `UxNotificationProvider`, nicht unter `NNotificationProvider`.**
+ * Dort steht die Stilvorlage des Balkens, und weil das Ausblenden am Ende
+ * seiner Animation hängt, bliebe eine Meldung ohne sie stehen. Der Provider
+ * bringt außerdem den Versatz unter die Kopfzeile mit.
  *
  * Ausgeblendet heißt nicht erledigt: Der Zustand steht weiterhin im Kopf der
  * Seite („nicht gedeckt"), und sobald er zwischendurch weg war und wiederkehrt,
  * meldet sich der Toast erneut.
  */
 
-import { onMounted, onUnmounted, watch, type Ref } from 'vue'
+import { h, onMounted, onUnmounted, watch, type Ref, type VNodeChild } from 'vue'
 import type { NotificationApi, NotificationReactive } from 'naive-ui'
+
+/**
+ * Die Farbe des Balkens je Art — dieselbe Bedeutung wie das Symbol daneben.
+ *
+ * Eine eigene Farbe wäre eine zweite Bedeutungsebene: Ein blauer Balken an
+ * einer roten Meldung liest sich als zweite Aussage, obwohl er nur die Zeit
+ * zeigt.
+ */
+const BALKEN_FARBE: Record<StateNotificationOptions['type'], string> = {
+  error: '--status-out',
+  warning: '--status-near',
+  info: '--accent',
+}
 
 export interface StateNotificationOptions {
   /** Überschrift des Toasts. */
@@ -33,14 +51,19 @@ export interface StateNotificationOptions {
    */
   seconds: Ref<number>
   /**
-   * Beschriftung des Zählers, bereits übersetzt — „schließt in 4 s".
+   * Beschriftung der Restzeit, bereits übersetzt — „schließt in 5 s".
    *
    * Kommt herein statt fest zu stehen, und ohne deutschen Rückfall: Ein Paket
    * hat keinen Katalog, und ein fest verdrahtetes Wort ist in der zweiten
    * Sprache sofort falsch. Pflicht statt optional, damit das Vergessen beim
    * Übersetzen auffällt und nicht erst im englischen Bildschirmfoto.
    *
-   * @param remaining Verbleibende ganze Sekunden, immer größer als 0.
+   * **Sie steht nicht mehr im Bild**, seit der Balken die Restzeit zeigt —
+   * sie ist das `aria-label` dazu. Ein Balken ohne Text ist für Hilfstechnik
+   * stumm, und Form allein trägt keine Information.
+   *
+   * @param remaining Gesamtdauer in ganzen Sekunden, immer größer als 0.
+   *                  Wird **einmal** beim Anlegen aufgerufen, nicht je Sekunde.
    */
   countdownLabel: (remaining: number) => string
 }
@@ -56,58 +79,55 @@ export function useStateNotification(
   options: StateNotificationOptions,
 ): void {
   let handle: NotificationReactive | null = null
-  let ticker: ReturnType<typeof setInterval> | null = null
 
   /** Der Toast ist weg — nicht sofort wieder aufpoppen. */
   let dismissed = false
 
-  function stopTicker(): void {
-    if (ticker !== null) clearInterval(ticker)
-    ticker = null
-  }
-
   function close(): void {
-    stopTicker()
     handle?.destroy()
     handle = null
   }
 
-  /** Beschriftung des Zählers — `undefined`, solange keiner läuft. */
-  function metaText(remaining: number): string | undefined {
-    return remaining > 0 ? options.countdownLabel(remaining) : undefined
-  }
-
   /**
-   * Zählt sichtbar herunter und blendet am Ende aus.
+   * Der mitlaufende Balken an der Unterkante — `undefined`, solange keiner läuft.
    *
-   * Der **erste** Wert steht schon in den Anlegeoptionen und wird hier nicht
-   * noch einmal gesetzt. Das ist kein Feinschliff: Naive misst die Höhe der
-   * Meldung in einem `nextTick` nach dem Einhängen und lässt sie von dort
-   * aufklappen. Wer das Objekt vorher anfasst, löst ein Neuzeichnen aus, die
-   * Transition bricht ab — und die Meldung bleibt auf Höhe 0 stehen. Sichtbar
-   * wird das erst ab der zweiten: Sie legt sich dann über die erste, statt
-   * unter ihr einzureihen.
+   * Er ersetzt den früheren Text („schließt in 4 s") und ist deshalb **kein**
+   * reiner Zierrat: Die Beschriftung wandert nach `aria-label`, sonst wäre die
+   * Restzeit für Hilfstechnik verschwunden. Sie wird einmal gesetzt und nicht
+   * je Sekunde nachgezogen — ein sich fortlaufend änderndes Label liest ein
+   * Screenreader unter Umständen jedes Mal vor.
+   *
+   * Die Dauer steht als Inline-Angabe am Element und nicht in der Stilvorlage:
+   * Naives Notification kennt weder `style` noch `class` als Option, und die
+   * Dauer ist je Meldung verschieden.
+   *
+   * **Der Balken ist zugleich die Uhr.** Ausgeblendet wird nicht nach einem
+   * eigenen Weckruf, sondern wenn seine Animation durch ist — die beiden
+   * können damit nicht auseinanderlaufen. Der Unterschied zeigt sich, sobald
+   * jemand den Tab wechselt: Der Browser friert Animationen in verborgenen
+   * Tabs ein, Zeitgeber laufen weiter. Mit einem eigenen Weckruf verschwand
+   * die Meldung, während der Balken noch fast am Anfang stand — beim
+   * Zurückkommen also eine Meldung, die man nie gesehen hat.
    */
-  function startTicker(): void {
-    stopTicker()
-    const total = Math.round(options.seconds.value)
-    if (total <= 0) return
+  function progressBar(total: number): (() => VNodeChild) | undefined {
+    if (total <= 0) return undefined
 
-    let remaining = total
-    const show = (): void => {
-      if (handle) handle.meta = metaText(remaining)
-    }
-
-    ticker = setInterval(() => {
-      remaining -= 1
-      if (remaining <= 0) {
+    const label = options.countdownLabel(total)
+    return () =>
+      h('div', {
+        class: 'ux-toast-progress',
+        role: 'progressbar',
+        'aria-label': label,
+        style: {
+          animationDuration: `${total}s`,
+          background: `rgb(var(${BALKEN_FARBE[options.type]}))`,
+        },
         // Wie ein Wegklicken: Der Zustand bleibt, die Meldung geht.
-        dismissed = true
-        close()
-        return
-      }
-      show()
-    }, 1000)
+        onAnimationend: () => {
+          dismissed = true
+          close()
+        },
+      })
   }
 
   /*
@@ -144,19 +164,23 @@ export function useStateNotification(
           title: options.title,
           content: text,
           type: options.type,
-          // Der erste Zählerstand gehört hier herein und nicht in ein
-          // nachträgliches `handle.meta` — siehe `startTicker`.
-          meta: metaText(Math.round(options.seconds.value)),
-          // Kein `duration`: Der Zähler unten macht das sichtbar und lässt sich
-          // in den Einstellungen abschalten.
+          /*
+           * Der Balken gehört hier herein und nicht in ein nachträgliches
+           * `handle.meta`. Naive misst die Höhe der Meldung in einem
+           * `nextTick` nach dem Einhängen und lässt sie von dort aufklappen;
+           * wer das Objekt vorher anfasst, löst ein Neuzeichnen aus, die
+           * Transition bricht ab, und die Meldung bleibt auf Höhe 0 stehen —
+           * sichtbar erst ab der zweiten, die sich dann über die erste legt.
+           */
+          meta: progressBar(Math.round(options.seconds.value)),
+          // Kein `duration`: Das Ausblenden hängt am Balken, und der lässt
+          // sich in den Einstellungen abschalten.
           closable: true,
           onClose: () => {
             dismissed = true
-            stopTicker()
             handle = null
           },
         })
-        startTicker()
       },
       { immediate: true },
     )

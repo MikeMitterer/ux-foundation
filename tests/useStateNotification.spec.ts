@@ -52,6 +52,20 @@ function zaehlerAttrappe() {
   return { api, optionen, metaSchreibzugriffe }
 }
 
+/**
+ * Holt die Beschriftung der Restzeit aus dem, was als `meta` mitgegeben wurde.
+ *
+ * `meta` ist seit dem Balken eine Render-Funktion und keine Zeichenkette mehr.
+ * Geprüft wird trotzdem dasselbe wie vorher: dass die Restzeit dort steht und
+ * aus dem Katalog der App stammt — sie sitzt nur nicht mehr im Bild, sondern
+ * am `aria-label`.
+ */
+function restzeitLabel(meta: unknown): unknown {
+  if (typeof meta !== 'function') return meta
+  const vnode = (meta as () => { props?: Record<string, unknown> })()
+  return vnode?.props?.['aria-label']
+}
+
 /** Hängt das Composable in eine Komponente ein — es braucht einen Lebenszyklus. */
 function mountWith(setup: () => void) {
   return mount(
@@ -139,7 +153,7 @@ describe('useStateNotification', () => {
     expect(created).toHaveLength(1)
   })
 
-  it('gibt den ersten Zählerstand beim Anlegen mit', async () => {
+  it('gibt den Balken beim Anlegen mit', async () => {
     /*
      * Der Grund ist im Browser gemessen worden: Naive misst die Höhe der
      * Meldung in einem `nextTick` nach dem Einhängen und lässt sie von dort
@@ -148,8 +162,12 @@ describe('useStateNotification', () => {
      *
      * Sichtbar wurde es erst ab der zweiten: Sie legte sich über die erste,
      * statt sich darunter einzureihen. Genau deshalb prüft dieser Test nicht
-     * nur, *dass* der Zähler steht, sondern dass er **nicht nachträglich**
+     * nur, *dass* der Balken steht, sondern dass er **nicht nachträglich**
      * geschrieben wird.
+     *
+     * Seit die Bewegung aus CSS kommt, gibt es ohnehin nichts mehr
+     * nachzuziehen — der Test bleibt trotzdem: Er hält fest, dass es dabei
+     * bleibt.
      */
     const { api, optionen, metaSchreibzugriffe } = zaehlerAttrappe()
 
@@ -164,15 +182,21 @@ describe('useStateNotification', () => {
     })
     await new Promise((resolve) => setTimeout(resolve, 0))
 
-    expect(optionen[0]?.meta, 'Der Zähler fehlt in den Anlegeoptionen').toBe('schließt in 6 s')
+    expect(restzeitLabel(optionen[0]?.meta), 'Der Balken fehlt in den Anlegeoptionen').toBe(
+      'schließt in 6 s',
+    )
     expect(metaSchreibzugriffe, 'meta wurde nach dem Anlegen angefasst').toEqual([])
   })
 
-  it('nimmt die Beschriftung des Zählers von außen', async () => {
+  it('nimmt die Beschriftung der Restzeit von außen', async () => {
     /*
      * Der Punkt der Übung: Im Paket steht kein sichtbarer Text. „schließt in
      * 4 s" stand hier einmal fest verdrahtet — in einer englischen Oberfläche
      * wäre es ohne jeden Hinweis deutsch geblieben.
+     *
+     * Dass die Beschriftung heute nur noch am `aria-label` hängt, ändert
+     * daran nichts: Vorgelesen wird sie trotzdem, und in der falschen Sprache
+     * fiele es nur niemandem beim Ansehen auf.
      *
      * Deshalb prüft dieser Test nicht das Format, sondern die Herkunft: Was
      * die App liefert, steht im Toast. Nur so fällt ein Rückfall auf eine
@@ -191,7 +215,9 @@ describe('useStateNotification', () => {
     })
     await new Promise((resolve) => setTimeout(resolve, 0))
 
-    expect(optionen[0]?.meta, 'Der Zähler kommt nicht aus dem Katalog der App').toBe('closes in 9 s')
+    expect(restzeitLabel(optionen[0]?.meta), 'Die Restzeit kommt nicht aus dem Katalog der App').toBe(
+      'closes in 9 s',
+    )
   })
 
   it('lässt die Meldung ohne Zähler stehen', () => {
