@@ -2,14 +2,6 @@
 /**
  * Schmale Zeile am unteren Rand — der Zustand der App auf einen Blick.
  *
- * Antwort auf eine wiederkehrende Frage: Sind die Zahlen, die ich gerade
- * ansehe, überhaupt aktuell? Steht die Gegenstelle? Welcher Stand läuft hier?
- * Das gehört an einen festen Platz, nicht verteilt über Kopfzeile,
- * Einstellungen und Konsole.
- *
- * Bewusst leise: Sie steht dauerhaft im Bild und darf mit den eigentlichen
- * Daten nicht um Aufmerksamkeit ringen.
- *
  * Reine Darstellung. Sämtliche Texte kommen als Prop — was „vor 4 Std" heißt,
  * weiß nur der Katalog der App, und ein Paket hat keinen.
  */
@@ -22,16 +14,12 @@ const props = withDefaults(
   defineProps<{
     /** Name der App. */
     appName: string
-    /** „powered by" — der Zusatz davor, als Text der App. */
+    /** Optionaler Zusatz vor der Herkunft, bereits übersetzt. */
     poweredByLabel?: string
     /** Herkunft, in der Akzentfarbe verlinkt. */
     originName?: string
     originHref?: string
-    /**
-     * Der aktive Kontext samt Größe („Beispiel-Depot, 6 Positionen").
-     * Sobald es mehr als einen gibt, ist das Pflicht: Ohne ihn ist jede Zahl
-     * auf dem Bildschirm mehrdeutig.
-     */
+    /** Der aktive Kontext samt Größe („Beispiel-Depot, 6 Positionen"). */
     context?: string
     /** Alter der Daten, fertig formuliert („Kurse vor 4 Std"). */
     dataAge?: string
@@ -47,7 +35,7 @@ const props = withDefaults(
     backendStateLabel?: string
   }>(),
   {
-    poweredByLabel: 'powered by',
+    poweredByLabel: '',
     originName: '',
     originHref: '',
     context: '',
@@ -143,10 +131,6 @@ const hasBackend = computed(
           class="ux-statusbar__version"
         >{{ version }}</span>
 
-        <!--
-          Anklickbar statt bloß informativ: Wer hier ein rotes Licht sieht, will
-          als Nächstes wissen, woran es liegt.
-        -->
         <button
           v-if="hasBackend"
           class="ux-statusbar__backend"
@@ -188,7 +172,9 @@ const hasBackend = computed(
   position: sticky;
   bottom: 0;
   z-index: 9;
-  background: rgb(var(--surface-statusbar) / 0.9);
+  /* Deckkraft als Token — siehe `tokens.css`: Der Prüfer muss gegen die
+     gemischte Fläche rechnen, nicht gegen `--surface-statusbar`. */
+  background: rgb(var(--surface-statusbar) / var(--surface-statusbar-alpha));
   backdrop-filter: blur(8px);
   border-top: 1px solid rgb(var(--border-bar));
   color: rgb(var(--text-bar-muted));
@@ -213,15 +199,6 @@ const hasBackend = computed(
     min-width: 0;
   }
 
-  /*
-   * Was zuerst weicht, ist nicht beliebig — der Skill gibt die Reihenfolge vor:
-   * erst Zierrat (Herkunftszeile, Trennpunkte), dann Zusatzangaben (Adressen,
-   * Fremdversionen). Nie weichen: der aktive Kontext, der Zustand und die
-   * Handlung.
-   *
-   * Gemessen bei 375 px ohne diese Regeln: drei Zeilen, 83 px hoch. Erlaubt
-   * sind zwei.
-   */
   &__brand {
     display: flex;
     align-items: center;

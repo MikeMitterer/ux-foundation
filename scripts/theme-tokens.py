@@ -127,11 +127,25 @@ RUECKFALL = {
     "--text-bar": "--text-primary",
     "--text-bar-secondary": "--text-secondary",
     "--text-bar-muted": "--text-muted",
+    "--text-bar-accent": "--accent",
     "--border-bar": "--border-default",
+}
+
+# Die Leisten liegen durchscheinend über der Seitenfläche. Was ein Nutzer sieht,
+# ist keine der beiden Farben, sondern ihre Mischung — gegen die wird gemessen.
+# Ergebnis steht je Theme unter `<flaeche>-gerendert`; diese Namen sind
+# **berechnet** und stehen nicht in `tokens.css`.
+GERENDERT = {
+    "--surface-header": "--surface-header-alpha",
+    "--surface-statusbar": "--surface-statusbar-alpha",
 }
 
 _TRIPEL = re.compile(r"^\d{1,3}\s+\d{1,3}\s+\d{1,3}$")
 _VERWEIS = re.compile(r"^var\(\s*(--[\w-]+)\s*\)$")
+
+
+_BLOCK = re.compile(r"([^{}]+)\{([^}]*)\}")
+_THEME_SELEKTOR = re.compile(r"^:root\[data-theme=['\"]([\w-]+)['\"]\]$")
 
 
 def _bloecke(text: str) -> tuple[dict[str, str], dict[str, dict[str, str]]]:
@@ -140,18 +154,34 @@ def _bloecke(text: str) -> tuple[dict[str, str], dict[str, dict[str, str]]]:
     Grundschicht sind alle `:root { … }` ohne Attribut — dort stehen die
     themeunabhängigen Werte und die Rückfälle. Themes sind
     `:root[data-theme='name'] { … }`.
+
+    **Jeder Selektor einer Gruppe zählt einzeln.** Ein früherer Ausdruck band
+    den Block direkt an *einen* `:root…`-Selektor und traf bei
+    `:root[data-theme='paper'], :root[data-theme='mono'] { … }` nur den
+    letzten — `paper` bekam die Werte nicht und wurde mit der Vorgabe
+    gemessen. Der Prüfer meldete deshalb „in Ordnung" für einen Wert, der so
+    nirgends steht. Kommentare fliegen vorher raus, sonst liest der Ausdruck
+    Fließtext als Selektor.
     """
     grund: dict[str, str] = {}
     themes: dict[str, dict[str, str]] = {}
+    ohne_kommentare = re.sub(r"/\*[\s\S]*?\*/", "", text)
 
-    for treffer in re.finditer(r":root(\[data-theme=['\"]([\w-]+)['\"]\])?\s*\{([^}]*)\}", text):
-        name = treffer.group(2)
-        werte = dict(re.findall(r"(--[\w-]+)\s*:\s*([^;]+);", treffer.group(3)))
-        werte = {k: v.strip() for k, v in werte.items()}
-        if name is None:
-            grund.update(werte)
-        else:
-            themes.setdefault(name, {}).update(werte)
+    for treffer in _BLOCK.finditer(ohne_kommentare):
+        werte = {
+            name: wert.strip()
+            for name, wert in re.findall(r"(--[\w-]+)\s*:\s*([^;]+);", treffer.group(2))
+        }
+        if not werte:
+            continue
+
+        for selektor in treffer.group(1).split(","):
+            selektor = selektor.strip()
+            theme = _THEME_SELEKTOR.match(selektor)
+            if theme:
+                themes.setdefault(theme.group(1), {}).update(werte)
+            elif selektor == ":root":
+                grund.update(werte)
 
     return grund, themes
 
@@ -177,8 +207,29 @@ def _aufloesen(name: str, eigene: dict[str, str], grund: dict[str, str],
     return None
 
 
+def _zahl(name: str, eigene: dict[str, str], grund: dict[str, str]) -> float | None:
+    """Liest einen Token, der keine Farbe ist, sondern eine blanke Zahl."""
+    roh = eigene.get(name, grund.get(name))
+    try:
+        return float(roh) if roh is not None else None
+    except ValueError:
+        return None
+
+
+def _mischen(oben: Farbe, unten: Farbe, alpha: float) -> Farbe:
+    """Legt `oben` mit `alpha` über `unten` — das sieht der Nutzer."""
+    return tuple(round(o * alpha + u * (1 - alpha)) for o, u in zip(oben, unten))
+
+
 def lies_themes(pfad: Path) -> dict[str, dict[str, Farbe]]:
-    """Liest alle Themes einer Token-Datei als aufgelöste Farbwerte."""
+    """Liest alle Themes einer Token-Datei als aufgelöste Farbwerte.
+
+    Zusätzlich zu den Token in der Datei stehen danach die **gerenderten**
+    Leisten-Flächen bereit (`…-gerendert`). Sie sind der Grund, warum ein
+    durchscheinender Kopf nicht mehr gegen seinen eigenen Token gemessen wird:
+    Über hellem Inhalt wird eine dunkle Leiste sichtbar heller, und helle
+    Schrift darauf trägt dann **weniger**, nicht mehr.
+    """
     grund, roh = _bloecke(pfad.read_text(encoding="utf-8"))
     namen = sorted({k for werte in roh.values() for k in werte} | set(grund) | set(RUECKFALL))
 
@@ -189,6 +240,14 @@ def lies_themes(pfad: Path) -> dict[str, dict[str, Farbe]]:
             farbe = _aufloesen(token, eigene, grund)
             if farbe is not None:
                 aufgeloest[token] = farbe
+
+        seite = aufgeloest.get("--surface-page")
+        for flaeche, alpha_token in GERENDERT.items():
+            oben = aufgeloest.get(flaeche)
+            alpha = _zahl(alpha_token, eigene, grund)
+            if oben is not None and seite is not None and alpha is not None:
+                aufgeloest[f"{flaeche}-gerendert"] = _mischen(oben, seite, alpha)
+
         ergebnis[theme] = aufgeloest
     return ergebnis
 
@@ -201,9 +260,17 @@ REGELN = [
     ("--text-secondary", "--surface-card", 4.5, True, "zweite Ebene auf der Karte"),
     ("--text-muted", "--surface-card", 4.5, True, "Beschriftungen auf der Karte"),
     ("--accent-contrast", "--accent", 4.5, True, "Text auf der Akzentfläche"),
-    ("--text-bar", "--surface-header", 7.0, True, "Wortmarke in der Kopfzeile"),
-    ("--text-bar-muted", "--surface-header", 4.5, True, "leiser Text in der Kopfzeile"),
-    ("--text-bar-muted", "--surface-statusbar", 4.5, True, "leiser Text in der Statuszeile"),
+    # Gegen die **gerenderte** Leiste, nicht gegen ihren Token: Die Leisten
+    # laufen durchscheinend, und über hellem Inhalt wird eine dunkle Leiste
+    # sichtbar heller. Gegen den Token gerechnet galt `sepia` als in Ordnung,
+    # während der Verweis dort tatsächlich bei 2.27:1 lag.
+    ("--text-bar", "--surface-header-gerendert", 7.0, True, "Text in der Kopfzeile"),
+    ("--text-bar-secondary", "--surface-header-gerendert", 4.5, True, "Menüpunkte in der Kopfzeile"),
+    ("--text-bar-muted", "--surface-header-gerendert", 4.5, True, "leiser Text in der Kopfzeile"),
+    ("--text-bar-muted", "--surface-statusbar-gerendert", 4.5, True, "leiser Text in der Statuszeile"),
+    # Diese beiden wurden bisher **gar nicht** gemessen — genau sie rissen.
+    ("--brand-word", "--surface-header-gerendert", 4.5, True, "Wortmarke in der Kopfzeile"),
+    ("--text-bar-accent", "--surface-statusbar-gerendert", 4.5, True, "Verweis in der Statuszeile"),
     ("--text-muted", "--surface-raised", 4.5, False, "Beschriftungen auf Menüs und Popovern"),
     ("--accent", "--surface-card", 3.0, False, "Akzent als Fläche erkennbar"),
     ("--brand-contrast", "--brand-from", 3.0, False, "Zeichen auf der Plakette (heller Pol)"),

@@ -116,6 +116,34 @@ describe('UxInlineNumber — Übernehmen', () => {
     expect(wrapper.emitted('commit')?.[0]).toEqual([12.5])
   })
 
+  it('leitet die Schrittweite aus precision ab', async () => {
+    const wrapper = makeWrapper({ precision: 2 })
+    const input = await openEditor(wrapper)
+
+    expect(input.attributes('step')).toBe('0.01')
+  })
+
+  it('rundet beim Übernehmen auf precision Nachkommastellen', async () => {
+    const wrapper = makeWrapper({ precision: 2 })
+    const input = await openEditor(wrapper)
+
+    await input.setValue('12.345')
+    await input.trigger('blur')
+
+    expect(wrapper.emitted('commit')?.[0]).toEqual([12.35])
+  })
+
+  it('lässt Nachkommastellen ohne precision unverändert', async () => {
+    const wrapper = makeWrapper()
+    const input = await openEditor(wrapper)
+
+    expect(input.attributes('step')).toBe('any')
+    await input.setValue('12.345')
+    await input.trigger('blur')
+
+    expect(wrapper.emitted('commit')?.[0]).toEqual([12.345])
+  })
+
   it('schließt das Feld nach dem Übernehmen', async () => {
     const wrapper = makeWrapper()
     const input = await openEditor(wrapper)

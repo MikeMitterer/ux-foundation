@@ -1,29 +1,23 @@
 /**
  * Die wiederkehrenden Navigationssymbole.
  *
- * Warum sie hier liegen und nicht in jeder App: Der Skill verlangt, dass ein
- * wiederkehrender Menüpunkt über alle Apps dasselbe Symbol trägt — das ist der
- * Punkt, an dem eine Sammlung zusammenwächst oder auseinanderfällt. Zweimal
- * abgezeichnet heißt zweimal leicht anders.
- *
  * Als Daten und nicht als fertige Komponente, damit eine App sie inline
  * rendern kann (einfärbbar, skalierbar, `aria-hidden`) ohne eine
  * Komponentenbibliothek dieses Pakets zu erben.
  *
- * Zeichenstil, verbindlich: Strichsymbole, `currentColor`, Strichstärke 2,
- * runde Enden, rund 15 px in der Kopfzeile. Keine gefüllten Flächen außer als
- * bewusste Betonung — zwei Symbolsprachen in einer Kopfzeile sieht man sofort.
+ * Die Definitionen verwenden Strichsymbole mit `currentColor`, runden Enden
+ * und Strichstärke 2. Einzelne Punkte dürfen gefüllt sein.
  */
 
-/** Ein Pfad innerhalb eines Symbols. `fill` nur für bewusste Betonung. */
+/** Ein Pfad innerhalb eines Symbols. */
 export interface IconPath {
   /** SVG-Pfaddaten oder — bei `shape: 'circle'` — leer. */
   d?: string
   /** Kreis statt Pfad: Mittelpunkt und Radius. */
   circle?: { cx: number; cy: number; r: number }
-  /** Gefüllt statt gestrichen. Nur für Punkte und Betonungen. */
+  /** Gefüllt statt gestrichen. */
   filled?: boolean
-  /** Runde Enden. Vorgabe ist `true`; gerade Enden brauchen eine Begründung. */
+  /** Runde Enden. Vorgabe ist `true`. */
   round?: boolean
 }
 

@@ -80,8 +80,9 @@ const slots = useSlots()
   z-index: 10;
   height: var(--topbar-height);
   /* Leicht durchscheinend: Beim Scrollen schimmert der Inhalt darunter durch,
-     statt hart abgeschnitten zu werden. */
-  background: rgb(var(--surface-header) / 0.85);
+     statt hart abgeschnitten zu werden. Die Deckkraft steht als Token, weil
+     das Prüfskript gegen die gemischte Fläche rechnen muss. */
+  background: rgb(var(--surface-header) / var(--surface-header-alpha));
   backdrop-filter: blur(8px);
   border-bottom: 1px solid rgb(var(--border-bar));
   color: rgb(var(--text-bar));

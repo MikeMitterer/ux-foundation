@@ -9,10 +9,6 @@
  * wird **hereingegeben** statt aus einem Store gelesen. Das Fundament kennt
  * die Einstellungen einer App nicht und soll sie nicht kennen — welche Ref
  * geliefert wird, entscheidet die App.
- *
- * Was hier hineingehört: Aussagen über den **Zustand der Daten**. Was nicht:
- * Hinweise im Formular selbst. Eine Warnung zum Feld, in das man gerade tippt,
- * gehört neben das Feld und nicht in die Ecke des Fensters.
  */
 import { useNotification } from 'naive-ui'
 import type { Ref } from 'vue'

@@ -9,11 +9,6 @@
  *
  * Was hier **nicht** liegt: die Kataloge, die i18n-Instanz und die Frage,
  * welche Sprachen eine App überhaupt hat. Das gibt der Aufrufer herein.
- *
- * Zur Platzierung: Der Umschalter gehört in die **Einstellungen**, nicht in
- * die Kopfzeile — er wird zweimal im Leben angefasst. Nur wo eine App
- * öffentlich ist und Besucher sie in ihrer Sprache erwarten, steht er rechts
- * in der Leiste, nie zwischen den Menüpunkten.
  */
 
 import { safeStorage } from './safeStorage'

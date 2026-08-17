@@ -24,6 +24,7 @@ const props = defineProps<{
   value: number | null
   /** Formatierte Anzeige im Ruhezustand. */
   display: string
+  /** Anzahl der erlaubten Nachkommastellen; ohne Angabe bleibt der Wert unverändert. */
   precision?: number
   min?: number
   max?: number
@@ -73,6 +74,17 @@ const editing = ref<boolean>(false)
  */
 const draft = ref<string | number>('')
 const inputRef = ref<HTMLInputElement | null>(null)
+
+/** Auf den von `Number.toFixed()` unterstützten Bereich begrenzte Dezimalstellen. */
+const normalizedPrecision = computed(() => {
+  if (props.precision === undefined || !Number.isFinite(props.precision)) return undefined
+  return Math.min(100, Math.max(0, Math.trunc(props.precision)))
+})
+
+/** Schrittweite des Zahlenfelds passend zur vereinbarten Zahl an Nachkommastellen. */
+const inputStep = computed(() =>
+  normalizedPrecision.value === undefined ? 'any' : 10 ** -normalizedPrecision.value,
+)
 
 /** Zustand des Werts — steuert Farbe und Zeiger der Anzeige. */
 const valueState = computed(() => {
@@ -124,7 +136,11 @@ function commit(): void {
   }
   if (!Number.isFinite(parsed)) return
 
-  const clamped = Math.min(props.max ?? Number.MAX_SAFE_INTEGER, Math.max(props.min ?? 0, parsed))
+  const rounded =
+    normalizedPrecision.value === undefined
+      ? parsed
+      : Number(parsed.toFixed(normalizedPrecision.value))
+  const clamped = Math.min(props.max ?? Number.MAX_SAFE_INTEGER, Math.max(props.min ?? 0, rounded))
   if (clamped === props.value) return
 
   emit('commit', clamped)
@@ -164,7 +180,10 @@ function onKeydown(event: KeyboardEvent): void {
     absolut über der Zelle, damit weder Zeilenhöhe noch Spaltenbreite davon
     abhängen, ob gerade ein Wert drinsteht.
   -->
-  <div class="inline-number">
+  <div
+    class="inline-number"
+    :class="{ 'inline-number--clearable': clearable && !editing }"
+  >
     <!--
       Hält Breite und Höhe der Zelle — in beiden Zuständen dieselbe.
 
@@ -192,7 +211,7 @@ function onKeydown(event: KeyboardEvent): void {
       ref="inputRef"
       v-model="draft"
       type="number"
-      :step="precision === 0 ? 1 : 0.5"
+      :step="inputStep"
       :min="min"
       :max="max"
       class="inline-number__field tabular-nums"
@@ -213,9 +232,14 @@ function onKeydown(event: KeyboardEvent): void {
     </button>
 
     <!--
-      Links, wo die rechtsbündige Zahl nicht hinreicht. Blass, bis die Maus
-      über der Zelle steht — sonst stünde in jeder Zeile ein Kreuz und die
-      Tabelle sähe aus wie ein Formular.
+      Links neben der rechtsbündigen Zahl. Blass, bis die Maus über der Zelle
+      steht — sonst stünde in jeder Zeile ein Kreuz und die Tabelle sähe aus
+      wie ein Formular.
+
+      „Links, wo die Zahl nicht hinreicht" stimmte nicht: Der Platzhalter baut
+      genau so breit wie der Text, links bleibt also nichts übrig. Das Kreuz lag
+      damit **auf** der ersten Ziffer. Deshalb macht `--clearable` oben eine
+      Gasse dafür auf.
     -->
     <button
       v-if="clearable && !editing"
@@ -234,16 +258,46 @@ function onKeydown(event: KeyboardEvent): void {
 .inline-number {
   position: relative;
 
+  /* Breite des Löschkreuzes — an *einer* Stelle, weil zwei Regeln sie
+     brauchen: das Kreuz selbst und die Gasse, die ihm Platz macht. Zwei
+     getippte Zahlen liefen beim ersten Feinschliff auseinander. */
+  --clear-width: 1.125rem;
+
   /* Gemeinsame Maße — der Platzhalter muss exakt so breit bauen, wie die
      beiden sichtbaren Zustände es täten. */
+  /*
+   * Rechts **kein** Polster: Die Zahl ist rechtsbündig, und ein Polster dort
+   * rückt sie von der Spaltenkante ab. Gemessen in einer Tabelle endete der
+   * Spaltenkopf „TER" bei 826 und die Zahl darunter bei 810 — sechs davon
+   * waren dieses Polster, der Rest ein Merkmal daneben. Eine Nachbarspalte
+   * ohne diese Komponente stand bündig, was den Unterschied sichtbar machte.
+   */
   &__sizer,
   &__field,
   &__display {
-    padding: 0.125rem 0.375rem;
+    padding: 0.125rem 0 0.125rem 0.375rem;
     border: 0;
     border-bottom: 1px solid transparent;
     text-align: right;
     font: inherit;
+  }
+
+  /*
+   * Gasse für das Löschkreuz.
+   *
+   * Sie sitzt am **Platzhalter** und damit an der Breite des Rahmens: Anzeige
+   * und Eingabefeld liegen absolut darüber und tragen nichts zur Größe bei.
+   * Ohne sie baut der Rahmen genau so breit wie der Text, links bleibt nichts
+   * frei, und das Kreuz liegt auf der ersten Ziffer.
+   *
+   * Nur wenn es auch eines gibt — sonst trüge jede Zelle eine leere Gasse.
+   * Die Zahl wandert dabei nicht: Sie ist rechtsbündig, die Gasse wächst nach
+   * links.
+   */
+  &--clearable &__sizer,
+  &--clearable &__field,
+  &--clearable &__display {
+    padding-left: calc(0.375rem + var(--clear-width));
   }
 
   &__sizer {
@@ -251,6 +305,20 @@ function onKeydown(event: KeyboardEvent): void {
     visibility: hidden;
     /* Nie umbrechen: Ein Umbruch im Platzhalter änderte die Höhe der Zeile. */
     white-space: nowrap;
+
+    /*
+     * Genug Breite für eine Eingabe, auch wenn die Anzeige kurz ist.
+     *
+     * Der Platzhalter baut aus dem **Anzeigetext**, und der ist im leeren
+     * Zustand ein Gedankenstrich. Das Eingabefeld liegt darüber und erbt diese
+     * Breite: Wer in eine leere Zelle tippte, hatte Platz für ein Zeichen, und
+     * „0,12" schob sich beim Tippen aus dem Bild.
+     *
+     * `ch` und nicht Pixel, damit es mit der Schriftgröße mitgeht; sechs Stellen
+     * fassen auch „100,00" ohne Abschneiden. Spalten mit mindestens einem Wert ändern
+     * sich dadurch nicht — sie sind ohnehin breiter.
+     */
+    min-width: 7ch;
   }
 
   &__field,
@@ -294,7 +362,8 @@ function onKeydown(event: KeyboardEvent): void {
     position: absolute;
     top: 50%;
     left: 0;
-    padding: 0 var(--space-1);
+    width: var(--clear-width);
+    padding: 0;
     opacity: 0;
     line-height: 1;
     @include muted(null);

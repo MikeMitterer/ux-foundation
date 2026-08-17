@@ -85,8 +85,13 @@ const tag = computed(() => (props.href ? 'a' : 'button'))
   cursor: pointer;
   transition: color 0.15s ease, background-color 0.15s ease;
 
+  /*
+   * Die Fläche kommt aus dem Bar-Token, nicht aus `--surface-raised`: Letztere
+   * gehört zum Inhalt, und ein Theme mit umgekehrten Leisten bekäme damit die
+   * falsche Hälfte — in `sepia` weiße Fläche unter fast weißer Schrift.
+   */
   &:hover {
-    background-color: token(--surface-raised);
+    background-color: token(--surface-bar-raised, 0.12);
     color: token(--text-bar);
   }
 

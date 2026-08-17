@@ -143,10 +143,30 @@ export function buildNaiveOverrides(): GlobalThemeOverrides {
     Message: {
       boxShadow: shadowSm,
     },
-    // Menüs, Hinweise und der „?"-Tooltip.
+    // Menüs und Popover.
     Popover: {
       boxShadow: shadowSm,
       color: surfaceRaised,
+      textColor: textPrimary,
+    },
+    /*
+     * Der „?"-Tooltip braucht einen **eigenen** Eintrag, obwohl er ein Popover
+     * ist. Naive gestaltet ihn absichtlich gegenläufig: In der hellen Vorlage
+     * steht `color: rgba(0,0,0,.85)` und `textColor: baseColor`, also weiße
+     * Schrift auf fast schwarzem Grund — ein Tooltip soll sich vom Inhalt
+     * abheben.
+     *
+     * Überschrieben war bisher nur die Fläche über `Popover`. Die Schrift kam
+     * weiter aus der Tooltip-Vorlage, also Weiß. In dunklen Paletten fiel das
+     * nie auf, weil `--surface-raised` dort dunkel ist. In `sepia` ist sie
+     * Weiß — gemessen Kontrast **1.0**, der Hinweis war schlicht leer.
+     *
+     * Deshalb kommen hier beide Hälften aus denselben Token.
+     */
+    Tooltip: {
+      boxShadow: shadowSm,
+      color: surfaceRaised,
+      textColor: textPrimary,
     },
     Input: {
       color: surfaceRaised,
@@ -189,7 +209,9 @@ export function buildBarNaiveOverrides(): GlobalThemeOverrides {
   const textBarMuted = token('--text-bar-muted')
   const borderBar = token('--border-bar')
   const surfaceHeader = token('--surface-header')
-  const raisedOnBar = token('--surface-raised', 0.5)
+  // Nicht `--surface-raised`: Die gehört zum Inhalt und ist in Themes mit
+  // umgekehrten Leisten das Gegenteil dessen, was die Leiste braucht.
+  const raisedOnBar = token('--surface-bar-raised', 0.12)
 
   return {
     common: {

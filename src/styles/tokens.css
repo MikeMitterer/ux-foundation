@@ -106,6 +106,24 @@
   --surface-statusbar: var(--surface-card);
 
   /*
+   * Wie deckend die Leisten liegen. Beide laufen leicht durchscheinend mit
+   * `backdrop-filter` — beim Scrollen schimmert der Inhalt darunter durch,
+   * statt hart abgeschnitten zu werden.
+   *
+   * **Die Werte stehen hier und nicht in den Komponenten**, weil die Fläche,
+   * die ein Nutzer sieht, keine der beiden Farben ist, sondern ihre Mischung.
+   * Wer Kontrast prüft, muss gegen die gemischte Fläche rechnen — und
+   * `theme-tokens.py` kommt an eine Zahl in einer `.vue`-Datei nicht heran.
+   * Genau daran ging die Prüfung vorbei: `sepia` galt als „in Ordnung",
+   * während der Verweis in der Statuszeile bei 2.27:1 lag.
+   *
+   * Zwei Werte statt einem, weil die Statuszeile schmaler ist und weniger
+   * Durchscheinen verträgt, bevor sie unruhig wirkt.
+   */
+  --surface-header-alpha: 0.85;
+  --surface-statusbar-alpha: 0.9;
+
+  /*
    * Eigene Textfarben, weil ein Theme die Leisten auch umkehren darf — helle
    * Inhalte, dunkle Leisten. Ohne diese Rolle stünde dort der dunkle
    * Fließtext auf dunklem Grund.
@@ -114,6 +132,23 @@
   --text-bar-muted: var(--text-muted);
   --text-bar-secondary: var(--text-secondary);
   --border-bar: var(--border-default);
+
+  /*
+   * Die erhobene Fläche **auf** der Leiste — Hover an Menüpunkten und Knöpfen.
+   *
+   * Nicht `--surface-raised`: Die gehört zum Inhalt. Ein Theme, das die Leisten
+   * umkehrt, bekommt damit die falsche Hälfte. Gemessen in `sepia` (heller
+   * Inhalt, dunkle Leisten) war die Hover-Fläche Weiß und die Schrift darauf
+   * `--text-bar`, also fast Weiß — der Menüpunkt verschwand beim Überfahren.
+   *
+   * Der Trick ist, den **Text** der Leiste als Fläche zu nehmen und ihn dünn
+   * aufzutragen: Auf dunkler Leiste ist er hell und hebt sie an, auf heller
+   * Leiste dunkel und senkt sie ab. Ein Wert, der sich von selbst umdreht —
+   * deshalb steht hier keine Farbe je Theme.
+   *
+   * Verwendet wird er immer mit Deckkraft: `token(--surface-bar-raised, .12)`.
+   */
+  --surface-bar-raised: var(--text-bar);
 
   /*
    * Der Akzent **auf** der Leiste — der Verweis auf die Herkunft in der
@@ -166,7 +201,14 @@
  */
 
 :root {
-  --brand-word: 106 179 240; /* #6ab3f0 — 5,3:1 bis 8,8:1 auf dunklen Leisten */
+  /*
+   * #99ccf5 — gemessen gegen die **gerenderte** Leiste, nicht gegen
+   * `--surface-header`. Der frühere Wert (#6ab3f0) trug auf den meisten Themes
+   * bequem, riss aber dort, wo die Leiste über hellem Inhalt liegt und dadurch
+   * sichtbar aufhellt: `meadow` 3.46:1, `sepia` 4.34:1. Bindend ist `meadow`
+   * mit 4.57:1; die dunklen Themes liegen jetzt zwischen 7.1 und 11.6.
+   */
+  --brand-word: 153 204 245;
 }
 
 :root[data-theme='paper'],
@@ -339,6 +381,10 @@
 
   --accent: 29 116 221;
   --accent-contrast: 255 255 255;
+  /* #2f81e4 — eine Spur heller als `--accent`, weil die Statuszeile
+     durchscheinend über der Seite liegt und dadurch aufhellt: der Verweis lag
+     dort bei 3.96:1, jetzt bei 4.64:1. */
+  --text-bar-accent: 47 129 228;
 
   --asset-stocks: 57 135 229;
   --asset-bonds: 213 81 129;
@@ -474,6 +520,10 @@
 
   --accent: 40 118 210;
   --accent-contrast: 255 255 255;
+  /* #2670c5 — eine Spur dunkler als `--accent`: Auf der hellen Statuszeile
+     lag der Verweis bei 4.20:1, jetzt bei 4.6:1. Die Richtung ist umgekehrt
+     zu den dunklen Themes, das Mittel dasselbe. */
+  --text-bar-accent: 38 112 197;
 
   --asset-stocks: 42 120 214;
   --asset-bonds: 232 123 164;
@@ -615,7 +665,10 @@
 
   --text-bar: 250 246 238;
   --text-bar-secondary: 214 203 184;
-  --text-bar-muted: 163 150 129;
+  /* #bab0a0 — angehoben von #a39681 (3.37:1 auf der gerenderten Kopfzeile).
+     Der Abstand zu `--text-bar-secondary` bleibt bei 10 Punkten Helligkeit,
+     die leise Stufe liest sich also weiter als leise. */
+  --text-bar-muted: 186 176 160;
 
   --border-default: 219 210 192;
   --border-subtle: 232 225 210;
@@ -623,6 +676,9 @@
 
   --accent: 180 83 9;
   --accent-contrast: 255 255 255;
+  /* #f48734 — derselbe Ton wie `--accent`, nur hell genug für die dunkle
+     Leiste: dort lag der Verweis bei 2.27:1, jetzt bei 4.54:1. */
+  --text-bar-accent: 244 135 52;
 
   --asset-stocks: 42 120 214;
   --asset-bonds: 232 123 164;
@@ -759,8 +815,12 @@
   --text-muted: 102 120 108;
 
   --text-bar: 240 248 243;
-  --text-bar-secondary: 196 219 205;
-  --text-bar-muted: 148 179 161;
+  /* #d0e2d7 — mitangehoben. Die leise Stufe musste steigen; bliebe die zweite
+     Ebene stehen, lägen beide 6 Punkte auseinander und die Abstufung wäre weg
+     (siehe „Die leise Stufe muss leise bleiben" im Skill). */
+  --text-bar-secondary: 208 226 215;
+  /* #b4cabd — angehoben von #94b3a1 (3.42:1 auf der gerenderten Kopfzeile). */
+  --text-bar-muted: 180 202 189;
 
   --border-default: 213 224 215;
   --border-subtle: 228 236 229;
@@ -768,6 +828,9 @@
 
   --accent: 21 128 61;
   --accent-contrast: 255 255 255;
+  /* #22d363 — derselbe Grünton wie `--accent`, hell genug für die dunkle
+     Leiste: der Verweis lag dort bei 1.79:1, jetzt bei 4.52:1. */
+  --text-bar-accent: 34 211 99;
 
   --asset-stocks: 42 120 214;
   --asset-bonds: 232 123 164;

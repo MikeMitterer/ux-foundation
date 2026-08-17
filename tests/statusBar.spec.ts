@@ -14,6 +14,14 @@ import { mount } from '@vue/test-utils'
 import { UxStatusBar } from '@ux/index'
 
 describe('UxStatusBar', () => {
+  it('fügt ohne Beschriftung keinen fest verdrahteten Herkunftstext ein', () => {
+    const wrapper = mount(UxStatusBar, {
+      props: { appName: 'Test', originName: 'Foundation' },
+    })
+
+    expect(wrapper.text()).toBe('Test Foundation')
+  })
+
   it('zeigt den Zustandspunkt auch ohne Adresse der Gegenstelle', () => {
     const wrapper = mount(UxStatusBar, {
       props: { appName: 'Test', backendState: 'online', backendStateLabel: 'Online' },

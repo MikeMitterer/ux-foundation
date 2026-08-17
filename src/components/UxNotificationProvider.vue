@@ -62,8 +62,8 @@ const CONTAINER_STYLE = { top: 'var(--toast-top)' }
   Der Toast hängt am `body`, nicht in dieser Komponente — ein Scope-Merkmal
   erreicht ihn nicht. Dasselbe gilt für den Balken selbst: Er entsteht in
   `useStateNotification` über `h()`, und was dort entsteht, trägt das Merkmal
-  ebenfalls nicht zuverlässig. `ux-standards` sieht für genau diesen Fall eine
-  bewusst globale Regel mit eigenem Präfix vor.
+  ebenfalls nicht zuverlässig. Die globale Regel trägt deshalb ein eigenes
+  Präfix.
 
   Diese Vorlage ist nicht nur Aussehen: `useStateNotification` blendet die
   Meldung aus, wenn die Animation des Balkens durch ist. Fehlt sie, bleibt der
