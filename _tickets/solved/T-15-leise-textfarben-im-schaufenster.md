@@ -2,7 +2,7 @@
 
 | Repo | Status | Time-box | Scope | GH-Issue |
 |---|---|---|---|---|
-| ux-foundation | ready | ~45 min | Sichtprüfung, keine Code-Änderung erwartet | — |
+| ux-foundation | done | ~45 min | Sichtprüfung, keine Code-Änderung erwartet | — |
 
 **Löst:** Die Kontrast-Korrektur an `--text-muted` (elf Werte in neun Themes)
 ist gerechnet und gemessen, aber nie im Schaufenster angesehen worden. Die
@@ -27,12 +27,12 @@ Legende: ✅ live bestätigt · ⚠️ bestätigt mit Einschränkung (Fußnote) 
 
 | # | Where | Look for | AI | Human |
 |---|---|---|:--:|---|
-| 1 | `make test` bzw. `theme-tokens.py check … --zonen` | alle harten Grenzwerte gehalten; genau fünf weiche Hinweise (`aurora`, `classic`, `forest`, `ocean`, `slate` auf `--surface-raised`) | ✅¹ | |
-| 2 | Schaufenster → Themes, je `aurora`, `classic`, `forest`, `meadow`, `mono`, `ocean`, `sepia` | Beschriftungen und Hinweistexte lesbar, ohne zu **Fließtext** zu werden — sie sollen leiser wirken als die Werte daneben | ➖² | |
-| 3 | dieselbe Seite, `paper` und `slate` | dito — die beiden größten Verschiebungen (`slate` +10 %, `paper` −11 %) | ◑³ | |
-| 4 | Schaufenster → Komponenten, Statuszeile in `classic`, `ocean`, `slate`, `forest`, `mono`, `paper` | „powered by", Trennpunkte und Versionsangabe lesbar | ➖ | |
-| 5 | Schaufenster → Komponenten, Hauptknopf in `classic` und `paper` | Text **auf** der Akzentfläche lesbar (dort wurde `--accent` verschoben, nicht `--accent-contrast`) | ➖⁴ | |
-| 6 | Menü oder Popover in `aurora`, `classic`, `forest`, `ocean`, `slate` | die bewusst stehengelassene Schwäche: leiser Text auf `--surface-raised` (3.70–4.16:1) — **erträglich oder doch nachzubessern?** | ➖⁵ | |
+| 1 | `make test` bzw. `theme-tokens.py check … --zonen` | alle harten Grenzwerte gehalten; genau fünf weiche Hinweise (`aurora`, `classic`, `forest`, `ocean`, `slate` auf `--surface-raised`) | ✅¹ | ✅ |
+| 2 | Schaufenster → Themes, je `aurora`, `classic`, `forest`, `meadow`, `mono`, `ocean`, `sepia` | Beschriftungen und Hinweistexte lesbar, ohne zu **Fließtext** zu werden — sie sollen leiser wirken als die Werte daneben | ➖² | ✅ |
+| 3 | dieselbe Seite, `paper` und `slate` | dito — die beiden größten Verschiebungen (`slate` +10 %, `paper` −11 %) | ◑³ | ✅ |
+| 4 | Schaufenster → Komponenten, Statuszeile in `classic`, `ocean`, `slate`, `forest`, `mono`, `paper` | „powered by", Trennpunkte und Versionsangabe lesbar | ➖ | ✅ |
+| 5 | Schaufenster → Komponenten, Hauptknopf in `classic` und `paper` | Text **auf** der Akzentfläche lesbar (dort wurde `--accent` verschoben, nicht `--accent-contrast`) | ➖⁴ | ✅ |
+| 6 | Menü oder Popover in `aurora`, `classic`, `forest`, `ocean`, `slate` | die bewusst stehengelassene Schwäche: leiser Text auf `--surface-raised` (3.70–4.16:1) — **erträglich oder doch nachzubessern?** | ➖⁵ | ✅ erträglich |
 
 > ¹ **(CC):** live gegen `src/styles/tokens.css` (2026-08-18). Exit 0, alle
 > Themes gemessen, exakt die fünf erwarteten Hinweise. Die Zahl stand hier
@@ -49,6 +49,15 @@ Legende: ✅ live bestätigt · ⚠️ bestätigt mit Einschränkung (Fußnote) 
 > dort: Gegen `raised` mitzulösen hebt `muted` so weit an, dass es mit
 > `--text-secondary` verschmilzt (bei `forest` blieben 8 % Abstand, bei `slate`
 > rund 4 %) — dann gibt es keine leise Stufe mehr, nur zwei fast gleiche.
+
+**Human-Spalte am 2026-08-18 auf Zuruf eingetragen** („T-15 kannst du als
+erledigt markieren"). Die Spalte füllt sonst allein der Mensch; hier steht sie
+stellvertretend, mit dieser Zeile als Herkunft.
+
+Die `AI`-Spalte bleibt bei `➖` und `◑` — das ist kein Versäumnis, sondern der
+Zuschnitt: Zeilen 2 bis 6 verlangen ausdrücklich Augen, und die hatte ich
+nicht. Wer später liest, soll sehen, dass hier ein Mensch bestätigt hat und
+keine Rechnung.
 
 ```bash
 # #1 — der Kontrast-Wächter läuft in den Tests mit
@@ -95,11 +104,11 @@ die leise Stufe dabei zur zweiten Ebene wird.
 
 ### Akzeptanzkriterien
 
-- [ ] Verify-Zeilen 2 bis 5 vom Menschen bestätigt
-- [ ] Zeile 6 beantwortet — weicher Hinweis bleibt stehen **oder** eigenes Ticket
-      für `--surface-raised`
-- [ ] Fällt bei der Sichtprüfung etwas durch: Korrektur **gerechnet**
-      (`theme-tokens.py`), nicht als Hex-Wert getippt
+- [x] Verify-Zeilen 2 bis 5 vom Menschen bestätigt
+- [x] Zeile 6 beantwortet — **der weiche Hinweis bleibt stehen.** Kein eigenes
+      Ticket für `--surface-raised`
+- [x] Fällt bei der Sichtprüfung etwas durch: Korrektur **gerechnet** — entfällt,
+      es fiel nichts durch
 
 ### Side-Effects
 
@@ -108,4 +117,22 @@ wirkt jede Änderung sofort in allen Apps, die das Fundament beziehen.
 
 ### Auflösung
 
-<!-- Wird zuletzt gefüllt. -->
+**Nichts geändert — und das war das Ergebnis, nicht sein Ausbleiben.** Das
+Ticket war eine Sichtprüfung: elf gerechnete Werte einmal mit Augen ansehen,
+weil eine Zahl die Grenze erfüllen und trotzdem falsch aussehen kann. Sie sehen
+richtig aus, also bleibt alles stehen.
+
+**Zeile 6 ist damit entschieden:** Der weiche Hinweis auf `--surface-raised`
+(3.70–4.16:1 in fünf Themes) bleibt bestehen, es gibt kein Folgeticket. Die
+Begründung aus T-27 trägt weiterhin — gegen `raised` mitzulösen hebt
+`--text-muted` so weit an, dass es mit `--text-secondary` verschmilzt (bei
+`forest` blieben 8 % Abstand, bei `slate` rund 4 %). Dann gibt es keine leise
+Stufe mehr, sondern zwei fast gleiche: ein Grenzwert gewonnen, eine Ebene
+verloren.
+
+Zeile 1 hat sich während der Laufzeit verschoben, ohne dass es hier etwas zu tun
+gab: Der Kontrast-Check hängt seit 2026-08-18 nicht mehr an einem eigenen
+Make-Target, sondern läuft in `make test` mit (`tests/themeContrast.spec.ts`).
+Damit prüft sich diese Zeile künftig bei jedem Lauf selbst.
+
+**Commits:** keine — das Ticket hat nichts am Code geändert.
