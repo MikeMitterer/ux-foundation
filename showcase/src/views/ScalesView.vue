@@ -109,12 +109,7 @@ const SHADOWS = [
 <style scoped lang="scss">
 .scale {
   &__label {
-    font-size: var(--font-xs);
-    font-weight: 500;
-    letter-spacing: 0.025em;
-    text-transform: uppercase;
-    color: rgb(var(--text-muted));
-    margin-bottom: var(--space-3);
+    @include abschnitts-label;
   }
 
   &__list { list-style: none; display: flex; flex-direction: column; gap: var(--space-2); }

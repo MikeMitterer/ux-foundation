@@ -3,13 +3,22 @@
 // Erzeugt selbst **kein** CSS: Die Datei wird in jede Komponente eingespielt,
 // und jede Regel darin läge sonst einmal je Komponente im Bündel.
 
-/// Kleine Abschnittsüberschrift — Großbuchstaben, leise, mit Laufweite.
+/// Abschnittsüberschrift — Großbuchstaben, mit Laufweite.
+///
+/// Sie stand einmal auf `--font-xs` in `--text-muted` bei Gewicht 500: die
+/// kleinste Stufe der Skala, in der leisesten Farbe, im Arbeitsgewicht. Drei
+/// Zurückhaltungen übereinander, und das Ergebnis las sich als Beschriftung
+/// **neben** dem Inhalt statt als Überschrift **über** ihm.
+///
+/// `--text-muted` ist die Stufe unter einem Wert — eine Überschrift gehört
+/// nicht hinein. Großbuchstaben und Laufweite bleiben: Sie markieren die
+/// Ebene, ohne Aufmerksamkeit zu fordern, und genau dafür sind sie da.
 @mixin abschnitts-label {
-  font-size: var(--font-xs);
-  font-weight: 500;
-  letter-spacing: 0.025em;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: rgb(var(--text-muted));
+  color: rgb(var(--text-secondary));
   margin-bottom: var(--space-3);
 }
 

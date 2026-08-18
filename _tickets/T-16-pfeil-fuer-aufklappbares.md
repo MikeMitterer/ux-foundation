@@ -24,15 +24,39 @@ Legende: ✅ live bestätigt · ⚠️ bestätigt mit Einschränkung (Fußnote) 
 
 | # | Where | Look for | AI | Human |
 |---|---|---|:--:|---|
-| 1 | `make test` im Fundament | `UxCaret`-Tests grün, restliche Suite unverändert grün | | |
-| 2 | `make typecheck && make lint` im Fundament | beides sauber | | |
-| 3 | Schaufenster → Eigene Komponenten (`http://localhost:5177`) | beide Bewegungen zu sehen: `flip` kippt um 180°, `turn` dreht um 90° | | |
-| 4 | Schaufenster, Pfeil in **beiden** Zuständen | die Form bleibt mittig im Kasten — sie wandert beim Drehen nicht nach oben oder unten | | |
-| 5 | StockInfo → Assets, Tabellenzeile auf- und zuklappen | Pfeil mittig in der Zeile, gleiche Größe wie vorher | | |
-| 6 | StockInfo unter `md` → Kartenliste, „mehr"/„weniger" | derselbe Pfeil wie in der Tabelle | | |
-| 7 | StockPortfolio → Dashboard, KPI-Karte aufklappen | Pfeil kippt um 180°, Deckkraft und Hover wie bisher | | |
-| 8 | StockPortfolio → Dashboard, Gruppenkopf und Abschnitt „Assetklassen" | Pfeil dreht zur Seite (nicht kippt), Deckkraft und Hover wie bisher | | |
-| 9 | `grep -rn "chevron" src` in beiden Apps | keine handgezeichneten Pfeile mehr übrig | | |
+| 1 | `make test` im Fundament | `UxCaret`-Tests grün, restliche Suite unverändert grün | ✅¹ | |
+| 2 | `make typecheck && make lint` im Fundament | beides sauber | ✅ | |
+| 3 | Schaufenster → Eigene Komponenten (`http://localhost:5177`) | beide Bewegungen zu sehen: `flip` kippt um 180°, `turn` dreht um 90° | ✅² | |
+| 4 | Schaufenster, Pfeil in **beiden** Zuständen | die Form bleibt mittig im Kasten — sie wandert beim Drehen nicht nach oben oder unten | ⚠️³ | |
+| 5 | StockInfo → Assets, Tabellenzeile auf- und zuklappen | Pfeil mittig in der Zeile, gleiche Größe wie vorher | ✅⁴ | |
+| 6 | StockInfo unter `md` → Kartenliste, „mehr"/„weniger" | derselbe Pfeil wie in der Tabelle | ✅⁵ | |
+| 7 | StockPortfolio → Dashboard, KPI-Karte aufklappen | Pfeil kippt um 180°, Deckkraft und Hover wie bisher | ➖⁶ | |
+| 8 | StockPortfolio → Dashboard, Gruppenkopf und Abschnitt „Assetklassen" | Pfeil dreht zur Seite (nicht kippt), Deckkraft und Hover wie bisher | ➖⁶ | |
+| 9 | `grep -rn "chevron" src` in beiden Apps | keine handgezeichneten Pfeile mehr übrig | ✅⁷ | |
+
+> ¹ **(CC):** 138 Tests grün (vorher 135), davon 6 neue für `UxCaret` und 3 für
+> die `(i)`-Fassung von `UxInfoHint`.
+> ² **(CC):** live auf `http://localhost:5177/#/own`, Block „Pfeil für
+> Aufklappbares" mit Umschalter — beide Bewegungen im selben Zustand
+> nebeneinander.
+> ³ **(CC):** ⚠️ **nicht mit Augen im Schaufenster geprüft**, sondern zweifach
+> gerechnet: Ein Test rechnet die Symmetrie des Pfads nach (Mittelpunkt 12/12),
+> und in StockInfo gemessen ergab der Versatz zur Zeilenmitte 0,4 px —
+> geschlossen wie geöffnet. Das ist Evidenz für die Geometrie, nicht für den
+> optischen Eindruck. Zeile bleibt für den Menschen offen.
+> ⁴ **(CC):** live, `http://localhost:5173/#/assets`. Größe 15,2 px (vorher
+> 11,2), Versatz zur Zeilenmitte 0,4 px in beiden Zuständen.
+> ⁵ **(CC):** live unter `md` angesehen, Karte „EUNL.DE" auf- und zugeklappt.
+> ⁶ **(CC):** ➖ **nicht angesehen.** Das Depot enthält eine Position, das
+> Dashboard zeigt aber den Leerzustand — ohne KPI-Karten und Gruppenköpfe sind
+> die Pfeile dort nicht sichtbar. Beispieldaten zu laden hätte die Depotdaten
+> verändert und wurde deshalb unterlassen. Belegt ist nur: Tests (512, davon 2
+> neue), `vue-tsc` und ESLint sauber, und ein statischer Wächter, der
+> handgezeichnete Pfeile ausschließt.
+> ⁷ **(CC):** In StockPortfolio als Test verankert
+> (`tests/caretUsage.spec.ts`) statt als einmaliger `grep` — er sucht den
+> Pfeil-Pfad per Muster und prüft gegen, dass `UxCaret` tatsächlich vorkommt.
+> In StockInfo entfiel die lokale `RowCaret.vue` ersatzlos.
 
 ```bash
 # #1, #2 — Fundament
