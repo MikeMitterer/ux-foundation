@@ -25,8 +25,6 @@ THEME_COLOR_DANGER  ?= $(RED)
 THEME_INDENT_GROUP  ?= $(shell printf '%2s' '')
 THEME_INDENT_TARGET ?= $(shell printf '%7s' '')
 
-TOKENS := src/styles/tokens.css
-
 # Geteilte Check-Scripte für `make status`. `PROJECT_TOOLS` ist ein
 # System-Setting wie DEV_MAKE und BASH_LIBS und wird vorausgesetzt — der
 # Rückfall auf den Symlink deckt nicht-interaktive Shells ab, die kein
@@ -150,17 +148,20 @@ clean: ## dist-showcase/, .vite/, Build-Info löschen
 	@rm -rf dist-showcase .vite showcase/*.tsbuildinfo *.tsbuildinfo
 	@echo "$(GREEN)aufgeräumt$(RESET)"
 
-##@ Themes
-
-# Nur der Check ist ein Target: Er läuft regelmäßig und gehört deshalb in
-# `make help`, wo man ihn findet. `repair` und `export` laufen selten, haben
-# eine eigene ordentliche Kommandozeile und würden hier nur eingewickelt —
-# eine Übersetzungsschicht zwischen zwei Optionsnamen ist schlechter als gar
-# keine. Für beides: `python3 scripts/theme-tokens.py --help`.
-
-.PHONY: check-themes
-check-themes: ## Alle Paletten gegen die Grenzwerte messen
-	@python3 scripts/theme-tokens.py check $(TOKENS) --zonen
+# ─── Themes ──────────────────────────────────────────────────────────────────
+#
+# Hier stand einmal `check-themes`. Der Kontrast-Check ist kein eigenes Target
+# mehr, sondern läuft in `make test` mit — `tests/themeContrast.spec.ts` ruft
+# dasselbe Skript auf und liest seinen Exit-Code. Ein Wächter, den man von Hand
+# starten muss, läuft irgendwann nicht mehr; die Verstöße aus T-14 standen
+# monatelang in der Datei, während der Lauf grün gemeldet hätte.
+#
+# Die selteneren Unterbefehle haben weiterhin kein Target — sie haben eine
+# eigene ordentliche Kommandozeile, und eine Übersetzungsschicht zwischen zwei
+# Optionsnamen ist schlechter als gar keine:
+#
+#   python3 scripts/theme-tokens.py --help
+#   python3 scripts/theme-tokens.py check src/styles/tokens.css --zonen
 
 ##@ Veröffentlichen
 

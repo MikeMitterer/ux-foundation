@@ -133,12 +133,25 @@ Sie ist Werkzeug, kein Bestandteil der Auslieferung — `files` in der
 
 ## Themes prüfen
 
+**Der Kontrast-Check läuft in `make test` mit.** `tests/themeContrast.spec.ts`
+ruft `theme-tokens.py check` auf und liest dessen Exit-Code; gerechnet wird
+weiterhin nur im Skript, eine zweite Formel in TypeScript gibt es bewusst
+nicht.
+
+Er hing früher an einem eigenen Target und lief damit nur auf Zuruf — die
+Verstöße, die T-14 zutage förderte, standen so monatelang unbemerkt in der
+Datei. Ein zweiter Test prüft zusätzlich, dass **jedes** Theme gemessen wurde:
+Exit-Code 0 heißt „nichts gerissen", nicht „alles geprüft", und ein Parser-
+Fehler hatte genau darin schon einmal ein Theme verschluckt.
+
+Von Hand nachsehen kann man weiterhin — die ausführliche Fassung mit den
+Zonen-Abständen gibt es nur dort:
+
 ```bash
-make check-themes
+python3 scripts/theme-tokens.py check src/styles/tokens.css --zonen
 ```
 
-Misst jede Palette gegen die Grenzwerte und liefert Exit-Code 1, sobald einer
-reißt. Zwei weitere Unterbefehle laufen selten und haben deshalb **kein**
+Zwei weitere Unterbefehle laufen selten und haben deshalb **kein**
 Make-Target — sie haben eine eigene Kommandozeile:
 
 ```bash

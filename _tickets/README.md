@@ -35,8 +35,7 @@ Die Prüfziele dieses Repos, vollständig kopierbar:
 
 ```bash
 cd "${DEV_LOCAL}/DevWeb/Production/ux-foundation"
-make check-themes    # alle Paletten gegen die Grenzwerte, Exit 1 bei Verstoß
-make test            # Vitest
+make test            # Vitest — der Kontrast-Check der Paletten läuft hier mit
 make typecheck       # vue-tsc über Fundament und Schaufenster
 make lint
 make dev             # Schaufenster auf Port 5177 — für alles, was man sehen muss
