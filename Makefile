@@ -169,10 +169,18 @@ clean: ## dist-showcase/, .vite/, Build-Info löschen
 publish-dry: ## Zeigt, was veröffentlicht würde — ohne es zu tun
 	@npm publish --dry-run
 
+# Die Anmeldung steht **vor** dem Sicherheitscheck nicht, sondern dahinter:
+# Erst wenn CONFIRM=yes gesetzt ist, soll überhaupt ein Browser aufgehen.
+#
+# `npm-login.sh --ensure` meldet an, falls nötig, statt es nur anzumahnen. Ohne
+# das endet `npm publish` bei einem privaten Paket mit `404 Not Found` statt
+# `401` — die Registry verrät dessen Existenz nicht, und die Meldung zeigt dann
+# auf den Paketnamen statt auf den abgelaufenen Token.
 .PHONY: publish
 publish: ##R Paket in die private Registry veröffentlichen  [CONFIRM=yes]
 	@test "$(CONFIRM)" = "yes" || \
 	  (echo "$(ORANGE)Sicherheitscheck: make $@ CONFIRM=yes$(NC)" && exit 1)
+	@bash $(PROJECT_TOOLS)/bash/npm-login.sh --ensure
 	@npm publish
 
 ##@ Versionierung
