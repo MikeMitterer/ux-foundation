@@ -269,9 +269,6 @@ function setTarget(position: Position, value: number | null): void {
 </template>
 
 <style scoped lang="scss">
-.label {
-  @include abschnitts-label;
-}
 
 .hint {
   @include erklaerung;

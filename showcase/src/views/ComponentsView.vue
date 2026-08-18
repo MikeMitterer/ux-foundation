@@ -84,9 +84,12 @@ const rows: Row[] = [
     <NCard
       :id="BLOECKE[0].anchor"
       class="card"
-      :title="t('components.buttons')"
-      size="small"
     >
+      <template #header>
+        <h3 class="card__title">
+          {{ t('components.buttons') }}
+        </h3>
+      </template>
       <div class="row">
         <NButton type="primary">
           {{ t('components.confirm') }}
@@ -107,9 +110,12 @@ const rows: Row[] = [
     <NCard
       :id="BLOECKE[1].anchor"
       class="card"
-      :title="t('components.inputs')"
-      size="small"
     >
+      <template #header>
+        <h3 class="card__title">
+          {{ t('components.inputs') }}
+        </h3>
+      </template>
       <div class="row">
         <NInput
           v-model:value="textValue"
@@ -128,9 +134,12 @@ const rows: Row[] = [
     <NCard
       :id="BLOECKE[2].anchor"
       class="card"
-      :title="t('components.feedback')"
-      size="small"
     >
+      <template #header>
+        <h3 class="card__title">
+          {{ t('components.feedback') }}
+        </h3>
+      </template>
       <div class="stack">
         <div class="row">
           <NTag type="success">
@@ -155,9 +164,12 @@ const rows: Row[] = [
     <NCard
       :id="BLOECKE[3].anchor"
       class="card"
-      :title="t('components.table')"
-      size="small"
     >
+      <template #header>
+        <h3 class="card__title">
+          {{ t('components.table') }}
+        </h3>
+      </template>
       <NDataTable
         :columns="columns"
         :data="rows"
@@ -182,6 +194,18 @@ const rows: Row[] = [
 /* Sonst verschwindet der Kartenkopf unter der klebenden Kopfzeile. */
 .card {
   scroll-margin-top: calc(3.5rem + var(--space-6));
+
+  /*
+   * Der Titel steht über den `#header`-Slot und nicht über das `title`-Prop:
+   * Naive rendert das Prop als `<div>`, und damit hatte diese Ansicht sichtbare
+   * Überschriften, die für Hilfstechnik keine waren — die Gliederung des
+   * Abschnitts fiel unter den Tisch. Der Reiter „Eigene" macht es über
+   * `ShowcaseBlock` längst richtig; hier zog es nach.
+   *
+   * Gestaltet wird es hier **nicht**: Ein `h3` trägt seine Stufe aus
+   * `styles/reset.css` im Paket, in jeder App gleich. Eine Regel an dieser
+   * Stelle wäre genau die Kopie, die das Fundament abschaffen soll.
+   */
 }
 
 .row {

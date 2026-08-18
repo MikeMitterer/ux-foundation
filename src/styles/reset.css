@@ -71,12 +71,79 @@ ol {
   list-style: none;
 }
 
+/*
+ * Überschriften tragen ihre Stufe, statt sie zu verlieren.
+ *
+ * Hier stand einmal `font-size: inherit; font-weight: inherit` — Tailwinds
+ * Preflight-Verhalten. Das ist als *Reset* richtig und als *Fundament* falsch:
+ * Ein `<h3>` sah damit aus wie Fließtext, und **jede** App musste die Stufen
+ * neu erfinden. Genau die Wiederholung soll dieses Paket abschaffen.
+ *
+ * Die Farbe ist Teil davon, nicht Beiwerk. Ohne sie erbt eine Überschrift die
+ * Textfarbe ihres Containers, und die kann leiser sein als der Absatz darunter
+ * — real vorgekommen in einem Naive-Reiter, dessen Pane auf die zweite
+ * Textstufe färbt. Eine Überschrift, die leiser steht als ihr eigener
+ * Fließtext, sucht man lange.
+ *
+ * Wer eine Stufe anders braucht, überschreibt sie in der Komponente. Wer eine
+ * *zusätzliche* braucht, hat meistens eine zu viel erfunden.
+ */
+
 h1,
 h2,
 h3,
-h4 {
-  font-size: inherit;
-  font-weight: inherit;
+h4,
+h5,
+h6 {
+  color: rgb(var(--text-primary));
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1.25;
+  text-wrap: balance;
+
+  /*
+   * **Kein Rand.** Hier stand kurz ein `margin-block-end`, und er war falsch:
+   * Weiter oben setzt `* { margin: 0 }` alles auf null, weil in diesem
+   * Fundament der Container die Abstände macht — per `gap` oder per Polster.
+   * Ein Rand an der Überschrift addiert sich dazu, statt ihn zu ersetzen.
+   *
+   * Gemessen an einer Naive-Karte: 20 px Kartenpolster plus 12 px Rand ergaben
+   * 32 px zwischen Titel und Inhalt, wo 20 gewollt waren. Wer eine Überschrift
+   * in blanken Fluss setzt, gibt ihrem Container ein `gap` — an einer Stelle,
+   * statt an jeder Überschrift.
+   */
+}
+
+h1 {
+  font-size: var(--font-2xl);
+  letter-spacing: -0.02em;
+}
+
+h2 {
+  font-size: var(--font-xl);
+  letter-spacing: -0.015em;
+}
+
+h3 {
+  font-size: var(--font-lg);
+  letter-spacing: -0.01em;
+}
+
+/*
+ * Ab hier hebt sich eine Ebene über Gewicht und Familie ab, nicht mehr über
+ * Größe: Vier Grade sind in einer Oberfläche genug, den fünften unterscheidet
+ * niemand mehr.
+ *
+ * `h5` und `h6` stehen trotzdem hier, obwohl sie in keiner App vorkommen. Ohne
+ * sie fielen sie auf die Vorgaben des Browsers zurück — 0.83em fett in der
+ * Systemschrift —, und das wäre die eine Ebene, die aus der Reihe tanzt. Wer
+ * so tief gliedert, soll das merken, weil die Struktur zu tief ist, und nicht,
+ * weil die Schrift springt.
+ */
+h4,
+h5,
+h6 {
+  font-size: var(--font-base);
 }
 
 table {

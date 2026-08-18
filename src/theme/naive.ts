@@ -105,6 +105,18 @@ export function buildNaiveOverrides(): GlobalThemeOverrides {
       boxShadow2: shadowSm,
       boxShadow3: shadowLg,
     },
+    /*
+     * Ein Reiter-Inhalt ist Inhalt, keine zweite Ebene.
+     *
+     * Naive setzt `paneTextColor` auf `textColor2` — bei uns die leisere
+     * Stufe. Damit erbt **alles** im Pane die gedämpfte Farbe, bis hin zur
+     * Abschnittsüberschrift: Im Schaufenster stand die größte Überschrift der
+     * Seite leiser da als der Fließtext darunter. Man sucht den Fehler dann
+     * bei der Überschrift, und dort ist er nicht.
+     */
+    Tabs: {
+      paneTextColor: textPrimary,
+    },
     DataTable: {
       thColor: 'transparent',
       tdColor: 'transparent',
@@ -117,6 +129,20 @@ export function buildNaiveOverrides(): GlobalThemeOverrides {
     Card: {
       color: surfaceCard,
       borderColor: border,
+
+      /*
+       * Der Kartentitel ist eine Überschrift und soll so wiegen.
+       *
+       * Naive nimmt dafür `fontWeightStrong`, bei ihnen 500 — in unserer
+       * Skala die Arbeitsstufe, nicht die einer Überschrift. Damit stand der
+       * Titel im selben Gewicht wie der Text darunter und markierte keinen
+       * Anfang.
+       *
+       * Nur das Gewicht: Die Größen bringt Naive über `size` schon richtig
+       * gestaffelt mit (18 px ab `medium`), und eine zweite Staffelung
+       * danebenzusetzen hieße, dieselbe Entscheidung zweimal zu treffen.
+       */
+      titleFontWeight: '600',
     },
     /*
      * Ein Dialog steckt in einer Karte (`preset="card"`), und deren Schatten

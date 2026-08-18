@@ -87,7 +87,7 @@ const BREITEN = [
   }
 
   &__width {
-    @include abschnitts-label;
+    @include gruppen-label;
     margin-bottom: 0;
   }
 

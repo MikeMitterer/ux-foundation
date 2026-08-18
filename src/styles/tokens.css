@@ -50,6 +50,16 @@
   --font-xl: 1.5rem;
 
   /*
+   * Der Seitentitel. Kam dazu, als `h1` und `h2` beide auf `--font-xl` standen
+   * und damit gleich aussahen — eine Seite, deren Titel nicht über ihren
+   * Abschnitten steht, hat keine Gliederung, sondern eine Aufzählung.
+   *
+   * Die Stufe darüber gibt es bewusst nicht: Über 30 px trägt keine
+   * Oberfläche mehr Text, sondern eine Marke.
+   */
+  --font-2xl: 1.875rem;
+
+  /*
    * Zwei Familien mit klaren Rollen: Die Oberfläche und alle Zahlen tragen
    * `ui`, Titel tragen `display`. Eine dritte gibt es nicht — und Zahlen
    * wechseln nie die Familie, sonst wandert die Spalte.

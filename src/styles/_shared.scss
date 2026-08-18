@@ -80,6 +80,31 @@ $bp-xl: 1280px;
   color: token(--text-muted);
 }
 
+/// Etikett über einer Gruppe innerhalb eines Bausteins — „Abstände", „Radien".
+///
+/// Die einzige Textebene ohne eigenes Element: Überschriften stehen als
+/// `h1`–`h4` und bekommen ihre Stufe aus `reset.css`, dies hier ist die Stufe
+/// **darunter** und braucht deshalb eine Klasse.
+///
+/// Kein `h5`: Ein Etikett benennt eine Gruppe, es gliedert nicht das Dokument.
+/// Als Überschrift ausgezeichnet stünde es in jedem Inhaltsverzeichnis und
+/// jedem Screenreader-Umriss zwischen echten Abschnitten.
+///
+/// Großbuchstaben und Laufweite markieren die Ebene, ohne Aufmerksamkeit zu
+/// fordern. Was hier **nicht** hingehört, ist `--text-muted`: Das ist die
+/// Stufe unter einem Wert. Ein Etikett in der leisesten Farbe, im kleinsten
+/// Grad und im Arbeitsgewicht liest sich als Beschriftung neben dem Inhalt
+/// statt als Kopf über ihm — drei Zurückhaltungen übereinander waren zwei zu
+/// viel.
+@mixin gruppen-label {
+  font-size: var(--font-sm);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: token(--text-secondary);
+  margin-bottom: var(--space-3);
+}
+
 /// Einzeilig kürzen statt umbrechen — für Namen in schmalen Spalten.
 @mixin truncate {
   overflow: hidden;

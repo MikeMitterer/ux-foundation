@@ -98,9 +98,6 @@ const swatches = computed<Swatch[]>(() => {
 
 <style scoped lang="scss">
 .swatches {
-  &__label {
-    @include abschnitts-label;
-  }
 
   &__grid {
     display: grid;

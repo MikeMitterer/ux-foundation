@@ -98,9 +98,6 @@ const ROLES = [
 </template>
 
 <style scoped lang="scss">
-.label {
-  @include abschnitts-label;
-}
 
 .hint {
   @include erklaerung;

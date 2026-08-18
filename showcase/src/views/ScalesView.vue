@@ -108,9 +108,11 @@ const SHADOWS = [
 
 <style scoped lang="scss">
 .scale {
-  &__label {
-    @include abschnitts-label;
-  }
+  /* Der Abstand zwischen Überschrift und Inhalt kommt vom Container, nicht von
+     der Überschrift — siehe `reset.css`. */
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
 
   &__list { list-style: none; display: flex; flex-direction: column; gap: var(--space-2); }
   &__row  { list-style: none; display: flex; gap: var(--space-6); align-items: flex-end; }

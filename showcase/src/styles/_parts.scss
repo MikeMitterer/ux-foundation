@@ -3,24 +3,13 @@
 // Erzeugt selbst **kein** CSS: Die Datei wird in jede Komponente eingespielt,
 // und jede Regel darin läge sonst einmal je Komponente im Bündel.
 
-/// Abschnittsüberschrift — Großbuchstaben, mit Laufweite.
-///
-/// Sie stand einmal auf `--font-xs` in `--text-muted` bei Gewicht 500: die
-/// kleinste Stufe der Skala, in der leisesten Farbe, im Arbeitsgewicht. Drei
-/// Zurückhaltungen übereinander, und das Ergebnis las sich als Beschriftung
-/// **neben** dem Inhalt statt als Überschrift **über** ihm.
-///
-/// `--text-muted` ist die Stufe unter einem Wert — eine Überschrift gehört
-/// nicht hinein. Großbuchstaben und Laufweite bleiben: Sie markieren die
-/// Ebene, ohne Aufmerksamkeit zu fordern, und genau dafür sind sie da.
-@mixin abschnitts-label {
-  font-size: var(--font-sm);
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: rgb(var(--text-secondary));
-  margin-bottom: var(--space-3);
-}
+// Überschriften stehen hier bewusst **nicht** mehr.
+//
+// Ihre Stufen liegen im Paket: `h1`–`h4` bekommen Grad, Gewicht, Familie und
+// Farbe aus `styles/reset.css`, das Etikett darunter aus dem Mixin
+// `gruppen-label` in `styles/shared`. Eine Kopie hier hätte das Schaufenster
+// von den Apps entkoppelt — und das Schaufenster soll gerade zeigen, was eine
+// App bekommt, ohne etwas dazuzutun.
 
 /// Erklärender Satz unter einer Überschrift.
 @mixin erklaerung {

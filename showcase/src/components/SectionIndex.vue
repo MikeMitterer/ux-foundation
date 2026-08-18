@@ -68,11 +68,11 @@ function springe(anchor: string): void {
   padding: var(--space-3) var(--space-4);
   @include card-surface(--surface-sunken);
 
+  /* Ein Etikett, keine Überschrift — es benennt die Leiste, gliedert aber
+     nichts. Deshalb ein `span` mit dem Mixin aus dem Paket und kein `h*`. */
   &__label {
-    font-size: var(--font-xs);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: rgb(var(--text-muted));
+    @include gruppen-label;
+    margin-bottom: 0;
   }
 
   &__list {

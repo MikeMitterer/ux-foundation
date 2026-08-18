@@ -41,9 +41,6 @@ defineProps<{
   /* Sonst verschwindet die Überschrift unter der klebenden Kopfzeile. */
   scroll-margin-top: calc(3.5rem + var(--space-6));
 
-  &__title {
-    @include abschnitts-label;
-  }
 
   &__hint {
     @include erklaerung;
