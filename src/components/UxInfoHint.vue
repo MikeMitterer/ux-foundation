@@ -33,12 +33,25 @@ withDefaults(
     settingHref?: string
     /** Beschriftung der Stellschraube, bereits übersetzt („Zur Einstellung →"). */
     settingLabel?: string
+    /**
+     * Womit der Hinweis anzeigt, dass es hier etwas zu lesen gibt.
+     *
+     * `question` ist die Vorgabe und der Regelfall: Ein Begriff ist
+     * erklärungsbedürftig, jemand stutzt, das Fragezeichen antwortet.
+     *
+     * `info` passt dort, wo nichts abzugrenzen ist, sondern eine Ansicht als
+     * Ganzes eingeordnet wird — ein (i) kündigt eine Auskunft an statt ein zu
+     * klärendes Missverständnis. Es steht dann im Akzent, weil es etwas
+     * Anklickbares markiert, und bringt seinen Kreis selbst mit.
+     */
+    icon?: 'question' | 'info'
   }>(),
   {
     moreHref: undefined,
     moreLabel: undefined,
     settingHref: undefined,
     settingLabel: undefined,
+    icon: 'question',
   },
 )
 </script>
@@ -61,20 +74,42 @@ withDefaults(
         `button`, denn ein `a` ohne `href` ist für die Tastatur nicht
         erreichbar.
       -->
-      <a
-        v-if="moreHref"
+      <component
+        :is="moreHref ? 'a' : 'button'"
         class="ux-hint__trigger"
+        :class="`ux-hint__trigger--${icon}`"
         :href="moreHref"
-        :aria-label="text"
-      >?</a>
-      <button
-        v-else
-        class="ux-hint__trigger"
-        type="button"
+        :type="moreHref ? undefined : 'button'"
         :aria-label="text"
       >
-        ?
-      </button>
+        <!--
+          Das (i) als **Form**, nicht als Buchstabe — dieselbe Falle wie beim
+          Pfeil (T-16): Ein Zeichen sitzt nach den Metriken seiner Schrift in
+          der Zeile und nicht mittig in seinem Kasten, und keine
+          Flex-Zentrierung ändert daran etwas. Kreis auf 12/12, Punkt und
+          Balken auf derselben Achse — damit ist es von sich aus zentriert.
+        -->
+        <svg
+          v-if="icon === 'info'"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          aria-hidden="true"
+        >
+          <circle
+            cx="12"
+            cy="12"
+            r="9"
+          />
+          <path d="M12 11.5 L12 16.5" />
+          <path d="M12 7.5 L12 7.6" />
+        </svg>
+        <template v-else>
+          ?
+        </template>
+      </component>
     </template>
 
     <div class="ux-hint__body">
@@ -111,7 +146,6 @@ withDefaults(
   justify-content: center;
   width: 0.875rem;
   height: 0.875rem;
-  border: 1px solid token(--border-default);
   border-radius: var(--radius-full);
   background: transparent;
   font-family: inherit;
@@ -120,12 +154,34 @@ withDefaults(
   vertical-align: middle;
   text-decoration: none;
   cursor: pointer;
-  @include muted(null);
   transition: color 0.15s ease, border-color 0.15s ease;
 
-  &:hover {
-    border-color: token(--text-muted);
-    color: token(--text-secondary);
+  /*
+   * Das Fragezeichen braucht einen gezeichneten Kreis um sich; das (i) bringt
+   * seinen eigenen mit. Ein Rahmen um beide ergäbe dort zwei Kreise
+   * ineinander.
+   */
+  &--question {
+    border: 1px solid token(--border-default);
+    @include muted(null);
+
+    &:hover {
+      border-color: token(--text-muted);
+      color: token(--text-secondary);
+    }
+  }
+
+  // Akzent, weil es etwas Anklickbares markiert — das ist die Rolle dieser
+  // Farbe (ux-standards, „Farbe und Gewicht"). Etwas größer als das
+  // Fragezeichen: Die Form trägt feinere Striche als ein Buchstabe.
+  &--info {
+    width: 1rem;
+    height: 1rem;
+    color: token(--accent);
+
+    &:hover { opacity: 0.75; }
+
+    svg { width: 100%; height: 100%; }
   }
 }
 

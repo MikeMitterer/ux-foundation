@@ -43,6 +43,43 @@ describe('UxInfoHint', () => {
     expect(trigger.attributes('href')).toBe('#/method#bands')
   })
 
+  /*
+   * Das Fragezeichen ist die Vorgabe (ux-standards, „Erklärungen in der App").
+   * Wo die Erklärung aber nichts abgrenzt, sondern die Ansicht als Ganzes
+   * einordnet, liest sich ein (i) treffender — es kündigt eine Auskunft an,
+   * kein zu klärendes Missverständnis.
+   */
+  it('zeigt in der Vorgabe ein Fragezeichen', () => {
+    const wrapper = mount(UxInfoHint, { props: { text: 'Kurz erklärt.' } })
+
+    expect(wrapper.get('.ux-hint__trigger').text()).toBe('?')
+    expect(wrapper.find('.ux-hint__trigger svg').exists()).toBe(false)
+  })
+
+  /*
+   * Als **Form**, nicht als Zeichen — dieselbe Falle wie beim Pfeil (T-16):
+   * Ein Buchstabe sitzt nach den Metriken seiner Schrift in der Zeile, nicht
+   * mittig in seinem Kasten. Der Kreis hier liegt auf 12/12 der Zeichenfläche
+   * und ist damit von sich aus zentriert.
+   */
+  it('zeigt auf Wunsch ein (i) als Form statt als Zeichen', () => {
+    const wrapper = mount(UxInfoHint, { props: { text: 'Kurz erklärt.', icon: 'info' } })
+    const svg = wrapper.get('.ux-hint__trigger svg')
+
+    expect(wrapper.get('.ux-hint__trigger').text()).toBe('')
+    expect(svg.attributes('viewBox')).toBe('0 0 24 24')
+    expect(svg.get('circle').attributes('cx')).toBe('12')
+    expect(svg.get('circle').attributes('cy')).toBe('12')
+  })
+
+  // Das (i) trägt den Akzent: Es markiert etwas Anklickbares, und dafür ist
+  // die Akzentfarbe da. Der eigene Rahmen entfällt — der Kreis ist im Zeichen.
+  it('kennzeichnet die (i)-Fassung mit einem eigenen Modifier', () => {
+    const wrapper = mount(UxInfoHint, { props: { text: 'Kurz erklärt.', icon: 'info' } })
+
+    expect(wrapper.get('.ux-hint__trigger').classes()).toContain('ux-hint__trigger--info')
+  })
+
   it('trägt den Erklärungstext als zugänglichen Namen', () => {
     // Ein „?" ohne Namen sagt Hilfstechnik nichts.
     const wrapper = mount(UxInfoHint, { props: { text: 'Kurz erklärt.' } })

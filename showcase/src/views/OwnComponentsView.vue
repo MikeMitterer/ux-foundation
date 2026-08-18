@@ -9,7 +9,7 @@
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { UxInfoHint, UxInlineNumber, UxNavItem, type NavIconName } from '@ux/index'
+import { UxCaret, UxInfoHint, UxInlineNumber, UxNavItem, type NavIconName } from '@ux/index'
 import SectionIndex, { type IndexItem } from '@/components/SectionIndex.vue'
 import ShowcaseBlock from '@/components/ShowcaseBlock.vue'
 import ShowcaseSection from '@/components/ShowcaseSection.vue'
@@ -25,6 +25,7 @@ const BLOECKE = [
   { anchor: 'own-inline', label: 'UxInlineNumber' },
   { anchor: 'own-nav', label: 'UxNavItem' },
   { anchor: 'own-hint', label: 'UxInfoHint' },
+  { anchor: 'own-caret', label: 'UxCaret' },
   { anchor: 'own-bars', label: 'UxTopbar · UxStatusBar' },
 ] as const satisfies readonly IndexItem[]
 
@@ -36,6 +37,12 @@ const navPunkte: { name: NavIconName; key: string }[] = [
   { name: 'settings', key: 'settings' },
 ]
 const aktiverPunkt = ref<NavIconName>('dashboard')
+
+/**
+ * Ein umschaltbarer Zustand für den Pfeil — ein Standbild zeigt nicht, worum
+ * es geht: dass die Form beim Drehen mittig bleibt, sieht man erst im Wechsel.
+ */
+const aufgeklappt = ref(true)
 
 interface Position {
   symbol: string
@@ -208,6 +215,49 @@ function setTarget(position: Position, value: number | null): void {
 
     <ShowcaseBlock
       :id="BLOECKE[3].anchor"
+      :title="t('own.caretHeading')"
+      :hint="t('own.caretHint')"
+    >
+      <!--
+        Beide Bewegungen nebeneinander und im selben Zustand: Nur so sieht man,
+        dass sie **verschiedenes** aussagen und nicht bloß verschieden aussehen.
+      -->
+      <div class="caretdemo">
+        <button
+          type="button"
+          class="caretdemo__toggle"
+          @click="aufgeklappt = !aufgeklappt"
+        >
+          {{ t('own.caretToggle') }}
+        </button>
+
+        <p class="caretdemo__row">
+          <UxCaret :open="aufgeklappt" />
+          <span>{{ t('own.caretFlip') }}</span>
+        </p>
+        <p class="caretdemo__row">
+          <UxCaret
+            :open="aufgeklappt"
+            motion="turn"
+          />
+          <span>{{ t('own.caretTurn') }}</span>
+        </p>
+        <p class="caretdemo__row">
+          <UxCaret
+            :open="aufgeklappt"
+            size="sm"
+          />
+          <UxCaret
+            :open="aufgeklappt"
+            size="md"
+          />
+          <span>{{ t('own.caretSizes') }}</span>
+        </p>
+      </div>
+    </ShowcaseBlock>
+
+    <ShowcaseBlock
+      :id="BLOECKE[4].anchor"
       :title="t('own.barsHeading')"
     >
       <ul class="notes">
@@ -294,5 +344,35 @@ function setTarget(position: Position, value: number | null): void {
   border: 1px solid rgb(var(--border-bar));
   border-radius: var(--radius-lg);
   background: rgb(var(--surface-header));
+}
+
+/*
+ * Die Zeilen sind Flex, damit der Pfeil auf der Textmitte sitzt — genau der
+ * Fall, für den `align-items: center` gedacht ist. Der Pfeil bringt seine
+ * eigene Ausrichtung für den Fließtext mit, hier stört sie nicht.
+ */
+.caretdemo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.caretdemo__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  color: token(--text-secondary);
+}
+
+.caretdemo__toggle {
+  align-self: flex-start;
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid token(--border-default);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: token(--text-primary);
+  font: inherit;
+  cursor: pointer;
 }
 </style>

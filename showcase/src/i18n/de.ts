@@ -173,6 +173,13 @@ export const de = {
       'Der Anteil, der bewusst nicht investiert wird — als Puffer für Nachkäufe. Er zählt beim Ausgleichen nicht als Position.',
     hintMore: 'Mehr dazu →',
     hintSetting: 'Zur Einstellung →',
+    caretHeading: 'Pfeil für Aufklappbares',
+    caretHint:
+      'UxCaret — eine Form statt eines Zeichens. Das früher verwendete ⌄ (U+2304) sitzt tief in seinem Em-Quadrat: Der Kasten steht mittig, das Zeichen darin klebt unten — und beim Drehen um 180° kippt es nach oben. Eine feste optische Korrektur trifft deshalb immer nur einen der beiden Zustände. Der Pfad hier liegt symmetrisch um die Kastenmitte, die Drehung verschiebt ihn nicht.',
+    caretFlip: 'flip — zu zeigt nach unten, offen nach oben: „hier geht etwas auf"',
+    caretTurn: 'turn — offen zeigt nach unten, zu zur Seite: „hier hängt etwas darunter"',
+    caretToggle: 'Umschalten',
+    caretSizes: 'Zwei Stufen: sm und md. Die Fundstellen hatten vier verschiedene Größen, die niemand entschieden hat.',
     barsHeading: 'Kopf- und Statuszeile',
     topbarNote:
       'Die Kopfzeile oben ist UxTopbar: Plakette mit festem Markenverlauf, Wortmarke als HTML-Text in --font-display, rechts nur, was keine Navigation ist.',
