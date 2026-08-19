@@ -113,7 +113,7 @@ const tag = computed(() => (props.href ? 'a' : 'button'))
 .ux-navitem__underline {
   position: absolute;
   right: var(--space-2);
-  bottom: -9px;
+  bottom: -4px;
   left: var(--space-2);
   height: 2px;
   border-radius: var(--radius-full);
