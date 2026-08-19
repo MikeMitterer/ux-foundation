@@ -2,13 +2,13 @@
 
 | Repo | Status | Time-box | Scope | GH-Issue |
 |---|---|---|---|---|
-| ux-foundation (Deliverable) + StockInfo + StockPortfolio | in-progress | ~90 min | Neue Komponente + Ablösung der vier Kopien | — |
+| ux-foundation (Deliverable) + StockInfo + StockPortfolio | done | ~90 min | Neue Komponente + Ablösung der vier Kopien | — |
 
 **Löst:** Jede aufklappbare Fläche in beiden Apps zeichnet ihren eigenen Pfeil.
 Vier Kopien, kein gemeinsamer Ort — und sie sind bereits auseinandergelaufen.
 
 <!--
-  Repo: ux-foundation (Deliverable). Status: in-progress.
+  Repo: ux-foundation (Deliverable). Status: done.
   Herkunft: Sichtprüfung der StockInfo-Schublade (2026-08-18). Der Pfeil dort
   klebte am unteren Rand der Zeile; beim Beheben kam heraus, dass es denselben
   Pfeil noch dreimal gibt.
@@ -22,17 +22,17 @@ Legende: ✅ live bestätigt · ⚠️ bestätigt mit Einschränkung (Fußnote) 
 ◑ teilweise (Fußnote) · ➖ keine Live-Verifikation (nur Unit/Review).
 `AI` = nur KI · `Human` = nur Mensch (nie überschreiben).
 
-| # | Where | Look for | AI | Human |
-|---|---|---|:--:|---|
-| 1 | `make test` im Fundament | `UxCaret`-Tests grün, restliche Suite unverändert grün | ✅¹ | |
-| 2 | `make typecheck && make lint` im Fundament | beides sauber | ✅ | |
-| 3 | Schaufenster → Eigene Komponenten (`http://localhost:5177`) | beide Bewegungen zu sehen: `flip` kippt um 180°, `turn` dreht um 90° | ✅² | |
-| 4 | Schaufenster, Pfeil in **beiden** Zuständen | die Form bleibt mittig im Kasten — sie wandert beim Drehen nicht nach oben oder unten | ⚠️³ | |
-| 5 | StockInfo → Assets, Tabellenzeile auf- und zuklappen | Pfeil mittig in der Zeile, gleiche Größe wie vorher | ✅⁴ | |
-| 6 | StockInfo unter `md` → Kartenliste, „mehr"/„weniger" | derselbe Pfeil wie in der Tabelle | ✅⁵ | |
-| 7 | StockPortfolio → Dashboard, KPI-Karte aufklappen | Pfeil kippt um 180°, Deckkraft und Hover wie bisher | ➖⁶ | |
-| 8 | StockPortfolio → Dashboard, Gruppenkopf und Abschnitt „Assetklassen" | Pfeil dreht zur Seite (nicht kippt), Deckkraft und Hover wie bisher | ➖⁶ | |
-| 9 | `grep -rn "chevron" src` in beiden Apps | keine handgezeichneten Pfeile mehr übrig | ✅⁷ | |
+| # | Where | Look for | AI | Human                                      |
+|---|---|---|:--:|--------------------------------------------|
+| 1 | `make test` im Fundament | `UxCaret`-Tests grün, restliche Suite unverändert grün | ✅¹ | ok                                         |
+| 2 | `make typecheck && make lint` im Fundament | beides sauber | ✅ | ok                                         |
+| 3 | Schaufenster → Eigene Komponenten (`http://localhost:5177`) | beide Bewegungen zu sehen: `flip` kippt um 180°, `turn` dreht um 90° | ✅² | ok                                         |
+| 4 | Schaufenster, Pfeil in **beiden** Zuständen | die Form bleibt mittig im Kasten — sie wandert beim Drehen nicht nach oben oder unten | ⚠️³ | ok                                         |
+| 5 | StockInfo → Assets, Tabellenzeile auf- und zuklappen | Pfeil mittig in der Zeile, gleiche Größe wie vorher | ✅⁴ | ok                                         |
+| 6 | StockInfo unter `md` → Kartenliste, „mehr"/„weniger" | derselbe Pfeil wie in der Tabelle | ✅⁵ | ok                                         |
+| 7 | StockPortfolio → Dashboard, KPI-Karte aufklappen | Pfeil kippt um 180°, Deckkraft und Hover wie bisher | ➖⁶ | ok                                         |
+| 8 | StockPortfolio → Dashboard, Gruppenkopf und Abschnitt „Assetklassen" | Pfeil dreht zur Seite (nicht kippt), Deckkraft und Hover wie bisher | ➖⁶ | ok                                         |
+| 9 | `grep -rn "chevron" src` in beiden Apps | keine handgezeichneten Pfeile mehr übrig | ✅⁷ | nicht verifiziert - aber als OK abgenommen |
 
 > ¹ **(CC):** 138 Tests grün (vorher 135), davon 6 neue für `UxCaret` und 3 für
 > die `(i)`-Fassung von `UxInfoHint`.
@@ -135,4 +135,35 @@ ein Bedeutungsverlust. Die Komponente kennt deshalb beide.
 
 ## Auflösung
 
-<!-- Commits, wenn erledigt -->
+**Aus vier Kopien wurde eine Form.** `UxCaret` liegt im Fundament, zeichnet in
+`currentColor` und kennt beide Bewegungen — `flip` für *hier geht etwas auf*,
+`turn` für *hier hängt etwas darunter*. Beide Fundstellen-Paare behalten damit
+ihre Aussage, statt sie einer Vereinheitlichung zu opfern.
+
+Die Glyphe `⌄` ist verschwunden. Der Pfad liegt symmetrisch um die Kastenmitte
+(12/12), womit die Drehung ihn nicht mehr verschiebt — der eigentliche Grund,
+warum die StockInfo-Schublade am Anfang schief aussah, und die Eigenschaft, die
+Zeile #4 rechnerisch belegt.
+
+Die Rückkehr der Kopien ist in StockPortfolio als Test verankert
+(`tests/caretUsage.spec.ts`), nicht als einmaliger `grep`: Er sucht den
+Pfeil-Pfad per Muster und prüft gegen, dass `UxCaret` vorkommt. In StockInfo
+entfiel die lokale `RowCaret.vue` ersatzlos, dort gibt es nichts mehr zu
+bewachen.
+
+**Zeilen #7 und #8 hat die KI nie gesehen** (`➖`) — das Dashboard zeigte den
+Leerzustand, und Beispieldaten zu laden hätte die Depotdaten verändert. Sie sind
+vom Menschen abgenommen, ebenso #9. Das bleibt so stehen: Die KI-Spalte
+behauptet nicht nachträglich, was sie nicht geprüft hat.
+
+**Commits:**
+
+| Repo | Commit | |
+|---|---|---|
+| ux-foundation | `e904b68` | `feat(components)`: UxCaret — ein Pfeil für alles Aufklappbare |
+| StockInfo | `d913827` | `refactor(dashboard)`: Pfeil und Erklärzeichen kommen aus dem Fundament |
+| StockPortfolio | `60316f0` | `refactor(ui)`: Pfeile kommen aus dem Fundament statt dreimal von Hand |
+
+Ausgeliefert mit **0.3.0**; beide Apps hängen inzwischen an einer neueren
+Fassung (StockInfo 0.4.0, StockPortfolio 0.5.0), der Weg ins Ziel ist also
+gegangen.
