@@ -16,7 +16,15 @@ import type { Ref } from 'vue'
 import { useStateNotification } from './useStateNotification'
 
 export interface NotifyOptions {
-  title: string
+  /**
+   * Überschrift — als Wert oder als Funktion.
+   *
+   * Ein Wert wird beim Registrieren eingefroren. Wechselt die App danach die
+   * Sprache, ohne neu zu laden, steht die alte Überschrift über dem neuen
+   * Text: Der Fließtext ist eine Funktion und folgt, die Überschrift nicht.
+   * Wer übersetzt, gibt sie deshalb als Funktion herein.
+   */
+  title: string | (() => string)
   content: () => string
   type: 'error' | 'warning' | 'info'
 }

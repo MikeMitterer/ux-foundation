@@ -9,7 +9,7 @@
  */
 
 import { describe, expect, it, vi } from 'vitest'
-import { defineComponent, h, ref } from 'vue'
+import { defineComponent, h, nextTick, ref } from 'vue'
 import { mount } from '@vue/test-utils'
 import { useStateNotification } from '@ux/index'
 import type { NotificationApi, NotificationReactive } from 'naive-ui'
@@ -253,5 +253,121 @@ describe('useStateNotification', () => {
     wrapper.unmount()
 
     expect(destroy).toHaveBeenCalled()
+  })
+})
+
+/**
+ * Attrappe, die Schreibzugriffe auf `title` mitschreibt.
+ *
+ * `fakeNotification` sammelt nur, was beim **Anlegen** mitgegeben wurde. Für
+ * eine bereits offene Meldung ist aber genau die Nachbesserung am Objekt der
+ * Punkt — sonst bliebe die Überschrift stehen, während der Text mitwechselt.
+ */
+function titleRecordingNotification() {
+  const created: string[] = []
+  const written: unknown[] = []
+
+  const api = {
+    create: (options: { title?: string }) => {
+      created.push(options.title ?? '')
+      return new Proxy({ destroy: vi.fn() } as unknown as NotificationReactive, {
+        set(target, name, value) {
+          if (name === 'title') written.push(value)
+          return Reflect.set(target, name, value)
+        },
+      })
+    },
+  } as unknown as NotificationApi
+
+  return { api, created, written }
+}
+
+/**
+ * Die Überschrift folgt der Sprache — der Fehler, der das ausgelöst hat.
+ *
+ * Gefunden in StockInfo: Nach einem Sprachwechsel **ohne Neuladen** stand
+ * „Fehler" über einem englischen Text. Der Fließtext ist eine Funktion und
+ * wurde neu ausgewertet, die Überschrift war ein Wert und blieb auf der
+ * Sprache vom Aufbau stehen.
+ *
+ * Ein Getter beim Aufrufer half nicht: `useNotifier` reicht die Optionen als
+ * Spread weiter, und der kopiert den Wert. Deshalb nimmt `title` jetzt auch
+ * eine Funktion — wie `content` seit jeher.
+ */
+describe('Überschrift als Funktion', () => {
+  it('nimmt beim Anlegen den aktuellen Stand, nicht den vom Aufbau', async () => {
+    const { api, created } = titleRecordingNotification()
+    const locale = ref('de')
+    const active = ref(false)
+
+    mountWith(() => {
+      useStateNotification(api, active, {
+        title: () => (locale.value === 'de' ? 'Fehler' : 'Error'),
+        type: 'error',
+        content: () => 'x',
+        seconds: ref(0),
+        countdownLabel: (n) => `schließt in ${n} s`,
+      })
+    })
+
+    // Die Sprache wechselt, **bevor** die Meldung entsteht.
+    locale.value = 'en'
+    await nextTick()
+    active.value = true
+    await nextTick()
+
+    expect(created).toEqual(['Error'])
+  })
+
+  /*
+   * **Der Text bleibt hier absichtlich gleich.**
+   *
+   * Die erste Fassung ließ ihn mitwechseln — dann feuert der Watcher schon
+   * wegen des Textes, und ob die Überschrift in seinen Quellen steht, ist
+   * nicht mehr unterscheidbar. Der Mutant „Überschrift aus den Quellen
+   * entfernt" blieb prompt grün. Nur ein Wechsel, den **allein** die
+   * Überschrift auslöst, prüft die Zusage.
+   */
+  it('zieht die Überschrift einer offenen Meldung nach, auch wenn der Text gleich bleibt', async () => {
+    const { api, written } = titleRecordingNotification()
+    const locale = ref('de')
+
+    mountWith(() => {
+      useStateNotification(api, ref(true), {
+        title: () => (locale.value === 'de' ? 'Fehler' : 'Error'),
+        type: 'error',
+        content: () => 'unveränderter Text',
+        seconds: ref(0),
+        countdownLabel: (n) => `schließt in ${n} s`,
+      })
+    })
+    await nextTick()
+
+    locale.value = 'en'
+    await nextTick()
+
+    expect(written).toContain('Error')
+  })
+
+  /*
+   * Die Gegenprobe: Ein Aufrufer ohne Übersetzung gibt weiter eine
+   * Zeichenkette. Ginge das verloren, wäre aus einer Erweiterung ein Bruch
+   * geworden — und zwar für jede App, die das Paket einbindet.
+   */
+  it('nimmt weiterhin eine Zeichenkette', async () => {
+    const { api, created } = titleRecordingNotification()
+
+    mountWith(() => {
+      useStateNotification(api, ref(true), {
+        title: 'Fester Titel',
+        type: 'info',
+        content: () => 'x',
+        seconds: ref(0),
+        countdownLabel: (n) => `schließt in ${n} s`,
+      })
+    })
+    await nextTick()
+
+    expect(created).toEqual(['Fester Titel'])
   })
 })

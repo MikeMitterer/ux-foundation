@@ -40,8 +40,15 @@ const BALKEN_FARBE: Record<StateNotificationOptions['type'], string> = {
 }
 
 export interface StateNotificationOptions {
-  /** Überschrift des Toasts. */
-  title: string
+  /**
+   * Überschrift des Toasts — als Wert oder als Funktion.
+   *
+   * Als Funktion wird sie wie der Fließtext bei jeder Änderung neu
+   * ausgewertet. Das ist der Fall, sobald sie übersetzt ist: Ein Wert wird
+   * beim Registrieren eingefroren und stünde nach einem Sprachwechsel ohne
+   * Neuladen in der alten Sprache über einem neuen Text.
+   */
+  title: string | (() => string)
   /** Fließtext — wird bei jeder Änderung neu ausgewertet. */
   content: () => string
   type: 'error' | 'warning' | 'info'
@@ -87,6 +94,16 @@ export function useStateNotification(
     handle?.destroy()
     handle = null
   }
+
+  /**
+   * Die Überschrift als Text — gleich, ob sie als Wert oder Funktion kam.
+   *
+   * Steht in den Quellen des Watchers, damit sie einem Sprachwechsel folgt.
+   * Ein Wert ändert sich dabei nie und kostet nur einen Vergleich; eine
+   * Funktion wird neu gelesen. Beides ohne Sonderweg beim Aufrufer.
+   */
+  const titleText = (): string =>
+    typeof options.title === 'function' ? options.title() : options.title
 
   /**
    * Der mitlaufende Balken an der Unterkante — `undefined`, solange keiner läuft.
@@ -142,8 +159,8 @@ export function useStateNotification(
    */
   onMounted(() => {
     watch(
-      [active, options.content, options.seconds],
-      ([isActive, text]) => {
+      [active, options.content, titleText, options.seconds],
+      ([isActive, text, title]) => {
         if (!isActive) {
           close()
           dismissed = false
@@ -151,17 +168,19 @@ export function useStateNotification(
         }
 
         if (handle) {
-          // Nur den Text nachziehen — ein neuer Toast für dieselbe Ursache
-          // würde bei jedem Tastendruck erneut aufspringen. Der Zähler läuft
-          // dabei weiter, sonst ließe er sich durch Tippen endlos verlängern.
+          // Nur Text und Überschrift nachziehen — ein neuer Toast für dieselbe
+          // Ursache würde bei jedem Tastendruck erneut aufspringen. Der Zähler
+          // läuft dabei weiter, sonst ließe er sich durch Tippen endlos
+          // verlängern.
           handle.content = text
+          handle.title = title
           return
         }
 
         if (dismissed) return
 
         handle = notification.create({
-          title: options.title,
+          title,
           content: text,
           type: options.type,
           /*
