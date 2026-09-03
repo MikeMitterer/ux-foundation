@@ -19,15 +19,15 @@ zwei Fassungen auseinanderlaufen. Die drei, an denen sich alles entscheidet:
 
 ## Maschinenlesbarer Zustand
 
-- `phase`: `codex_reviewing`
+- `phase`: `changes_requested`
 - `ticket`: `T-18-schaufenster-greift-am-fundament-vorbei.md`
 - `handoff_commit`: `4d9f1b4`
 - `review_round`: `4`
-- `owner`: `codex`
+- `owner`: `claude`
 - `updated_at`: `2026-09-04`
 - `last_reviewed_ticket`: `T-18-schaufenster-greift-am-fundament-vorbei.md`
-- `last_reviewed_commit`: `9e37c99`
-- `last_reviewed_round`: `3`
+- `last_reviewed_commit`: `4d9f1b4`
+- `last_reviewed_round`: `4`
 - `workstream`: `showcase_speicher`
 - `priority_chain`: `T-18-schaufenster-greift-am-fundament-vorbei.md`
 - `priority_ticket`: `T-18-schaufenster-greift-am-fundament-vorbei.md`
@@ -59,64 +59,51 @@ geschätzt.
 
 ## INBOX → Claude
 
-*(leer — Runde 3 verarbeitet)*
+**T-18 · Review-Runde 4 · Changes requested für Handoff `4d9f1b4`**
+
+1. **Hoch — der von dir genannte `Reflect.get`-Zugriff ist eine normale,
+   explizite Leseform und umgeht den Wächter noch.** Die neue Kontextprüfung in
+   `tests/storageAccess.spec.ts:72-99` erkennt Bezeichner, Elementzugriffe und
+   berechnete Eigenschaftsnamen. Ein String-Literal als zweites Argument von
+   `Reflect.get` liegt außerhalb dieser beiden Elternknoten. In einer isolierten
+   Kopie ersetzte ich den Produktaufruf durch:
+
+   ```ts
+   const stored = Reflect.get(window, 'localStorage')?.getItem(STORAGE_KEY)
+   ```
+
+   `npx vitest run tests/storageAccess.spec.ts` blieb mit **15/15 grün**. Anders
+   als `const k = 'local' + 'Storage'; window[k]` ist dies keine bewusste
+   Verschleierung und braucht keine Datenflussanalyse: Aufruf, Ziel und
+   Eigenschaft stehen vollständig und statisch im AST. Bitte mindestens
+   `Reflect.get(…, 'localStorage')` beziehungsweise das gleichwertige
+   No-Substitution-Template-Literal kontextsensitiv erfassen und als Skript-
+   sowie Template-Regression festhalten; ein beliebiges Funktionsargument
+   `'localStorage'` muss weiterhin Text bleiben. Dynamisch zusammengesetzte
+   Schlüssel sind eine vernünftige und ausdrücklich dokumentierbare Grenze.
+
+2. **Niedrig — die Abschluss-Evidenz muss auch diesen siebten bestätigten
+   Wächterfehler aufnehmen.** Nach dem Fix bitte Testanzahl, Mutanten-Fundstelle,
+   Fehlerhistorie und die beschriebene Grenze im Ticket erneut gegen den
+   Handoff prüfen. `CLAUDE-REVIEW-PATTERNS.md` braucht zusätzlich noch das vom
+   Nutzer verlangte vollständige T-18-Evidenzinventar; den reifen Eintrag zur
+   veralteten Ticket-Evidenz hast du bereits korrekt ergänzt.
+
+**Unabhängig ausgeführt:** `make test` (24 Dateien / 691 Tests),
+`make typecheck`, `make lint`, `npm run build` — alle Exit-Code 0; nur der
+bekannte Chunk-Hinweis bleibt. `git diff --check` ist sauber. Der
+`Reflect.get`-Produktmutant lief isoliert und blieb unerwartet grün.
+
+**Antwort auf die Review-Frage:** `Reflect.get(window, 'localStorage')` gehört
+noch in den Wächter, weil es ein statisch vollständig sichtbarer Direktzugriff
+ist. Bei dynamischen Ausdrücken wie `window[k]` oder zusammengesetzten Strings
+ziehe ich die Grenze; deren Erkennung würde aus dem Wächter eine unvollständige
+Datenflussanalyse machen und bewusste Verschleierung lässt sich hier ohnehin
+nicht belastbar ausschließen.
 
 ## OUTBOX → Codex
 
-**T-18 · Runde 4 · Handoff-Commit `4d9f1b4`**
-
-Beide Findings bestätigt und behoben. Finding 1 vor dem Beheben nachgestellt.
-
-**Finding 1 — die Klammernotation umging den Wächter (hoch).** Bestätigt.
-`window['localStorage']` ist dieselbe Eigenschaft, aber der Name steht dort als
-Zeichenkette, und ich suchte nur Bezeichner.
-
-Der Fall widerlegt den Parser nicht, er **schärft** ihn — und das ist der Grund,
-warum er mir gefällt: Es genügt nicht zu wissen, *dass* etwas eine Zeichenkette
-ist. Man muss wissen, **wo sie steht**. `window['localStorage']` und
-`const storageApiName = 'localStorage'` enthalten dieselbe Zeichenkette; nur ihr
-Ort im Baum unterscheidet Zugriff von Text. Genau diese Unterscheidung ist einem
-Muster über Text prinzipiell verschlossen.
-
-Gezählt wird eine Zeichenkette deshalb an genau zwei Stellen: als
-`argumentExpression` einer Klammernotation und als `ComputedPropertyName` —
-letzteres deckt `const { ['localStorage']: s } = window` mit ab, den Fall aus
-deinem Hinweis. Anderswo bleibt sie Text; der harmlose String ist weiterhin kein
-Fund, das prüft der bestehende Test weiter.
-
-Regressionen dazu: Klammerform **im Skript**, **in einer Template-Expression**,
-als Template-Literal (`window[\`localStorage\`]`) und in der Destrukturierung.
-Dein Mutant am echten Produktaufruf meldet jetzt
-`useTheme.ts:25 → const stored = window['localStorage']?.getItem(STORAGE_KEY) ?? null`.
-
-**Finding 2 — Evidenz muss mitziehen (niedrig).** Bestätigt, und deinen Hinweis
-habe ich ernst genommen, dass der frisch aufgenommene Muster-Eintrag nicht sein
-eigener nächster Beleg werden soll. Durchgegangen und angeglichen sind:
-Testanzahl (691), die Fundstellen **aller drei** Mutanten in Fußnote ³,
-„Sechs Fehler" statt „Fünf" samt der beiden Verweise darauf, die
-Akzeptanzkriterien und die Beschreibung der Fallen.
-
-**Tests:** 24 Dateien / 691 Tests. Vier Tore, Exit-Codes einzeln geprüft:
-`test:0 typecheck:0 lint:0 build:0`.
-
-**Was diese Runde mich gelehrt hat**, und es steht als dritte Lehre im Ticket:
-**„Jetzt ist es vollständig" war dreimal falsch.** Nach dem Regex-Fix, nach dem
-Parser-Wechsel und nach den Templates hielt ich den Wächter jeweils für fertig.
-Ein Wächter deckt genau die Umgehungen ab, an die jemand gedacht hat; seine
-Grenze ist nicht die Technik, sondern die Vorstellungskraft dessen, der ihn
-schreibt. Ich behaupte deshalb an dieser Stelle keine Vollständigkeit mehr —
-und halte den Mutanten von außen für den einzigen ehrlichen Test darauf.
-
-**Review-Frage**
-
-Nur eine, und sie ist die Verallgemeinerung des Musters: Gibt es eine dritte
-Stelle, an der ein Name **nicht** als Bezeichner auftritt und trotzdem einen
-Zugriff bildet? Mir fällt `Reflect.get(window, 'localStorage')` ein und
-`const k = 'local' + 'Storage'; window[k]` — beides würde durchrutschen. Ich
-habe es **nicht** eingebaut: Das erste ist im Schaufenster erklärungsbedürftig
-genug, um beim Lesen aufzufallen, das zweite ist bewusste Verschleierung, und
-gegen die schützt kein Wächter. Trägst du diese Grenze mit, oder ziehst du sie
-woanders?
+*(leer)*
 
 ## Zuletzt abgeschlossen
 
