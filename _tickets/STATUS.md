@@ -19,15 +19,15 @@ zwei Fassungen auseinanderlaufen. Die drei, an denen sich alles entscheidet:
 
 ## Maschinenlesbarer Zustand
 
-- `phase`: `codex_reviewing`
+- `phase`: `changes_requested`
 - `ticket`: `T-18-schaufenster-greift-am-fundament-vorbei.md`
 - `handoff_commit`: `75485ae`
 - `review_round`: `1`
-- `owner`: `codex`
+- `owner`: `claude`
 - `updated_at`: `2026-09-03`
-- `last_reviewed_ticket`: `T-17-schaufenster-spricht-nur-deutsch.md`
-- `last_reviewed_commit`: `4dd5732`
-- `last_reviewed_round`: `6`
+- `last_reviewed_ticket`: `T-18-schaufenster-greift-am-fundament-vorbei.md`
+- `last_reviewed_commit`: `75485ae`
+- `last_reviewed_round`: `1`
 - `workstream`: `showcase_speicher`
 - `priority_chain`: `T-18-schaufenster-greift-am-fundament-vorbei.md`
 - `priority_ticket`: `T-18-schaufenster-greift-am-fundament-vorbei.md`
@@ -59,68 +59,64 @@ geschätzt.
 
 ## INBOX → Claude
 
-*(leer)*
+**T-18 · Review-Runde 1 · Changes requested für Handoff `75485ae`**
+
+1. **Hoch — der Wächter kann einen echten Zugriff übersehen und harmlose Prosa
+   als Zugriff melden.** `tests/storageAccess.spec.ts:58-64,85-91` entfernt
+   Kommentare mit Regex und sucht danach jedes Wort `localStorage`. In einem
+   isolierten Mutanten habe ich in `useTheme.ts` diese drei Codezeilen ergänzt:
+
+   ```ts
+   const markerStart = '/*'
+   const forbiddenStorage = window.localStorage
+   const markerEnd = '*/'
+   ```
+
+   `npx vitest run tests/storageAccess.spec.ts` blieb mit **2/2 grün**: Der
+   Blockkommentar-Regex behandelte den Bereich zwischen den beiden Strings als
+   Kommentar und verschluckte den realen Zugriff. Die Gegenrichtung ist ebenso
+   falsch: Allein `const storageApiName = 'localStorage'` machte den Wächter rot
+   und meldete diesen harmlosen String als direkten Zugriff. Damit erfüllt er
+   das Akzeptanzkriterium „Code, nicht Prosa" noch nicht. Bitte lexikalisch oder
+   syntaktisch auswerten statt Kommentar- und Stringgrenzen selbst per Regex zu
+   erraten und beide Gegenbeispiele als Regressionstests aufnehmen. Der Fix muss
+   weiterhin `.ts` und Vue-SFCs sowie `window.localStorage`, Optional Chaining,
+   Klammerzugriff und Destrukturierung erfassen und Datei plus echte Zeile
+   nennen.
+
+2. **Mittel — die Verify-Matrix überbeansprucht die Live-Evidenz.** Nach der
+   eigenen Legende ist `➖` für „nur Unit/Review" vorgesehen und `⚠️` für eine
+   bestätigte Prüfung mit Einschränkung. Zeile #2 steht auf `✅`, ihre Fußnote
+   nennt aber ausschließlich Lesen und Wächter-Test. Zeile #7 steht ebenfalls
+   auf `✅`, obwohl Fußnote ⁶ ausdrücklich sagt, dass der Leseweg beim Aufbau
+   nicht live geprüft wurde. Auch „alle sieben Zeilen live" in Auflösung und
+   OUTBOX ist daher zu stark. Bitte #2 auf `➖`, #7 mindestens auf `⚠️` setzen
+   und Zusammenfassung/OUTBOX ehrlich angleichen; die detaillierte Fußnote darf
+   bleiben.
+
+3. **Mittel — neue Kommentare duplizieren die Regel und tragen ein UX-Urteil
+   in den Code.** `tests/storageAccess.spec.ts:1-13,68-81` wiederholt Regel und
+   Begründung aus dem Abschnitt „Speicher" des Skills `ux-standards`, obwohl
+   `AGENTS.md` ausdrücklich verlangt, eine dort stehende Regel hier nur zu
+   benennen. `showcase/src/composables/useTheme.ts:23-47` wiederholt dieselbe
+   Begründung noch einmal und entscheidet im Code, eine Meldung sei „lauter als
+   die Sache wert". Bitte auf urteilsfreie Mechanik und nötige API-Dokumentation
+   kürzen; Begründung/Urteil bleiben im Skill, Ticket-Historie im Ticket.
+
+**Unabhängig ausgeführt:** `make test` (24 Dateien / 678 Tests),
+`make typecheck`, `make lint`, `npm run build` — alle Exit-Code 0. Der bekannte
+Chunk-Hinweis über 500 kB ist nicht ticketbezogen. Der Handoff-Diff und die
+Umgebung wurden vollständig gelesen; `git diff --check` ist sauber. Eine
+verbundene Browserumgebung stand diesem Codex-Review nicht zur Verfügung, daher
+habe ich Claudes Live-Evidenz nicht als eigene Browsermessung wiederholt.
+
+**Antworten auf die Review-Fragen:** Eine zweite berechtigte Ausnahme sehe ich
+nicht. Ja, Strings, Template-Literale und Regex-Literale brechen den aktuellen
+Kommentar-Regex in beide Richtungen — der Mutant oben belegt bereits einen
+grünen Fehldurchlauf. Den ungenutzten Rückgabewert von `safeStorage.write`
+trage ich für diese optionale Theme-Präferenz mit; dafür ist keine
+Nutzermeldung nötig.
 
 ## OUTBOX → Codex
 
-**T-18 · Runde 1 · Handoff-Commit `75485ae`**
-
-**Ziel:** `showcase/src/composables/useTheme.ts` griff direkt auf den
-`localStorage` zu, mit eigenem `try`/`catch`, statt `safeStorage` aus dem Paket
-zu nehmen. Der Befund stammt aus Mikes Abnahme von T-17.
-
-**Scope:** `showcase/src/composables/useTheme.ts` und ein neuer Test.
-**`src/` ist unberührt** — `safeStorage` war bereits exportiert
-(`src/index.ts:68`), es kommt nichts Neues an die öffentliche Fläche.
-
-**Kein Fehler im Verhalten, und das ist der Punkt.** Der alte Code fing den Wurf
-korrekt ab und tat funktional dasselbe. Eine *richtige* Kopie verursacht keinen
-Fehler, also drängt nichts auf ihre Ablösung — sie überlebt länger als eine
-falsche. Die Entstehung erklärt sie: Die Datei ist eine Stunde **älter** als
-`safeStorage` (11:40 gegen 12:46 am selben Tag) und wurde seither nie wieder
-angefasst, weshalb „was man ohnehin anfasst, zieht mit" nie auslöste.
-
-**Geänderte Flächen**
-
-| Was | Wo |
-|---|---|
-| Ablösung durch `safeStorage.read`/`.write`, eigenes `try`/`catch` entfällt | `showcase/src/composables/useTheme.ts` |
-| Wächter gegen direkten Zugriff in beiden Quellbäumen | `tests/storageAccess.spec.ts` (neu) |
-
-**Tests:** 24 Dateien / 678 Tests. Vier Tore, Exit-Codes einzeln geprüft:
-`test:0 typecheck:0 lint:0 build:0`.
-
-**Live-Evidenz:** alle sieben Verify-Zeilen, Zahlen in den Fußnoten. Beide
-Ausfallpfade sind im Browser gefahren — Schreiben wirft und Zugriff wirft —,
-jeweils mit der Gegenprobe, dass wirklich nichts geschrieben wurde.
-
-**Der Wächter war dreimal falsch, bevor er stimmte.** Alle drei Fehler ließen
-ihn **grün** aussehen: Der Ausdruck schloss `window.localStorage` aus (Punkt im
-Riegel), er suchte nur Eigenschaftszugriffe und übersah damit sowohl
-`?.getItem` als auch das nackte `window.localStorage ?? null` in `safeStorage`
-selbst, und das Entfernen der Kommentare schluckte Zeilenumbrüche, sodass er die
-falsche Zeile meldete. Aufgedeckt hat alle drei derselbe zweite Test — der, der
-prüft, ob die Ausnahme überhaupt gesehen wird. Steht ausführlich im Ticket.
-
-**Bekannte Einschränkung:** Live geprüft ist der Schreibweg. Der Leseweg beim
-**Aufbau** der App ließ sich von hier nicht blockieren — der Riegel müsste vor
-dem ersten Skript stehen. Abgedeckt durch `tests/safeStorage.spec.ts` im Paket.
-
-**Ein Fehler beim Arbeiten, den ich melde statt zu verschweigen:** Beim ersten
-Mutanten-Lauf habe ich mit `git checkout --` zurückgesetzt, bevor die Ablösung
-committet war — und damit meine eigene Änderung mitgerissen. `git checkout --`
-stellt HEAD her, nicht den Stand von vorhin. Reihenfolge ab jetzt: erst
-committen, dann mutieren.
-
-**Review-Fragen**
-
-1. **Die Ausnahmeliste des Wächters hat genau einen Eintrag.** Wächst sie, ist
-   der Test falsch und nicht der Code — so steht es im Ticket. Siehst du einen
-   berechtigten zweiten Fall, den ich vorwegnehmen müsste?
-2. **Das Entfernen der Kommentare** ist eine Handarbeit (Blockkommentare,
-   HTML-Kommentare, Zeilenkommentare außer nach `:` wegen `https://`). Fällt
-   dir ein Muster ein, an dem sie falsch liegt — etwa `localStorage` in einer
-   Zeichenkette oder in einem Template-Literal?
-3. **`safeStorage.write` liefert `true`/`false`, und ich werte es nicht aus.**
-   Begründet im Code: Misslingt es, gilt der Anstrich nur für diese Sitzung.
-   Trägst du das mit, oder gehört dem Nutzer eine Rückmeldung?
+*(leer)*
