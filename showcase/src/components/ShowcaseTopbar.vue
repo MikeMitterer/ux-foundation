@@ -277,8 +277,21 @@ const themeOptions = computed(() =>
       background: rgb(var(--surface-raised) / 0.5);
     }
 
+    /*
+     * Die aktive Kennung trägt zusätzlich eine Fläche.
+     *
+     * Die Helligkeit allein trug den Unterschied zu leise — gemessen 1.76:1
+     * zwischen den beiden Zuständen, während jeder für sich gut auf der Leiste
+     * steht (10.67 und 6.07). Die inaktive weiter abzudunkeln käme der
+     * Textgrenze von 4.5:1 zu nahe; ein Gewichtswechsel verschöbe bei zwei
+     * Buchstaben die Nachbarn und ließe die Zeile bei jedem Wechsel zucken.
+     *
+     * Eine Fläche kostet nichts von beidem und trägt den Zustand zudem in der
+     * **Form** — Farbe soll eine Aussage nie allein tragen.
+     */
     &--active {
       color: rgb(var(--text-bar));
+      background: rgb(var(--surface-raised) / 0.7);
     }
 
     /* Finger, nicht Mauszeiger — am Schreibtisch bliebe der Knopf schlank. */

@@ -67,11 +67,23 @@ interface Row {
  * und `table.change` standen ungenutzt im Katalog, während diese Datei die
  * Wörter selbst tippte.
  */
+/*
+ * Feste Breiten, und zwar wegen des Sprachwechsels.
+ *
+ * Naive misst die Spalten sonst am Inhalt — und der längste Inhalt ist hier die
+ * Kopfzeile. „Veränderung" gegen „Change" sind 75 px Unterschied; beim Umschalten
+ * sprang die Spalte entsprechend und schob die Nachbarn um bis zu 42 px mit.
+ * Gemessen, nicht geschätzt.
+ *
+ * `name` bleibt ohne Breite und nimmt den Rest: Eine Spalte muss das tun, sonst
+ * bleibt bei breitem Fenster ein Streifen daneben stehen. Es ist die einzige,
+ * deren Inhalt ohnehin variabel ist.
+ */
 const columns = computed<DataTableColumns<Row>>(() => [
-  { title: t('table.symbol'), key: 'symbol' },
+  { title: t('table.symbol'), key: 'symbol', width: 120 },
   { title: t('table.name'), key: 'name' },
-  { title: t('table.value'), key: 'value', align: 'right' },
-  { title: t('table.change'), key: 'change', align: 'right' },
+  { title: t('table.value'), key: 'value', align: 'right', width: 120 },
+  { title: t('table.change'), key: 'change', align: 'right', width: 150 },
 ])
 
 const rows: Row[] = [
