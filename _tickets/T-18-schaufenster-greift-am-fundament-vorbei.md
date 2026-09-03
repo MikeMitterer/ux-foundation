@@ -33,7 +33,7 @@ Legende: ✅ live bestätigt · ⚠️ bestätigt mit Einschränkung (Fußnote) 
 | 6 | Konsole: Schreiben werfen lassen (Block unten), dann Theme wechseln | der Anstrich wechselt sichtbar, gespeichert wird nichts, **kein** Absturz | ✅⁵ | |
 | 7 | dasselbe, aber schon den **Zugriff** werfen lassen (nicht erst das Schreiben) | ebenfalls kein Absturz — das ist der Fall, für den `safeStorage` überhaupt existiert | ⚠️⁶ | |
 
-> ¹ **(CC):** 24 Dateien / 687 Tests, Exit-Codes einzeln geprüft:
+> ¹ **(CC):** 24 Dateien / 691 Tests, Exit-Codes einzeln geprüft:
 > `test:0 typecheck:0 lint:0 build:0`.
 >
 > ² **(CC):** **Keine Live-Verifikation** — gelesen und vom Wächter-Test
@@ -44,9 +44,11 @@ Legende: ✅ live bestätigt · ⚠️ bestätigt mit Einschränkung (Fußnote) 
 > ³ **(CC):** Mutant ausgeführt, nicht behauptet: `safeStorage.read(…)` wieder
 > durch `window.localStorage?.getItem(…)` ersetzt → der Test wird rot und meldet
 > `showcase/src/composables/useTheme.ts:22 → …`. Die Zeilenzahl stimmt mit der
-> echten überein; das war beim ersten Anlauf **nicht** so, siehe „Fünf Fehler im
-> Wächter" unten. Ebenso gefangen wird seit Runde 2 der Template-Mutant in einer
-> SFC — `showcase/src/App.vue:141 → $event.view.localStorage.clear()`.
+> echten überein; das war beim ersten Anlauf **nicht** so, siehe „Sechs Fehler im
+> Wächter" unten. Ebenso gefangen werden seit Runde 2 der Template-Mutant in
+> einer SFC — `showcase/src/App.vue:141 → $event.view.localStorage.clear()` —
+> und seit Runde 3 die Klammernotation:
+> `useTheme.ts:25 → const stored = window['localStorage']?.getItem(STORAGE_KEY) ?? null`.
 >
 > ⁴ **(CC):** live gegen http://localhost:5177. Theme auf `ocean` gestellt →
 > `localStorage` führt `ux-foundation.theme: "ocean"`, der Schlüsselsatz ist
@@ -139,12 +141,15 @@ Zwei Gründe, sie trotzdem abzulösen:
       `src/composables/safeStorage.ts` selbst
 - [ ] Er wertet **syntaktisch** aus, nicht über Textsuche, und erfasst in einer
       `.vue`-Datei die Skriptblöcke **und** die Ausdrücke des Templates
-- [ ] Er ist per Mutant geprüft — je einer in einer `.ts`-Datei und in einem
-      Template —: Test rot, Datei und echte Zeile genannt
+- [ ] Er erfasst den Namen als Bezeichner **und** als Zeichenkette dort, wo sie
+      einen Zugriff bildet (`window['localStorage']`, berechneter
+      Eigenschaftsname); anderswo bleibt eine Zeichenkette Text
+- [ ] Er ist per Mutant geprüft — in einer `.ts`-Datei, in einem Template und in
+      Klammernotation —: Test rot, Datei und echte Zeile genannt
 - [ ] Was er direkt importiert, steht als direkte Abhängigkeit in der
       `package.json`; nichts hängt an einem fremden Abhängigkeitsbaum
 
-### Der Wächter hat zwei Fallen, und beide sind teuer
+### Die Fallen des Wächters
 
 **Erstens: Er muss Code von Text unterscheiden können.** Ein `grep` nach
 `localStorage` schlägt auch bei Kommentaren an — in `localeDetection.ts` steht
@@ -152,11 +157,17 @@ das Wort dreimal in JSDoc —, und ein Test, der darauf anspringt, ist nach zwei
 Tagen abgeschaltet. Umgekehrt kann er echten Code übersehen.
 
 Hier stand zunächst der Rat, Kommentare vorher zu entfernen und auf die
-Zugriffsform zu prüfen. **Beides ist widerlegt** (siehe „Fünf Fehler im Wächter"):
+Zugriffsform zu prüfen. **Beides ist widerlegt** (siehe „Sechs Fehler im Wächter"):
 Ein Ausdruck über Text kann Kommentar- und Stringgrenzen nicht kennen, und die
 Zugriffsform trifft weder `window.localStorage ?? null` noch Optional Chaining.
 Richtig ist der **Parser**: TypeScript für Skripte, der SFC-Parser für Vue.
-Gesucht wird der Bezeichner im Syntaxbaum, nicht ein Muster im Text.
+
+**Und es reicht nicht, nur Bezeichner zu suchen.** `window['localStorage']` ist
+dieselbe Eigenschaft in Klammernotation — dort steht der Name als
+*Zeichenkette*. Zugleich muss `const storageApiName = 'localStorage'` weiterhin
+durchgehen. Es ist dieselbe Zeichenkette; nur **ihr Ort** entscheidet, und genau
+den kennt allein der Baum: Argument einer Klammernotation oder berechneter
+Eigenschaftsname zählt, alles andere ist Text.
 
 **Zweitens: Ein Vue-Template ist ausführbarer Code.**
 `@click="$event.view.localStorage.clear()"` steht in keinem `<script>` und wird
@@ -190,12 +201,13 @@ Ein Verhaltensunterschied bleibt und ist gewollt: `safeStorage.write` gibt
 gilt dann eben nur für diese Sitzung —, aber der Rückgabewert steht ab jetzt
 zur Verfügung, falls jemand darauf reagieren will.
 
-### Fünf Fehler im Wächter, und was sie über Wächter sagen
+### Sechs Fehler im Wächter, und was sie über Wächter sagen
 
-Der Test war fünfmal falsch, bevor er stimmte — und keiner der Fehler hätte
-sich beim Lesen gezeigt. **Drei fand mein eigener Selbstcheck, zwei erst Codex
-mit einem Mutanten.** Die letzten beiden sind die lehrreicheren, weil sie zeigen,
-wo mein Selbstcheck selbst blind war.
+Der Test war sechsmal falsch, bevor er stimmte — und keiner der Fehler hätte
+sich beim Lesen gezeigt. **Drei fand mein eigener Selbstcheck, drei erst Codex
+mit einem Mutanten.** Die drei von ihm sind die lehrreicheren, weil sie zeigen,
+wo mein Selbstcheck selbst blind war — und weil ich nach jedem einzelnen dachte,
+jetzt sei es vollständig.
 
 1. **Der Ausdruck schloss den Verstoß aus.** Ich hatte `(?<![\w.])localStorage`
    geschrieben, um `safeStorage` nicht zu treffen. Damit fiel ausgerechnet
@@ -225,21 +237,37 @@ Mutanten, dass er es nicht war:
 
 Beides ist dieselbe Wurzel: **Ein Ausdruck über Text kann Kommentar- und
 Stringgrenzen nicht kennen.** Er kann sie nur raten, und beim Raten liegt er in
-beide Richtungen falsch. Der Wächter liest den Quelltext jetzt mit dem
-TypeScript-Parser und sucht den *Bezeichner* im Syntaxbaum; damit fallen
-Zeichenkette, Template-Literal, Regex-Literal und Kommentar von selbst heraus,
-und die Formen (`?.`, `[…]`, Destrukturierung) muss niemand mehr aufzählen.
+beide Richtungen falsch. Der Wächter liest den Quelltext seither mit dem
+TypeScript-Parser.
 
-**Zwei Lehren, und die zweite ist die unbequemere:**
+Damit war er wieder grün, und ich hielt ihn wieder für fertig — Runde 2 und
+Runde 3 fanden je einen weiteren Weg daran vorbei:
+
+6. **Die Klammernotation.** `window['localStorage']` ist dieselbe Eigenschaft;
+   dort steht der Name als *Zeichenkette*, und ich suchte nur Bezeichner. Codex
+   setzte genau das als echten Produktaufruf ein — 11/11 grün.
+
+Das ist der interessanteste der sechs, weil er den Parser nicht widerlegt,
+sondern **schärft**: Es genügt nicht zu wissen, dass etwas eine Zeichenkette
+ist. Man muss wissen, **wo sie steht.** `window['localStorage']` und
+`const name = 'localStorage'` enthalten dieselbe Zeichenkette; nur ihr Ort im
+Baum unterscheidet Zugriff von Text. Gezählt wird sie deshalb als Argument einer
+Klammernotation und als berechneter Eigenschaftsname — sonst nicht.
+
+**Drei Lehren, und die letzte ist die unbequemste:**
 
 - Ein Wächter braucht selbst einen Wächter. Ein Test, der behauptet „an dieser
   Stelle *muss* etwas gefunden werden", kostet vier Zeilen und fängt eine
   Klasse Fehler, die sonst niemand bemerkt.
 - **Auch der Selbstcheck hat blinde Flecken.** Meiner prüfte nur, *dass*
   gefunden wird — nicht, ob die Erkennung sich täuschen lässt. Dafür braucht es
-  jemanden, der versucht, an ihr vorbeizukommen. Genau das hat Codex getan, und
-  genau das ist der Wert eines zweiten Prüfers gegenüber einer zweiten Runde
-  desselben.
+  jemanden, der versucht, an ihr vorbeizukommen.
+- **„Jetzt ist es vollständig" war dreimal falsch.** Nach dem Regex-Fix, nach
+  dem Parser-Wechsel und nach den Templates hielt ich den Wächter jeweils für
+  fertig. Ein Wächter deckt genau die Umgehungen ab, an die jemand gedacht hat;
+  seine Grenze ist nicht die Technik, sondern die Vorstellungskraft dessen, der
+  ihn schreibt. Deshalb ist der Mutant von **außen** die einzige ehrliche Probe,
+  und deshalb wird ein Vollständigkeitsanspruch hier nicht mehr behauptet.
 
 ### Ein Fehler beim Arbeiten, der hierher gehört
 
@@ -256,7 +284,7 @@ Richtige Reihenfolge, ab jetzt: erst committen, dann mutieren.
 ### Auflösung
 
 `ux-foundation` — Handoff-Commit siehe `STATUS.md`. `make test` 24 Dateien /
-687 Tests, dazu `typecheck`, `lint` und `npm run build`; Exit-Codes einzeln
+691 Tests, dazu `typecheck`, `lint` und `npm run build`; Exit-Codes einzeln
 geprüft (`0/0/0/0`).
 
 **Live geprüft sind die Zeilen #4 bis #6**, #7 mit Einschränkung (der Leseweg

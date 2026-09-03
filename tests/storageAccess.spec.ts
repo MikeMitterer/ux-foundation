@@ -3,9 +3,14 @@
  *
  * Geprüft wird über den **TypeScript-Parser**, nicht über Textsuche: Nur er
  * unterscheidet Bezeichner von Zeichenkette, Template-Literal, Regex-Literal
- * und Kommentar. Gesucht wird der Bezeichner `localStorage` im Syntaxbaum, was
- * `window.localStorage`, `localStorage?.getItem`, `localStorage['x']` und
- * `const { localStorage } = window` ohne Aufzählung gleichermaßen erfasst.
+ * und Kommentar — und nur er weiß, **wo** eine Zeichenkette steht.
+ *
+ * Gefunden wird der Name an zwei Orten: als Bezeichner (`window.localStorage`,
+ * `localStorage?.getItem`, `const { localStorage } = window`) und als
+ * Zeichenkette **dort, wo sie einen Zugriff bildet** — `window['localStorage']`
+ * und `const { ['localStorage']: s } = window`. Ein Text `'localStorage'`
+ * anderswo bleibt Text. Dieselbe Zeichenkette, verschiedener Ort: Genau das
+ * kann ein Muster über Text nicht entscheiden.
  *
  * Bei einer `.vue`-Datei reichen die Skriptblöcke nicht: **Ein Template ist
  * ausführbarer Code.** `@click="$event.view.localStorage.clear()"` steht in
@@ -53,7 +58,7 @@ function accessesInScript(code: string, firstLine = 1): Access[] {
   const found: Access[] = []
 
   const visit = (node: ts.Node): void => {
-    if (ts.isIdentifier(node) && node.text === 'localStorage') {
+    if (refersToStorage(node)) {
       const { line } = source.getLineAndCharacterOfPosition(node.getStart(source))
       found.push({ line: firstLine + line, text: lines[line]?.trim() ?? '' })
     }
@@ -62,6 +67,37 @@ function accessesInScript(code: string, firstLine = 1): Access[] {
   visit(source)
 
   return found
+}
+
+/**
+ * Meint dieser Knoten den Speicher — als Name oder als Schlüssel?
+ *
+ * Der Bezeichner ist der offensichtliche Fall. Der zweite ist es nicht:
+ * `window['localStorage']` ist dieselbe Eigenschaft in Klammernotation, und
+ * dort steht der Name als **Zeichenkette**. Eine Fassung, die nur Bezeichner
+ * sah, ließ ihn durch.
+ *
+ * Deshalb zählt eine Zeichenkette **nur an den beiden Stellen, an denen sie
+ * einen Zugriff bildet** — als Argument einer Klammernotation und als
+ * berechneter Eigenschaftsname, letzteres deckt
+ * `const { ['localStorage']: s } = window` mit ab. Überall sonst bleibt sie,
+ * was sie ist: Text. `const storageApiName = 'localStorage'` ist damit
+ * weiterhin kein Fund.
+ *
+ * Genau diese Unterscheidung kann nur ein Baum treffen, kein Muster über Text:
+ * Es ist dieselbe Zeichenkette, und nur ihr Ort entscheidet.
+ *
+ * @param node Der zu prüfende Knoten.
+ */
+function refersToStorage(node: ts.Node): boolean {
+  if (ts.isIdentifier(node)) return node.text === 'localStorage'
+  if (!ts.isStringLiteralLike(node) || node.text !== 'localStorage') return false
+
+  const parent: ts.Node | undefined = node.parent
+  if (parent === undefined) return false
+
+  if (ts.isElementAccessExpression(parent)) return parent.argumentExpression === node
+  return ts.isComputedPropertyName(parent)
 }
 
 /**
@@ -219,6 +255,27 @@ describe('Der Wächter unterscheidet Code von Text', () => {
     expect(accessesInScript(code).map((a) => a.line)).toEqual([1, 2])
   })
 
+  it('erfasst die Klammernotation, in der der Name eine Zeichenkette ist', () => {
+    // Aus Codex' Review von Runde 3. `window['localStorage']` ist dieselbe
+    // Eigenschaft wie `window.localStorage`; die Fassung davor sah nur
+    // Bezeichner und blieb bei diesem Produktaufruf grün.
+    const code = "const stored = window['localStorage']?.getItem(KEY)"
+
+    expect(accessesInScript(code)).toEqual([{ line: 1, text: code }])
+  })
+
+  it('erfasst einen berechneten Eigenschaftsnamen in der Destrukturierung', () => {
+    const code = "const { ['localStorage']: storage } = window"
+
+    expect(accessesInScript(code)).toEqual([{ line: 1, text: code }])
+  })
+
+  it('erfasst die Klammernotation auch als Template-Literal', () => {
+    const code = 'const stored = window[`localStorage`]'
+
+    expect(accessesInScript(code)).toEqual([{ line: 1, text: code }])
+  })
+
   it('nennt in einer SFC die Zeile der Datei, nicht die des Skriptblocks', () => {
     const sfc = [
       '<template>',
@@ -231,6 +288,18 @@ describe('Der Wächter unterscheidet Code von Text', () => {
     ].join('\n')
 
     expect(accessesInSfc(sfc)).toEqual([{ line: 6, text: 'const x = window.localStorage' }])
+  })
+
+  it('erfasst die Klammernotation auch in einer Template-Expression', () => {
+    const sfc = [
+      '<template>',
+      '  <button @click="window[\'localStorage\'].clear()">Mutant</button>',
+      '</template>',
+    ].join('\n')
+
+    expect(accessesInSfc(sfc)).toEqual([
+      { line: 2, text: "window['localStorage'].clear()" },
+    ])
   })
 
   it('findet einen Zugriff im Template, auch ohne jeden Skriptblock', () => {
