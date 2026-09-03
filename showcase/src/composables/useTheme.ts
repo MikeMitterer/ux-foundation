@@ -13,6 +13,7 @@ import {
   DEFAULT_DARK_THEME,
   DEFAULT_LIGHT_THEME,
   isThemeId,
+  safeStorage,
   THEMES,
   type ThemeId,
 } from '@ux/index'
@@ -22,27 +23,31 @@ const STORAGE_KEY = 'ux-foundation.theme'
 /**
  * Liest das gespeicherte Theme.
  *
- * In eine eigene Funktion gezogen, weil der Zugriff auf `localStorage` in
+ * Über `safeStorage` aus dem Paket, weil der Zugriff auf den Speicher in
  * abgeschotteten Browsern wirft — nicht erst das Lesen, schon der bloße
  * Zugriff. Der Anstrich ist eine Bequemlichkeit; dafür soll die App nicht
  * stehenbleiben.
+ *
+ * Hier stand einmal ein eigenes `try`/`catch`, das genau dasselbe tat. Es war
+ * nicht falsch, nur doppelt: Die Datei entstand eine Stunde vor `safeStorage`
+ * und wurde danach nie wieder angefasst. Eine richtige Kopie verursacht keinen
+ * Fehler — deshalb überlebt sie länger als eine falsche, und deshalb bewacht
+ * `tests/storageAccess.spec.ts` die Regel jetzt, statt sie nur aufzuschreiben.
  */
 function readStoredTheme(): ThemeId | null {
-  try {
-    const stored = window.localStorage?.getItem(STORAGE_KEY)
-    return isThemeId(stored) ? stored : null
-  } catch {
-    return null
-  }
+  const stored = safeStorage.read(STORAGE_KEY)
+  return isThemeId(stored) ? stored : null
 }
 
-/** Schreibt die Wahl, still scheiternd aus demselben Grund. */
+/**
+ * Schreibt die Wahl.
+ *
+ * Der Rückgabewert von `safeStorage.write` bleibt ungenutzt, und das ist eine
+ * Entscheidung: Misslingt es, gilt der Anstrich eben nur für diese Sitzung.
+ * Eine Meldung dafür wäre lauter als die Sache wert ist.
+ */
 function writeStoredTheme(theme: ThemeId): void {
-  try {
-    window.localStorage?.setItem(STORAGE_KEY, theme)
-  } catch {
-    /* kein Speicher verfügbar — die Wahl gilt dann nur für diese Sitzung */
-  }
+  safeStorage.write(STORAGE_KEY, theme)
 }
 
 /** Vorgabe ohne eigene Wahl: was das Betriebssystem sagt. */
