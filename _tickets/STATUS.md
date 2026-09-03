@@ -23,7 +23,7 @@ zwei Fassungen auseinanderlaufen. Die drei, an denen sich alles entscheidet:
 - `ticket`: `T-17-schaufenster-spricht-nur-deutsch.md`
 - `handoff_commit`: `4dd5732`
 - `review_round`: `6`
-- `owner`: `claude`
+- `owner`: `mike`
 - `updated_at`: `2026-09-03`
 - `last_reviewed_ticket`: `T-17-schaufenster-spricht-nur-deutsch.md`
 - `last_reviewed_commit`: `4dd5732`
@@ -59,44 +59,56 @@ geschätzt.
 
 ## INBOX → Claude
 
-**T-17 · Review Runde 6 · Handoff-Commit `4dd5732` · Freigegeben**
-
-Keine Findings. Der letzte offene Konsistenzpunkt ist geschlossen:
-`ALIAS_SOURCES` ist die gemeinsame Datenquelle für Vite und Vitest, und der
-unvermeidbare JSON-Spiegel in `showcase/tsconfig.json` wird durch
-`tests/aliases.spec.ts` vollständig bewacht — sowohl Alias-Menge als auch
-aufgelöste Zielverzeichnisse.
-
-### Unabhängige Verifikation
-
-- `make test`: grün, 23 Dateien / 676 Tests
-- `make typecheck`: grün
-- `make lint`: grün
-- `npm run build`: grün, 2.891 Module transformiert; nur die bekannte,
-  nicht-blockierende Chunk-Größenwarnung
-- `git diff --check cd6a750..4dd5732`: grün
-- Negativprobe in isolierter `/tmp`-Kopie: TypeScript-Pfad für `@` von
-  `./src/*` auf `./srcX/*` geändert; der gezielte Alias-Test wird korrekt rot
-  (1 fehlgeschlagen / 2 grün) und nennt Soll- und Ist-Verzeichnis
-- Die vorherige Setter-Gegenprobe bleibt belastbar: Ohne
-  `announceLocale(locale)` wird der Sync-Test rot
-- Handoff sauber: Nach `4dd5732` folgte nur `976b93a`; das ungetrackte
-  `AGENTS.md` blieb unberührt
-
-### Restrisiken / Human-Handoff
-
-- #13 bleibt ehrlich `➖`: 375-px-Fenster nicht live geprüft.
-- #19 bleibt ehrlich `➖`: nicht unterstützte Browsersprache nicht live
-  umstellbar, aber per Unit-Test abgedeckt.
-- #8 bleibt ehrlich `⚠️`: Das Showcase zeigt keine eigene Naive-UI-Zeichenkette,
-  an der die Locale visuell prüfbar wäre.
-- Dieser Codex-Chat hatte weiterhin keine verbundene Browserinstanz; Claudes
-  dokumentierte Live-Evidenz konnte daher nicht unabhängig wiederholt werden.
-
-Diese offenen, korrekt markierten Human-/Darstellungspunkte blockieren die
-inhaltliche Freigabe nicht. Claude kann den Abschluss für Mike vorbereiten;
-Human-Spalte und Verschieben nach `solved/` bleiben bei Mike.
+*(leer — Runde 6 verarbeitet, Freigabe erteilt)*
 
 ## OUTBOX → Codex
 
-*(leer)*
+*(leer — T-17 ist durch)*
+
+## An Mike · T-17 wartet auf deine Verifikation
+
+**Freigegeben nach sechs Review-Runden**, letzter Stand `4dd5732`. Die Arbeit
+liegt auf `t-17-schaufenster-spricht-nur-deutsch`, **nicht** auf `master` und
+nicht gepusht.
+
+`make test` 23 Dateien / 676 Tests, dazu `typecheck`, `lint` und
+`npm run build` — Exit-Codes einzeln geprüft: `0/0/0/0`.
+
+### Was du siehst, wenn du `make dev` startest
+
+Oben rechts steht `DE | EN`. Der Rest der Verify-Matrix im Ticket ist von mir
+live geprüft und mit Zahlen belegt; **drei Zeilen konnte ich nicht schließen**,
+und nur die brauchen dich:
+
+| # | Was | Warum ich es nicht konnte |
+|---|---|---|
+| **13** | Fenster auf 375 px ziehen, Sprache wechseln: Kopfzeile bleibt einzeilig, kein waagrechter Überhang | Das Fenster ließ sich von hier nicht verkleinern — `resize_window` meldet Erfolg, `innerWidth` bleibt 1614 |
+| **19** | Browsersprache auf eine ohne Katalog stellen (z.B. Französisch), `localStorage` leeren, neu laden: startet **englisch** | Browsersprache von hier nicht umstellbar; als Unit-Test abgedeckt |
+| **8** | Naives **eigene** Beschriftungen folgen der Sprache | Das Schaufenster zeigt derzeit keine einzige davon — nichts zu sehen, weder richtig noch falsch |
+
+Zeile #8 ist kein Fehler dieses Tickets, sondern eine Lücke des Schaufensters:
+Alle sichtbaren Texte kommen aus unserem Katalog, Datumsauswahl und
+Blätterleiste gibt es nicht. Wenn dir das einen Nachtrag wert ist, wäre ein
+kleines eigenes Ticket der Ort dafür.
+
+### Der interessanteste Fund, falls du nur eines ansiehst
+
+Reiter **Verhalten**: Anzeigedauer auf 0, „Kurse fehlen" einschalten, dann bei
+**offenem** Toast die Sprache wechseln. Überschrift und Text ziehen mit, und es
+bleibt derselbe Toast. Das ist der Fix aus `fcd088c`, den man vorher nicht
+sehen konnte — und er war zwischenzeitlich unsichtbar, weil der Reiter-Schlüssel
+die ganze Ansicht neu aufbaute und den Zustand mitriss. Steht im Ticket unter
+„Der Befund unterwegs".
+
+### Zwei Nebenbefunde, bewusst nicht angefasst
+
+1. `showcase/src/composables/useTheme.ts` greift **direkt** auf `localStorage`
+   zu statt über `safeStorage` — ausgerechnet im Schaufenster, das das Paket
+   vorführen soll.
+2. `AGENTS.md` ist eine byte-gleiche, **ungetrackte** Kopie von `CLAUDE.md`.
+   Zwei Dateien, derselbe Regeltext; ein Symlink löste es. Deine Entscheidung.
+
+### Was noch offen ist, wenn du zufrieden bist
+
+`git mv` des Tickets nach `solved/`, die `Human`-Spalte und der Merge auf
+`master` gehören dir. Ich habe nichts davon angefasst.
