@@ -146,6 +146,34 @@ fehl; erst der Vergleich gegen git zeigte die stehengebliebene Mutation. Die
 finale Praxis waren einzelne Exit-Codes, `waitUntil()` und isolierte Mutanten in
 `/tmp`.
 
+### Dauerhafte Ticket-Evidenz veraltet zwischen den Runden
+
+**Erkennungsregel:** Die OUTBOX einer Übergabe nennt den neuen Stand, das Ticket
+aber noch den alten. Betroffen sind bevorzugt Zahlen (Testanzahl), Fundstellen
+(Datei und Zeile eines Mutanten) und Querverweise auf Abschnitte, deren
+Überschrift sich mit dem Inhalt geändert hat. Das Muster entsteht, weil die
+OUTBOX beim Übergeben ohnehin neu geschrieben wird, das Ticket dagegen nur
+stellenweise angefasst — die unveränderten Stellen wirken deshalb aktuell.
+
+**Prüffrage:** Jede Zahl, jede Datei-Zeilen-Angabe und jeden Abschnittsverweis
+im Ticket gegen den aktuellen Handoff prüfen, nicht gegen die OUTBOX. Nennt eine
+Fußnote noch eine Zeile aus einer früheren Fassung? Verweist ein Fließtext auf
+eine Überschrift, die inzwischen anders heißt? Historische Fußnoten dürfen ihre
+damaligen Zahlen behalten — der **Abschluss** darf es nicht.
+
+**Beleg:** T-17, Mikes Abnahme: Auflösung und Kurz-Testblock standen nach sechs
+Runden noch auf 21 Dateien / 663 Tests und Verify-Bereich #1–#16, während der
+übergebene Stand 22/673 und #1–#19 war.
+
+**Zweiter Beleg:** T-18, Review-Runde 2, Handoff `c51bda9`: Die OUTBOX nannte
+korrekt 684 Tests, das Ticket weiter 678. Fußnote ³ nannte die Fundstelle
+`useTheme.ts:38` aus der Regex-Fassung, obwohl der Mutant inzwischen Zeile 22
+meldete, und ein Verweis zeigte auf „Drei Fehler im Wächter", während der
+Abschnitt „Fünf Fehler" hieß. Zusätzlich beschrieb der Abschnitt „Der Wächter
+hat eine Falle" noch den widerlegten Regex-Weg als Empfehlung — die
+gefährlichste Ausprägung, weil ein veralteter **Rat** weiterwirkt, während eine
+veraltete Zahl nur falsch ist.
+
 ### Review-Evidenz für Menschen ist ein ausführbarer Ablauf
 
 **Erkennungsregel:** Eine Verify-Zeile beschreibt intern korrekt, was technisch

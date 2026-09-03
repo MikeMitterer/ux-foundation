@@ -33,7 +33,7 @@ Legende: ✅ live bestätigt · ⚠️ bestätigt mit Einschränkung (Fußnote) 
 | 6 | Konsole: Schreiben werfen lassen (Block unten), dann Theme wechseln | der Anstrich wechselt sichtbar, gespeichert wird nichts, **kein** Absturz | ✅⁵ | |
 | 7 | dasselbe, aber schon den **Zugriff** werfen lassen (nicht erst das Schreiben) | ebenfalls kein Absturz — das ist der Fall, für den `safeStorage` überhaupt existiert | ⚠️⁶ | |
 
-> ¹ **(CC):** 24 Dateien / 678 Tests, Exit-Codes einzeln geprüft:
+> ¹ **(CC):** 24 Dateien / 687 Tests, Exit-Codes einzeln geprüft:
 > `test:0 typecheck:0 lint:0 build:0`.
 >
 > ² **(CC):** **Keine Live-Verifikation** — gelesen und vom Wächter-Test
@@ -43,9 +43,10 @@ Legende: ✅ live bestätigt · ⚠️ bestätigt mit Einschränkung (Fußnote) 
 >
 > ³ **(CC):** Mutant ausgeführt, nicht behauptet: `safeStorage.read(…)` wieder
 > durch `window.localStorage?.getItem(…)` ersetzt → der Test wird rot und meldet
-> `showcase/src/composables/useTheme.ts:38 → …`. Die Zeilenzahl stimmt mit der
-> echten überein; das war beim ersten Anlauf **nicht** so, siehe „Drei Fehler im
-> Wächter" unten.
+> `showcase/src/composables/useTheme.ts:22 → …`. Die Zeilenzahl stimmt mit der
+> echten überein; das war beim ersten Anlauf **nicht** so, siehe „Fünf Fehler im
+> Wächter" unten. Ebenso gefangen wird seit Runde 2 der Template-Mutant in einer
+> SFC — `showcase/src/App.vue:141 → $event.view.localStorage.clear()`.
 >
 > ⁴ **(CC):** live gegen http://localhost:5177. Theme auf `ocean` gestellt →
 > `localStorage` führt `ux-foundation.theme: "ocean"`, der Schlüsselsatz ist
@@ -134,22 +135,38 @@ Zwei Gründe, sie trotzdem abzulösen:
 - [ ] Der Speicherschlüssel bleibt **`ux-foundation.theme`** — wer das
       Schaufenster offen hat, verliert seine Wahl nicht
 - [ ] Ein **Wächter-Test** verbietet den direkten Zugriff dauerhaft: Er
-      durchsucht `showcase/src` und `src` nach `localStorage` und lässt genau
-      eine Ausnahme zu — `src/composables/safeStorage.ts` selbst
-- [ ] Der Wächter ist per Mutant geprüft: direkter Zugriff wieder eingebaut →
-      Test rot, Datei und Zeile genannt
+      durchsucht `showcase/src` und `src` und lässt genau eine Ausnahme zu —
+      `src/composables/safeStorage.ts` selbst
+- [ ] Er wertet **syntaktisch** aus, nicht über Textsuche, und erfasst in einer
+      `.vue`-Datei die Skriptblöcke **und** die Ausdrücke des Templates
+- [ ] Er ist per Mutant geprüft — je einer in einer `.ts`-Datei und in einem
+      Template —: Test rot, Datei und echte Zeile genannt
+- [ ] Was er direkt importiert, steht als direkte Abhängigkeit in der
+      `package.json`; nichts hängt an einem fremden Abhängigkeitsbaum
 
-### Der Wächter hat eine Falle
+### Der Wächter hat zwei Fallen, und beide sind teuer
 
-Ein naiver `grep` nach `localStorage` schlägt auch bei **Kommentaren** an, und
-davon gibt es reichlich — in `localeDetection.ts` steht das Wort dreimal in
-JSDoc, in `i18n/index.ts` zweimal in einer Begründung. Ein Test, der darauf
-anspringt, ist nach zwei Tagen abgeschaltet.
+**Erstens: Er muss Code von Text unterscheiden können.** Ein `grep` nach
+`localStorage` schlägt auch bei Kommentaren an — in `localeDetection.ts` steht
+das Wort dreimal in JSDoc —, und ein Test, der darauf anspringt, ist nach zwei
+Tagen abgeschaltet. Umgekehrt kann er echten Code übersehen.
 
-Er muss also den Code sehen, nicht die Prosa: Kommentare vorher entfernen oder
-auf die Zugriffsform prüfen (`localStorage.` / `localStorage[`) statt auf das
-bloße Wort. Die Ausnahmeliste bleibt **eine** Datei; wächst sie, ist der Test
-falsch und nicht der Code.
+Hier stand zunächst der Rat, Kommentare vorher zu entfernen und auf die
+Zugriffsform zu prüfen. **Beides ist widerlegt** (siehe „Fünf Fehler im Wächter"):
+Ein Ausdruck über Text kann Kommentar- und Stringgrenzen nicht kennen, und die
+Zugriffsform trifft weder `window.localStorage ?? null` noch Optional Chaining.
+Richtig ist der **Parser**: TypeScript für Skripte, der SFC-Parser für Vue.
+Gesucht wird der Bezeichner im Syntaxbaum, nicht ein Muster im Text.
+
+**Zweitens: Ein Vue-Template ist ausführbarer Code.**
+`@click="$event.view.localStorage.clear()"` steht in keinem `<script>` und wird
+trotzdem zu einem Zugriff kompiliert. Ein Wächter, der nur Skriptblöcke ansieht,
+lässt eine ganze Dateiklasse ungeprüft, obwohl er sie zu prüfen behauptet. Die
+Ausdrücke des Templates kennt der SFC-Parser einzeln, samt Dateizeile; reiner
+Text ist kein Ausdruck und bleibt folgenlos.
+
+Die Ausnahmeliste bleibt **eine** Datei; wächst sie, ist der Test falsch und
+nicht der Code.
 
 Vorbild ist StockPortfolio — der Skill `ux-standards` nennt genau diesen Test
 als „den verlässlicheren Weg als eine Regel, an die sich alle erinnern sollen".
@@ -239,7 +256,7 @@ Richtige Reihenfolge, ab jetzt: erst committen, dann mutieren.
 ### Auflösung
 
 `ux-foundation` — Handoff-Commit siehe `STATUS.md`. `make test` 24 Dateien /
-678 Tests, dazu `typecheck`, `lint` und `npm run build`; Exit-Codes einzeln
+687 Tests, dazu `typecheck`, `lint` und `npm run build`; Exit-Codes einzeln
 geprüft (`0/0/0/0`).
 
 **Live geprüft sind die Zeilen #4 bis #6**, #7 mit Einschränkung (der Leseweg

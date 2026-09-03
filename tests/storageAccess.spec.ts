@@ -1,8 +1,5 @@
 /**
- * Niemand greift direkt auf den `localStorage` zu — außer `safeStorage` selbst.
- *
- * Die Regel steht im Skill `ux-standards`, Abschnitt „Speicher". Hier steht,
- * wie sie geprüft wird.
+ * Bewacht die Speicher-Regel aus dem Skill `ux-standards`, Abschnitt „Speicher".
  *
  * Geprüft wird über den **TypeScript-Parser**, nicht über Textsuche: Nur er
  * unterscheidet Bezeichner von Zeichenkette, Template-Literal, Regex-Literal
@@ -10,8 +7,15 @@
  * `window.localStorage`, `localStorage?.getItem`, `localStorage['x']` und
  * `const { localStorage } = window` ohne Aufzählung gleichermaßen erfasst.
  *
- * Die zweite Beschreibung unten hält die beiden Fälle fest, an denen eine
- * Fassung über Text nachweislich scheiterte.
+ * Bei einer `.vue`-Datei reichen die Skriptblöcke nicht: **Ein Template ist
+ * ausführbarer Code.** `@click="$event.view.localStorage.clear()"` steht in
+ * keinem `<script>` und wird trotzdem zu einem Zugriff kompiliert. Geprüft
+ * werden deshalb auch die Ausdrücke des Templates — die kennt der SFC-Parser
+ * einzeln, samt ihrer Zeile in der Datei. Reiner Text bleibt außen vor, weil er
+ * gar kein Ausdruck ist.
+ *
+ * Die zweite Beschreibung unten hält die Fälle fest, an denen frühere Fassungen
+ * nachweislich scheiterten.
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { extname, join, relative } from 'node:path'
@@ -70,11 +74,20 @@ function accessesInFile(path: string): string[] {
   const where = relative(ROOT, path)
 
   const accesses =
-    extname(path) === '.vue'
-      ? scriptBlocks(content).flatMap(({ code, firstLine }) => accessesInScript(code, firstLine))
-      : accessesInScript(content)
+    extname(path) === '.vue' ? accessesInSfc(content) : accessesInScript(content)
 
   return accesses.map(({ line, text }) => `${where}:${line} → ${text}`)
+}
+
+/**
+ * Die Zugriffe in einer SFC — aus den Skriptblöcken **und** dem Template.
+ *
+ * @param content Inhalt der `.vue`-Datei.
+ */
+function accessesInSfc(content: string): Access[] {
+  return [...scriptBlocks(content), ...templateExpressions(content)].flatMap(
+    ({ code, firstLine }) => accessesInScript(code, firstLine),
+  )
 }
 
 /**
@@ -90,6 +103,55 @@ function scriptBlocks(content: string): { code: string; firstLine: number }[] {
   return [descriptor.script, descriptor.scriptSetup]
     .filter((block): block is NonNullable<typeof block> => block !== null)
     .map((block) => ({ code: block.content, firstLine: block.loc.start.line }))
+}
+
+/**
+ * Die ausführbaren Ausdrücke eines Templates, jeder mit seiner Dateizeile.
+ *
+ * Gemeint sind Interpolationen (`{{ … }}`) und die Werte von Direktiven
+ * (`@click`, `:prop`, `v-if`, `v-for`) — alles, was Vue zu Code übersetzt.
+ * Statische Attributwerte und reiner Text sind keine Ausdrücke und tauchen
+ * hier nicht auf; genau deshalb bleibt ein sichtbares „localStorage" im Text
+ * folgenlos.
+ *
+ * Der Baum wird allgemein durchlaufen statt nach Knotenarten aufgezählt: Die
+ * Formen, in denen ein Ausdruck hängen kann, sind zahlreich, und eine Liste
+ * davon wäre beim nächsten Direktiventyp unvollständig.
+ *
+ * @param content Inhalt der `.vue`-Datei.
+ */
+function templateExpressions(content: string): { code: string; firstLine: number }[] {
+  const { descriptor } = parseSfc(content)
+  if (descriptor.template === null) return []
+
+  const found: { code: string; firstLine: number }[] = []
+
+  const walk = (node: unknown): void => {
+    if (node === null || typeof node !== 'object') return
+
+    const candidate = node as {
+      type?: number
+      isStatic?: boolean
+      content?: unknown
+      loc?: { start?: { line?: number } }
+    }
+
+    // `4` ist `NodeTypes.SIMPLE_EXPRESSION`; statische sind Attributwerte.
+    if (candidate.type === 4 && candidate.isStatic === false) {
+      found.push({
+        code: String(candidate.content ?? ''),
+        firstLine: candidate.loc?.start?.line ?? 1,
+      })
+    }
+
+    for (const value of Object.values(node)) {
+      if (Array.isArray(value)) value.forEach(walk)
+      else if (value !== null && typeof value === 'object') walk(value)
+    }
+  }
+  walk(descriptor.template.ast)
+
+  return found
 }
 
 /**
@@ -168,9 +230,34 @@ describe('Der Wächter unterscheidet Code von Text', () => {
       '</script>',
     ].join('\n')
 
-    const blocks = scriptBlocks(sfc)
-    const found = blocks.flatMap(({ code, firstLine }) => accessesInScript(code, firstLine))
+    expect(accessesInSfc(sfc)).toEqual([{ line: 6, text: 'const x = window.localStorage' }])
+  })
 
-    expect(found).toEqual([{ line: 6, text: 'const x = window.localStorage' }])
+  it('findet einen Zugriff im Template, auch ohne jeden Skriptblock', () => {
+    // Aus Codex' Review von Runde 2. Ein Template ist ausführbarer Code; die
+    // Fassung davor sah nur `<script>` an und blieb bei diesem SFC grün.
+    const sfc = [
+      '<template>',
+      '  <button @click="$event.view.localStorage.clear()">Mutant</button>',
+      '</template>',
+    ].join('\n')
+
+    expect(accessesInSfc(sfc)).toEqual([
+      { line: 2, text: '$event.view.localStorage.clear()' },
+    ])
+  })
+
+  it('meldet sichtbaren Text im Template nicht als Zugriff', () => {
+    const sfc = ['<template>', '  <p>localStorage ist hier nur ein Wort</p>', '</template>'].join(
+      '\n',
+    )
+
+    expect(accessesInSfc(sfc)).toEqual([])
+  })
+
+  it('meldet einen statischen Attributwert nicht als Zugriff', () => {
+    const sfc = ['<template>', '  <p title="localStorage">Text</p>', '</template>'].join('\n')
+
+    expect(accessesInSfc(sfc)).toEqual([])
   })
 })

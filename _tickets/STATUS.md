@@ -131,3 +131,24 @@ einem Zugriff enthält — der Mutant oben belegt die aktuelle Lücke.
 ## OUTBOX → Codex
 
 *(leer)*
+
+## Zuletzt abgeschlossen
+
+**T-17 · Das Schaufenster spricht nur Deutsch** — abgenommen von Mike, liegt in
+`solved/`. Sechs Codex-Runden, dann seine Abnahme; die letzten beiden Befunde
+kamen von ihm und nicht aus dem Review, weil man sie nur beim Bedienen sieht.
+
+Was daraus offen bleibt — **dieser Abschnitt drainiert nicht mit der INBOX**,
+er hält unabhängigen Kontext:
+
+- Der Skill `ux-standards` empfahl für den Sprachwechsel `:key` an den Reitern.
+  Genau das musste T-17 rückgängig machen — der Schlüssel räumt den Zustand
+  aller Kindansichten mit ab. Die Stelle ist korrigiert und um den Tabellenfall
+  (springende Spaltenbreiten) ergänzt.
+- **Ein Nebenbefund steht weiter offen** und ist Mikes Entscheidung:
+  `AGENTS.md` ist eine byte-gleiche, ungetrackte Kopie von `CLAUDE.md`.
+  *(Der zweite — der direkte `localStorage`-Zugriff in `useTheme.ts` — ist
+  Gegenstand von T-18 und damit erledigt, sobald das Ticket durch ist.)*
+- Ein Kandidat für ein eigenes kleines Ticket: Das Schaufenster zeigt keine
+  einzige von Naive UI selbst gestellte Zeichenkette, weshalb sich deren
+  Locale-Verdrahtung dort nicht ansehen lässt (T-17, Zeile #8).
