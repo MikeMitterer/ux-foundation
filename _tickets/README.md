@@ -14,6 +14,8 @@ Benannt statt wiederholt, damit nicht zwei Fassungen auseinanderlaufen:
   der Mensch. Die Mensch-Spalte wird **nie** überschrieben.
 - **`QUESTIONS.md` drainiert** — jeder Eintrag löst auf zu erledigt, GitHub-
   Issue oder gelöscht. Tickets sammeln sich in `solved/`, Fragen nicht.
+- **Zwei-Agenten-Review** — `STATUS.md` ist die ephemere Mailbox; der stabile
+  Vertrag steht in `CODEX-REVIEW-AUTOMATION.md`.
 
 Die Ticket-Vorlage liegt im Skill unter `templates/ticket.md`.
 
@@ -50,8 +52,12 @@ Bildschirmfoto zeigt, *dass* etwas eng aussieht, nicht ob es umbricht.
 
 ```
 _tickets/
-├── README.md      # diese Datei
-├── QUESTIONS.md   # ephemer, tendiert gegen leer
-├── T-NN-*.md      # offene Tickets
-└── solved/        # erledigte
+├── README.md                       # diese Datei
+├── QUESTIONS.md                    # ephemer, tendiert gegen leer
+├── STATUS.md                       # Claude↔Codex-Mailbox
+├── CODEX-REVIEW-AUTOMATION.md      # stabiler Review-Vertrag
+├── CODEX-IN-CONTEXT-SCHEDULER.md   # Scheduler-Start und Laufzeit
+├── CLAUDE-REVIEW-PATTERNS.md       # dauerhafte Lernschicht
+├── T-NN-*.md                       # offene Tickets
+└── solved/                         # erledigte
 ```
