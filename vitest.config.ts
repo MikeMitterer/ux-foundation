@@ -14,7 +14,17 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   plugins: [vue()],
   resolve: {
-    alias: { '@ux': fileURLToPath(new URL('./src', import.meta.url)) },
+    alias: {
+      '@ux': fileURLToPath(new URL('./src', import.meta.url)),
+      /*
+       * Derselbe Alias wie in `showcase/vite.config.ts`, weil ein paar Tests
+       * Schaufenster-Module einhängen und die untereinander mit `@/…`
+       * aufeinander zeigen. Ohne ihn scheitert schon das Laden — und zwar erst
+       * bei dem Test, der zufällig das erste Modul mit so einem Import
+       * erwischt, was beim Suchen in die Irre führt.
+       */
+      '@': fileURLToPath(new URL('./showcase/src', import.meta.url)),
+    },
   },
   test: {
     /*

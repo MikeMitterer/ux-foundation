@@ -359,6 +359,46 @@ Kommentare beschrieben noch den Stand vor Runde 1, darunter ausgerechnet der in
 `DemoNav.vue`, der behauptete, die Beschriftung im iframe könne sich gar nicht
 ändern.
 
+### Runde 3: der Test bewachte gar nichts
+
+Codex hat nicht gelesen, sondern **gemessen**: In einer isolierten Kopie den
+Aufruf `announceLocale(locale)` aus `setLocale()` entfernt — und alle acht
+Tests blieben grün. Ein Regressionstest, den man durch Entfernen der Sache, die
+er sichern soll, nicht rot bekommt, ist Dekoration.
+
+Der Grund war derselbe Fehler wie in Runde 2, eine Ebene höher: Mein Test rief
+`announceFromOtherDocument()` direkt auf. Damit lief der öffentliche Setter nie
+— weder `persistLocale` noch `announceLocale` —, und der Speicher-Mock traf
+einen Pfad, den niemand betrat. Ich hatte den **Empfänger** geprüft und geglaubt,
+damit die Verdrahtung geprüft zu haben.
+
+Der neue Block „Der Umschalter sagt an, was er tut" geht den Weg der Kopfzeile:
+`useLocale().setLocale('en')`, beobachtet aus der Rolle, für die die Kopplung
+gebaut wurde — ein zweites Dokument am selben Kanal.
+
+**Dabei kam heraus, dass der Ausfall-Fall vorher gar keiner war.** happy-dom
+bringt **keinen** `localStorage` mit; im Test scheiterte `safeStorage` also
+ohnehin immer, und „bei blockiertem Speicher" prüfte eine Lage, die es nicht
+herstellte. Der Test hängt jetzt selbst einen Speicher ein und lässt *dessen*
+`setItem` werfen — und stellt zusätzlich fest, dass wirklich nichts geschrieben
+wurde, damit er nicht wieder unbemerkt die falsche Lage prüft.
+
+Gegengeprüft mit zwei Mutanten, statt es zu behaupten:
+
+| Mutant | vorher | jetzt |
+|---|---|---|
+| `announceLocale(locale)` aus `setLocale` entfernt | grün (8/8) | **rot** — „erreicht andere Dokumente auch bei blockiertem Speicher" |
+| `persistLocale(locale, …)` aus `setLocale` entfernt | grün | **rot** — zwei Fälle |
+
+Nebenbei brauchte es dafür den `@`-Alias in `vitest.config.ts`: Die
+Schaufenster-Module zeigen mit `@/…` aufeinander, und ohne ihn scheitert schon
+das Laden.
+
+**Die Lehre, und sie ist die dritte Runde in Folge dieselbe Familie:** Ein Test
+beweist nur, was er tatsächlich ausführt. Runde 2 baute den Kanal selbst nach,
+Runde 3 übersprang den Setter. Beide Male sah der Test richtig aus und maß
+nichts. Der Mutant ist die einzige ehrliche Probe.
+
 ### Offene Punkte
 
 - **Zeile #13 ist ungeprüft** — das Fenster ließ sich hier nicht verkleinern.
