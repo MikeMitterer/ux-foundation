@@ -145,7 +145,7 @@ Legende: ✅ live bestätigt · ⚠️ bestätigt mit Einschränkung (Fußnote) 
 cd "${DEV_LOCAL}/DevWeb/Production/ux-foundation"
 make test        # #1
 make typecheck   # #2
-make dev         # #4–#14 — Schaufenster auf http://localhost:5177
+make dev         # #4–#18 — Schaufenster auf http://localhost:5177
 ```
 
 Für #3 die Gegenprobe von Hand — sie ist der einzige Beweis, dass der Typ
@@ -399,6 +399,31 @@ beweist nur, was er tatsächlich ausführt. Runde 2 baute den Kanal selbst nach,
 Runde 3 übersprang den Setter. Beide Male sah der Test richtig aus und maß
 nichts. Der Mutant ist die einzige ehrliche Probe.
 
+### Runde 4: die zweite Quelle beseitigt statt bewacht
+
+Zwei kleine Punkte, beide zutreffend.
+
+Der `@`-Alias, den Runde 3 in `vitest.config.ts` gebracht hatte, stand damit
+zweimal da — einmal dort, einmal in `showcase/vite.config.ts`. Ich hatte das
+selbst als Frage gestellt; die Repo-Regel beantwortet sie: Wer eine zweite
+Quelle anlegt, legt den Test dazu — **und wo sich die Doppelung vermeiden
+lässt, gibt es gar keine zweite Quelle.**
+
+Also kein Wächter, sondern `aliases.ts` im Wurzelverzeichnis, aus der beide
+Konfigurationen lesen. Die Pfade gehen von dieser Datei aus, damit es gleich
+ist, aus welcher Tiefe jemand sie einbindet — sonst hätte man die Doppelung nur
+durch eine Falle ersetzt. Der Bau ist mitgeprüft (`npm run build`), weil die
+Datei auch zur Bauzeit geladen wird; `showcase/tsconfig.json` nimmt sie
+ausdrücklich auf, sonst kennt `vue-tsc` sie nicht.
+
+Der Wert der Zusammenlegung liegt nicht in den zwei gesparten Zeilen: Liefen die
+Seiten auseinander, prüfte der Testlauf **andere Module**, als die App lädt —
+und bliebe dabei grün. Das ist die teuerste Sorte Fehler.
+
+Dazu beschrieb der Abschlussblock noch den Stand von Runde 1 (21 Dateien, 663
+Tests, Zeilen 1–16). Historische Fußnoten behalten ihre damaligen Zahlen; der
+Abschluss nennt jetzt den übergebenen Stand.
+
 ### Offene Punkte
 
 - **Zeile #13 ist ungeprüft** — das Fenster ließ sich hier nicht verkleinern.
@@ -422,6 +447,20 @@ Beide außerhalb des Scopes, beide gemeldet statt still behoben:
 
 ### Auflösung
 
-`ux-foundation` — Handoff-Commit siehe `STATUS.md`. `make test` (21 Dateien,
-663 Tests), `make typecheck` und `make lint` grün. Live geprüft sind die Zeilen
-1–12 und 14–16; #13 blieb ➖ (Fenstergröße), #8 ⚠️ (nichts zu sehen).
+`ux-foundation` — Handoff-Commit siehe `STATUS.md`. Vier Review-Runden mit
+Codex; was jede gefunden hat, steht oben in ihrem eigenen Abschnitt.
+
+**Stand bei der Übergabe:** `make test` 22 Dateien / 673 Tests, `make typecheck`
+und `make lint` grün — Exit-Codes einzeln geprüft (`0/0/0`), nicht durch eine
+Pipe. Zusätzlich `npm run build` grün, weil die Alias-Zusammenlegung auch zur
+Bauzeit greifen muss.
+
+**Live geprüft:** die Zeilen 1–12 sowie 14–18, jede mit eigener Evidenz in der
+Fußnote. Der Kanal zwischen den Dokumenten ist zusätzlich per Mutant
+abgesichert: Wer `announceLocale` oder `persistLocale` aus `setLocale` entfernt,
+bekommt einen roten Test — nachgemessen, nicht angenommen.
+
+**Nicht abschließbar von hier, drei Zeilen:** #13 ➖ (Fenstergröße ließ sich
+nicht ändern), #19 ➖ (Browsersprache nicht umstellbar; als Unit-Test
+abgedeckt), #8 ⚠️ (das Schaufenster zeigt keine von Naive selbst gestellte
+Zeichenkette — nichts zu sehen, weder richtig noch falsch).

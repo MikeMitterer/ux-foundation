@@ -3,6 +3,8 @@ import { fileURLToPath, URL } from 'node:url'
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
 
+import { ALIASES } from '../aliases'
+
 /**
  * Konfiguration der Schaufenster-App.
  *
@@ -15,14 +17,8 @@ export default defineConfig({
 
   plugins: [vue()],
 
-  resolve: {
-    alias: {
-      // Auf die Quellen zeigen statt auf ein gebautes Paket: Änderungen am
-      // Fundament sollen im Schaufenster sofort sichtbar sein.
-      '@ux': fileURLToPath(new URL('../src', import.meta.url)),
-      '@': fileURLToPath(new URL('./src', import.meta.url)),
-    },
-  },
+  // Dieselben Zuordnungen wie im Testlauf, aus einer Quelle — siehe dort.
+  resolve: { alias: ALIASES },
 
   css: {
     preprocessorOptions: {

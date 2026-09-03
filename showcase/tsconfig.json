@@ -36,6 +36,7 @@
     "src/**/*.vue",
     "../src/**/*.ts",
     "../src/**/*.vue",
-    "vite.config.ts"
+    "vite.config.ts",
+    "../aliases.ts"
   ]
 }

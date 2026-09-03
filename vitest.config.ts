@@ -1,7 +1,7 @@
-import { fileURLToPath, URL } from 'node:url'
-
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vitest/config'
+
+import { ALIASES } from './aliases'
 
 /**
  * Tests laufen ohne Browser: Geprüft wird die Logik des Pakets, nicht das
@@ -10,22 +10,16 @@ import { defineConfig } from 'vitest/config'
  * Das Vue-Plugin ist trotzdem nötig: Die Tests greifen über `@ux/index` zu,
  * und dieser Barrel exportiert auch Komponenten. Der Umweg ist Absicht — so
  * prüfen sie nebenbei, dass die öffentliche Export-Fläche überhaupt lädt.
+ *
+ * Die Zuordnungen kommen aus `aliases.ts` — derselben Datei, aus der auch das
+ * Schaufenster liest. Ein paar Tests hängen Schaufenster-Module ein, und die
+ * zeigen untereinander mit `@/…` aufeinander; liefen die beiden Seiten
+ * auseinander, prüfte der Testlauf andere Module, als die App lädt, und bliebe
+ * dabei grün.
  */
 export default defineConfig({
   plugins: [vue()],
-  resolve: {
-    alias: {
-      '@ux': fileURLToPath(new URL('./src', import.meta.url)),
-      /*
-       * Derselbe Alias wie in `showcase/vite.config.ts`, weil ein paar Tests
-       * Schaufenster-Module einhängen und die untereinander mit `@/…`
-       * aufeinander zeigen. Ohne ihn scheitert schon das Laden — und zwar erst
-       * bei dem Test, der zufällig das erste Modul mit so einem Import
-       * erwischt, was beim Suchen in die Irre führt.
-       */
-      '@': fileURLToPath(new URL('./showcase/src', import.meta.url)),
-    },
-  },
+  resolve: { alias: ALIASES },
   test: {
     /*
      * `happy-dom` statt `node`: Ein Test hängt Komponenten ein, um das
