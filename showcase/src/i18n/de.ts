@@ -47,9 +47,9 @@ export const de = {
   },
 
   /*
-   * Nur die Beschriftung. Die Sprachnamen selbst sind Endonyme und stehen als
-   * Konstante in `i18n/index.ts` — sie dürfen sich mit der Sprache gerade
-   * nicht ändern.
+   * Nur die Beschriftung des Umschalters. Die Kennungen daneben — `DE`, `EN` —
+   * stehen nirgends als Text: Sie entstehen aus `LOCALE_IDS` in Großbuchstaben.
+   * Ein Kürzel wird nicht übersetzt und heißt in jeder Oberfläche gleich.
    */
   locale: {
     switchLabel: 'Sprache wählen',

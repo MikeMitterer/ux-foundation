@@ -41,6 +41,7 @@ Legende: ✅ live bestätigt · ⚠️ bestätigt mit Einschränkung (Fußnote) 
 | 14 | Reiter wechseln, dann Sprache wechseln | Der Schiebebalken sitzt unter dem aktiven Reiter, auch nach dem Wechsel | ✅¹¹ | |
 | 15 | Reiter „Naive UI" und „Schrift", Sprache wechseln | Spaltenköpfe, Knöpfe, Etiketten, Hinweis und die Rollen-Tabelle wechseln mit — nichts bleibt deutsch stehen | ✅¹² | |
 | 16 | Bereiche Grundlagen / Komponenten / Verhalten durchklicken | je Bereich der richtige Reitersatz, **ein** sichtbarer Abschnitt (Regression zu #14) | ✅¹³ | |
+| 17 | Reiter „Mobil" **laden**, dann Sprache wechseln **ohne** Neuladen | alle drei eingebetteten Navigationen wechseln mit — Beschriftungen **und** `lang` im jeweiligen iframe | ✅¹⁴ | |
 
 > ¹ **(CC):** `make test` 21 Dateien / 663 Tests grün, `make typecheck` und
 > `make lint` ohne Ausgabe (2026-09-03). Der neue `tests/showcaseMessages.spec.ts`
@@ -55,6 +56,10 @@ Legende: ✅ live bestätigt · ⚠️ bestätigt mit Einschränkung (Fußnote) 
 > ³ **(CC):** live gegen http://localhost:5177 (2026-09-03, Theme `mangolila`).
 > Beim Wechsel wandern Menü (`Grundlagen`→`Basics`), Reiter, Fließtext und
 > Statuszeile (`Beispiel-Depot, 6 Positionen`→`Example portfolio, 6 positions`).
+> **Korrektur nach Runde 1:** Diese Zeile stand zunächst als „alle sichtbaren
+> Texte" da und war damit zu weit — die eingebetteten Mobil-Ansichten waren
+> nicht geprüft und wechselten tatsächlich **nicht** mit. Das ist jetzt behoben
+> und in #17 gesondert nachgewiesen; hier gilt die Aussage für die Elternseite.
 >
 > ⁴ **(CC):** live, mit Zusicherung an jedem Schritt — Anzeigedauer `0`,
 > Schalter `aria-checked=true`, Toast „Kurse fehlen / 3 Kurse konnten nicht
@@ -107,6 +112,15 @@ Legende: ✅ live bestätigt · ⚠️ bestätigt mit Einschränkung (Fußnote) 
 > Abklingen der Animation genau **ein** sichtbarer Abschnitt und
 > `scrollWidth − clientWidth = 0`. Während der Animation stehen kurz zwei
 > Abschnitte im Dokument, das ist Naives Übergang und war vorher genauso.
+>
+> ¹⁴ **(CC):** live, die Gegenprobe aus Codex' Finding 1 wörtlich ausgeführt —
+> Mobil-Ansicht geladen (drei iframes, alle `lang="de"`, Beschriftungen
+> „Übersicht/Papiere/Devisen/Einstellungen"), dann **ohne** Neuladen auf `EN`
+> geklickt. Danach in **allen drei**: `lang="en"` und
+> „Dashboard/Instruments/FX/Settings". Abgesichert durch
+> `tests/showcaseLocaleSync.spec.ts` — der Test feuert das `storage`-Ereignis
+> und prüft auch die Ränder: fremder Schlüssel, unbekannte Sprache, geleerter
+> Speicher.
 
 ### Kurz-Testblock
 
@@ -234,14 +248,19 @@ bleiben die Katalog-Schlüssel zweibuchstabig; sie müssen es sogar, weil
 `browserLocale()` die Browsersprache auf ihren ersten Teil abbildet und ein
 Schlüssel `de-AT` damit nie träfe.
 
-### Warum die Sprachnamen nicht im Katalog stehen
+### Warum die Kennungen nicht im Katalog stehen
 
-„Deutsch" und „English" sind **Endonyme** — jede Sprache in ihrem eigenen Namen,
-und damit unabhängig von der gerade aktiven. Übersetzt man sie, steht in der
-englischen Oberfläche „German" für einen Eintrag, den ein deutscher Leser
-auswählen will; genau er versteht ihn dann nicht mehr. Sie liegen deshalb als
-Konstante neben der Sprachliste, nicht als Katalog-Eintrag. Der `aria-label` des
-Umschalters ist normaler sichtbarer Text und **steht** im Katalog.
+`DE` und `EN` entstehen aus `LOCALE_IDS` in Großbuchstaben und stehen nirgends
+als Text. Zwei Gründe, und der zweite ist der wichtigere:
+
+1. **Ein Kürzel wird nicht übersetzt.** Es heißt in jeder Oberfläche gleich —
+   dasselbe, was Endonyme leisten würden („Deutsch"/„English"), nur ohne Liste.
+2. **Es gibt keine zweite Quelle.** Eine Namensliste neben `LOCALE_IDS` müsste
+   bei jeder neuen Sprache nachgezogen werden, und genau das vergisst jemand.
+
+Die erste Fassung hatte eine Auswahlliste mit Endonymen; sie ist auf Mikes
+Ansage durch `DE \| EN` ersetzt. Der `aria-label` der Gruppe ist normaler
+sichtbarer Text und **steht** im Katalog.
 
 ### Side-Effects
 
@@ -250,6 +269,39 @@ Umschalters ist normaler sichtbarer Text und **steht** im Katalog.
 angefasst. Der Katalog verdoppelt sich von einer auf zwei Dateien — die zweite
 Quelle ist durch den Typ (Schlüssel) und einen Test (Platzhalter) abgesichert,
 wie es die Repo-Regel verlangt.
+
+### Runde 1: was Codex gefunden hat
+
+Drei Findings, alle drei zutreffend, alle drei behoben.
+
+**Der eine, der zählt: die iframes.** Der Mobil-Abschnitt bettet dieselbe App
+dreimal als eigenes Dokument ein, und jedes baut seine **eigene** i18n-Instanz
+auf. Der Umschalter änderte nur den Ref der Elternseite — die drei
+Navigationen blieben in ihrer Startsprache stehen, während ringsherum alles
+wechselte. Meine Verify-Zeilen #5 und #15 behaupteten „alle sichtbaren Texte";
+das war zu weit gegriffen, weil ich die eingebettete Ansicht nicht geprüft
+hatte. Die Fußnote zu #3 sagt das jetzt ausdrücklich.
+
+Gelöst über das `storage`-Ereignis, und das ist hier kein Notbehelf, sondern
+genau der richtige Schnitt: Es feuert in allen Dokumenten derselben Herkunft
+**außer** dem, das geschrieben hat. Das schreibende aktualisiert sich über
+seinen eigenen Ref, die übrigen über das Ereignis — niemand wird doppelt
+gesetzt, und zwei Browser-Tabs des Schaufensters ziehen nebenbei gleich mit.
+
+Dabei kam heraus, dass `lang` am Wurzelelement im falschen Modul saß: Es stand
+in `useLocale`, das nur lädt, wer einen Umschalter zeigt. Die iframes zeigen
+keinen und hatten deshalb **gar kein** `lang`. Beides — die Startbelegung und
+die Brücke — liegt jetzt in `i18n/index.ts`, das jedes Dokument über `main.ts`
+lädt.
+
+**Die beiden kleinen:** Die neu eingeführten Bezeichner waren deutsch
+(`Katalog`, `nachrichten`, `DEUTSCH`, `NAMEN`, …). `code-standards` verlangt
+englische Bezeichner auch in Tests und nimmt den Einwand „aber das Repo ist
+voll davon" vorweg: *„Altlast: Neuer Code ist englisch."* Umbenannt sind nur
+die neuen. Dazu zeigte ein Kommentar noch auf einen Typ `Katalog`, den es nie
+gab — er heißt `MessageSchema`. Und Katalog-Kommentar wie Ticket-Abschnitt
+beschrieben weiter die verworfene Endonym-Fassung; beide sagen jetzt, was
+tatsächlich dasteht.
 
 ### Offene Punkte
 

@@ -2,9 +2,9 @@
  * Die beiden Kataloge des Schaufensters gegeneinander.
  *
  * Ein zweiter Katalog ist eine zweite Quelle, und die Repo-Regel verlangt im
- * selben Zug den Test dazu. Die **Schlüssel** bewacht schon der Typ `Katalog`
- * in `de.ts` — fehlt einer, ist `make typecheck` rot, nicht erst der Browser.
- * Was der Typ nicht sehen kann, steht hier:
+ * selben Zug den Test dazu. Die **Schlüssel** bewacht schon der Typ
+ * `MessageSchema` in `de.ts` — fehlt einer, ist `make typecheck` rot, nicht
+ * erst der Browser. Was der Typ nicht sehen kann, steht hier:
  *
  * 1. **Platzhalter.** `'{count} Kurse fehlen'` und `'quotes missing'` sind für
  *    TypeScript beide `string`. Fällt beim Übersetzen ein `{n}` weg, meldet
@@ -20,19 +20,17 @@ import { de } from '../showcase/src/i18n/de'
 import { en } from '../showcase/src/i18n/en'
 
 /** Ein Katalog ist zwei Ebenen tief: Gruppe → Schlüssel → Text. */
-type Katalog = Record<string, Record<string, string>>
+type Catalog = Record<string, Record<string, string>>
 
 /**
  * Alle Nachrichten eines Katalogs als flache Liste.
  *
- * @param katalog Der Katalog.
+ * @param catalog Der Katalog.
  * @returns Paare aus punktiertem Pfad (`patterns.stackBody`) und Text.
  */
-function nachrichten(katalog: Katalog): [string, string][] {
-  return Object.entries(katalog).flatMap(([gruppe, eintraege]) =>
-    Object.entries(eintraege).map(
-      ([schluessel, text]): [string, string] => [`${gruppe}.${schluessel}`, text],
-    ),
+function messages(catalog: Catalog): [string, string][] {
+  return Object.entries(catalog).flatMap(([group, entries]) =>
+    Object.entries(entries).map(([key, text]): [string, string] => [`${group}.${key}`, text]),
   )
 }
 
@@ -45,35 +43,35 @@ function nachrichten(katalog: Katalog): [string, string][] {
  *
  * @param text Die Nachricht.
  */
-function platzhalter(text: string): string[] {
-  return [...text.matchAll(/\{(\w+)\}/g)].map((treffer) => treffer[1]).sort()
+function placeholders(text: string): string[] {
+  return [...text.matchAll(/\{(\w+)\}/g)].map((match) => match[1]).sort()
 }
 
-const DEUTSCH = nachrichten(de as unknown as Katalog)
-const ENGLISCH = nachrichten(en as unknown as Katalog)
+const GERMAN = messages(de as unknown as Catalog)
+const ENGLISH = messages(en as unknown as Catalog)
 
 describe('Schaufenster-Kataloge', () => {
   it('führen dieselben Schlüssel', () => {
     // Der Typ prüft das schon — hier steht es, damit ein Fehlschlag den
     // fehlenden Schlüssel *nennt* statt eine Seite später an `undefined` zu
     // scheitern.
-    expect(ENGLISCH.map(([pfad]) => pfad).sort()).toEqual(DEUTSCH.map(([pfad]) => pfad).sort())
+    expect(ENGLISH.map(([path]) => path).sort()).toEqual(GERMAN.map(([path]) => path).sort())
   })
 
-  it.each(DEUTSCH)('%s trägt in beiden Sprachen dieselben Platzhalter', (pfad, deutsch) => {
-    const englisch = ENGLISCH.find(([p]) => p === pfad)?.[1] ?? ''
-    expect(platzhalter(englisch)).toEqual(platzhalter(deutsch))
+  it.each(GERMAN)('%s trägt in beiden Sprachen dieselben Platzhalter', (path, german) => {
+    const english = ENGLISH.find(([p]) => p === path)?.[1] ?? ''
+    expect(placeholders(english)).toEqual(placeholders(german))
   })
 
-  it.each([...DEUTSCH, ...ENGLISCH])('%s enthält kein @', (_pfad, text) => {
+  it.each([...GERMAN, ...ENGLISH])('%s enthält kein @', (_path, text) => {
     expect(text).not.toContain('@')
   })
 
   it('sind nicht leer', () => {
     // Der Typ nimmt auch '' als string. Ein leerer Eintrag ist beim Übersetzen
     // der wahrscheinlichste Platzhalter, den jemand vergisst zu füllen.
-    for (const [pfad, text] of [...DEUTSCH, ...ENGLISCH]) {
-      expect(text.trim(), pfad).not.toBe('')
+    for (const [path, text] of [...GERMAN, ...ENGLISH]) {
+      expect(text.trim(), path).not.toBe('')
     }
   })
 })

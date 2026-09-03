@@ -42,7 +42,12 @@ watch(
  * die Bereiche mehrerer Apps ab, und sieben Punkte nebeneinander würden hier
  * genau die Regel verletzen, die dieser Abschnitt vorführt.
  */
-const NAMEN = ['dashboard', 'instruments', 'fx', 'settings'] as const satisfies readonly NavIconName[]
+const ITEM_NAMES = [
+  'dashboard',
+  'instruments',
+  'fx',
+  'settings',
+] as const satisfies readonly NavIconName[]
 
 /*
  * `computed`, obwohl es hier heute nichts ändert: Diese Seite lebt in einem
@@ -51,7 +56,7 @@ const NAMEN = ['dashboard', 'instruments', 'fx', 'settings'] as const satisfies 
  * das falsche Vorbild: Sie friert die Sprache beim Aufbau ein, und wer die
  * Zeile später anderswo abschreibt, erbt den Fehler.
  */
-const punkte = computed(() => NAMEN.map((name) => ({ name, label: t(`demo.${name}`) })))
+const items = computed(() => ITEM_NAMES.map((name) => ({ name, label: t(`demo.${name}`) })))
 </script>
 
 <template>
@@ -79,10 +84,10 @@ const punkte = computed(() => NAMEN.map((name) => ({ name, label: t(`demo.${name
           ein drittes Mal — nach StockPortfolio und StockInfo.
         -->
         <UxNavItem
-          v-for="(punkt, index) in punkte"
-          :key="punkt.name"
-          :icon="punkt.name"
-          :label="punkt.label"
+          v-for="(item, index) in items"
+          :key="item.name"
+          :icon="item.name"
+          :label="item.label"
           :active="index === 0"
         />
       </template>
