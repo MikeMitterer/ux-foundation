@@ -2,7 +2,7 @@
 
 | Repo | Status | Time-box | Scope | GH-Issue |
 |---|---|---|---|---|
-| ux-foundation (nur `showcase/`) | ready | ~2 h | Schaufenster-only — `src/` bleibt unberührt | — |
+| ux-foundation (nur `showcase/`) | done | ~2 h | Schaufenster-only — `src/` bleibt unberührt | — |
 
 **Löst:** Das Schaufenster hat genau einen Katalog und keinen Umschalter. Damit
 lässt sich alles, was am Sprachwechsel hängt, hier **nicht** vorführen — und
@@ -25,25 +25,27 @@ Legende: ✅ live bestätigt · ⚠️ bestätigt mit Einschränkung (Fußnote) 
 
 | # | Where | Look for | AI | Human |
 |---|---|---|:--:|---|
-| 1 | `make test` | alle Tests grün, darunter der neue Katalog-Test | ✅¹ | |
+| 1 | `make test` | alle Tests grün, darunter der neue Katalog-Test | ✅¹ | ok |
 | 2 | `make typecheck` | grün — `MessageSchema` erzwingt gleiche Schlüssel in `de` und `en` | ✅¹ | |
-| 3 | `make typecheck` nach absichtlich entferntem Schlüssel in `en.ts` | **rot**, mit Nennung des fehlenden Schlüssels (Gegenprobe zu #2) | ✅² | |
-| 4 | http://localhost:5177 · Kopfzeile rechts | `DE \| EN` mit Pipe, links neben der Theme-Liste; die aktive Kennung hell, die andere gedämpft | ✅³ | |
-| 5 | auf `EN` stellen | alle sichtbaren Texte wechseln — Menü, Reiter, Fließtext, Statuszeile | ✅³ | |
-| 6 | Reiter „Verhalten": Anzeigedauer 0, Zustand einschalten, **dann** Sprache wechseln | **Überschrift und Text des offenen Toasts** wechseln mit, und es bleibt **derselbe** Toast | ✅⁴ | |
-| 7 | Reiter „Schrift", Tabellenziffern | Zahlenformat schaltet mit: `1.234,50` unter de, `1,234.50` unter en | ✅⁵ | |
-| 8 | Reiter „Naive UI" | Naives **eigene** Beschriftungen folgen der Sprache | ⚠️⁶ | |
-| 9 | Konsole: `document.documentElement.lang` | `de` bzw. `en` — zieht beim Wechsel mit | ✅⁷ | |
-| 10 | Sprache auf `EN`, **Seite neu laden** | bleibt englisch (Wahl liegt im `localStorage`) | ✅⁸ | |
-| 11 | `localStorage.removeItem('ux-foundation.showcase.locale')`, neu laden | Browsersprache greift, wenn keine Wahl gespeichert ist | ✅⁹ | |
-| 12 | Erststart ohne gespeicherte Wahl, danach `localStorage.getItem(…)` | `null` — der bloße Besuch friert die Browsersprache **nicht** als Wahl ein | ✅⁹ | |
-| 13 | Fenster auf 375 px, Sprache wechseln | Kopfzeile bleibt einzeilig, kein waagrechter Überhang | ➖¹⁰ | |
-| 14 | Reiter wechseln, dann Sprache wechseln | Der Schiebebalken sitzt unter dem aktiven Reiter, auch nach dem Wechsel | ✅¹¹ | |
-| 15 | Reiter „Naive UI" und „Schrift", Sprache wechseln | Spaltenköpfe, Knöpfe, Etiketten, Hinweis und die Rollen-Tabelle wechseln mit — nichts bleibt deutsch stehen | ✅¹² | |
-| 16 | Bereiche Grundlagen / Komponenten / Verhalten durchklicken | je Bereich der richtige Reitersatz, **ein** sichtbarer Abschnitt (Regression zu #14) | ✅¹³ | |
-| 17 | Reiter „Mobil" **laden**, dann Sprache wechseln **ohne** Neuladen | alle drei eingebetteten Navigationen wechseln mit — Beschriftungen **und** `lang` im jeweiligen iframe | ✅¹⁴ | |
-| 18 | dasselbe mit **blockiertem Speicher** (`Storage.prototype.setItem` wirft) | wechselt trotzdem — die Kopplung hängt nicht daran, ob geschrieben werden konnte | ✅¹⁵ | |
-| 19 | `localStorage` leeren, Browsersprache auf Französisch, neu laden | startet **englisch**, nicht deutsch — der Rückfall ist `en` | ➖¹⁶ | |
+| 3 | `make typecheck` nach absichtlich entferntem Schlüssel in `en.ts` | **rot**, mit Nennung des fehlenden Schlüssels (Gegenprobe zu #2) | ✅² |ok |
+| 4 | http://localhost:5177 · Kopfzeile rechts | `DE \| EN` mit Pipe, links neben der Theme-Liste; die aktive Kennung hell, die andere gedämpft | ✅³ | OK, ein wenig größer könnte der Unterschied schon sein |
+| 5 | auf `EN` stellen | alle sichtbaren Texte wechseln — Menü, Reiter, Fließtext, Statuszeile | ✅³ | ok |
+| 6 | Reiter „Verhalten": Anzeigedauer 0, Zustand einschalten, **dann** Sprache wechseln | **Überschrift und Text des offenen Toasts** wechseln mit, und es bleibt **derselbe** Toast | ✅⁴ |ok |
+| 7 | Reiter „Schrift", Tabellenziffern | Zahlenformat schaltet mit: `1.234,50` unter de, `1,234.50` unter en | ✅⁵ | ok|
+| 8 | Reiter „Naive UI" | Naives **eigene** Beschriftungen folgen der Sprache | ⚠️⁶ | nicht überprüft |
+| 9 | Konsole: `document.documentElement.lang` | `de` bzw. `en` — zieht beim Wechsel mit | ✅⁷ | OK |
+| 10 | Sprache auf `EN`, **Seite neu laden** | bleibt englisch (Wahl liegt im `localStorage`) | ✅⁸ |ok |
+| 11 | `localStorage.removeItem('ux-foundation.showcase.locale')`, neu laden | Browsersprache greift, wenn keine Wahl gespeichert ist | ✅⁹ |ok |
+| 12 | Erststart ohne gespeicherte Wahl, danach `localStorage.getItem(…)` | `null` — der bloße Besuch friert die Browsersprache **nicht** als Wahl ein | ✅⁹ |ok |
+| 13 | Fenster auf 375 px, Sprache wechseln | Kopfzeile bleibt einzeilig, kein waagrechter Überhang | ➖¹⁰ | ok |
+| 14 | Reiter wechseln, dann Sprache wechseln | Der Schiebebalken sitzt unter dem aktiven Reiter, auch nach dem Wechsel | ✅¹¹ | ok |
+| 15 | Reiter „Naive UI" und „Schrift", Sprache wechseln | Spaltenköpfe, Knöpfe, Etiketten, Hinweis und die Rollen-Tabelle wechseln mit — nichts bleibt deutsch stehen | ✅¹² | OK, allerdings springen die Spaltenbreiten massiv bei der Sprachumschaltung |
+| 16 | Bereiche Grundlagen / Komponenten / Verhalten durchklicken | je Bereich der richtige Reitersatz, **ein** sichtbarer Abschnitt (Regression zu #14) | ✅¹³ | ok |
+| 17 | Reiter „Mobil" **laden**, dann Sprache wechseln **ohne** Neuladen | alle drei eingebetteten Navigationen wechseln mit — Beschriftungen **und** `lang` im jeweiligen iframe | ✅¹⁴ |ok |
+| 18 | wie #17, aber vorher den Speicher lahmlegen — Konsole öffnen und den Block unten einfügen. Das ahmt den Privatmodus nach, wo `localStorage` blockiert ist | die drei Ansichten wechseln **trotzdem** mit. Sie hingen einmal daran, dass geschrieben werden konnte; im Privatmodus blieben sie stehen | ✅¹⁵ | KA was das sein soll |
+| 19 | `localStorage` leeren, Browsersprache auf Französisch, neu laden | startet **englisch**, nicht deutsch — der Rückfall ist `en` | ➖¹⁶ | Nicht überprüft, wird aber passen |
+| 20 | Reiter „Naive UI", Tabelle, Sprache wechseln | die Spaltenbreiten stehen still — kein Springen des Rasters (dein Befund zu #15) | ✅¹⁷ | |
+| 21 | Kopfzeile, aktive gegen inaktive Sprachkennung | der Unterschied ist auf Anhieb zu sehen (dein Befund zu #4) | ✅¹⁸ | |
 
 > ¹ **(CC):** `make test` 21 Dateien / 663 Tests grün, `make typecheck` und
 > `make lint` ohne Ausgabe (2026-09-03). Der neue `tests/showcaseMessages.spec.ts`
@@ -138,6 +140,18 @@ Legende: ✅ live bestätigt · ⚠️ bestätigt mit Einschränkung (Fußnote) 
 > als Unit-Test in `tests/showcaseLocaleSync.spec.ts` („Rückfall-Sprache des
 > Schaufensters"), der `navigator.languages` auf Französisch stellt und `en`
 > erwartet — und gegenprüft, dass ein deutscher Browser weiterhin `de` bekommt.
+>
+> ¹⁷ **(CC):** live **gemessen**, vorher und nachher. Vorher sprang beim Wechsel
+> „Veränderung"→„Change" die Spalte von 266 auf 191 px und schob die Nachbarn um
+> bis zu 42 px mit — Mikes „massiv" war präzise. Nachher: `[120, 721, 120, 150]`
+> in **beiden** Sprachen, größter Sprung **0 px**.
+>
+> ¹⁸ **(CC):** gemessen, weil „sieht man besser" keine Aussage ist. Die beiden
+> Zustände unterschieden sich um **1.76:1**, während jeder für sich sauber auf
+> der Leiste steht (10.67 und 6.07 gegen die Leistenfläche). Die aktive Kennung
+> trägt jetzt zusätzlich eine Fläche. Die inaktive weiter abzudunkeln wäre der
+> naheliegende Weg gewesen, hätte aber die Textgrenze von 4.5:1 angeknabbert;
+> ein Gewichtswechsel verschöbe bei zwei Buchstaben die Nachbarn.
 
 ### Kurz-Testblock
 
@@ -146,6 +160,22 @@ cd "${DEV_LOCAL}/DevWeb/Production/ux-foundation"
 make test        # #1
 make typecheck   # #2
 make dev         # #4–#18 — Schaufenster auf http://localhost:5177
+```
+
+Für **#18** in die Browser-Konsole, bei geöffnetem Reiter „Mobil". Danach die
+Sprache umschalten: Die drei eingebetteten Ansichten müssen mitwechseln, obwohl
+nichts gespeichert werden kann. Ein Neuladen setzt alles zurück.
+
+```js
+// ahmt den Privatmodus nach: Schreiben in den localStorage wirft
+Storage.prototype.setItem = function () { throw new Error('Speicher blockiert') }
+```
+
+Zur Gegenprobe, dass wirklich nichts geschrieben wurde — der Wert muss auf der
+**alten** Sprache stehenbleiben, während die Oberfläche schon die neue zeigt:
+
+```js
+localStorage.getItem('ux-foundation.showcase.locale')
 ```
 
 Für #3 die Gegenprobe von Hand — sie ist der einzige Beweis, dass der Typ
@@ -450,13 +480,53 @@ der tsconfig auf `./srcX/*` verbogen → Test rot; zurückgenommen → grün.
 angeht — auch vom Test. Sonst hat man die Doppelung beseitigt und die
 Absicherung gleich mit.
 
+### Runde 7: Mikes Abnahme
+
+Er ist die Matrix durchgegangen und hat zwei Dinge gefunden, die sechs
+Review-Runden nicht gefunden hatten — beide sieht man nur, wenn man die Sache
+tatsächlich bedient:
+
+1. **Die Spaltenbreiten sprangen beim Sprachwechsel.** Naive misst die Spalten
+   am längsten Inhalt, und der ist hier die Kopfzeile. Gemessen: „Veränderung"
+   gegen „Change" sind 75 px, und die Nachbarspalten wanderten um bis zu 42 px
+   mit. Sein Wort dafür war „massiv", und das trifft es. Behoben mit festen
+   Breiten für die Spalten mit vorhersagbarem Inhalt; `name` nimmt den Rest.
+2. **Der Unterschied zwischen aktiver und inaktiver Sprachkennung war zu
+   leise** — 1.76:1, während jede für sich sauber auf der Leiste steht. Die
+   aktive trägt jetzt zusätzlich eine Fläche.
+
+Dazu ein Befund über das Ticket hinaus: Zeile #18 war für einen Menschen nicht
+ausführbar formuliert („`Storage.prototype.setItem` wirft"). Seine Antwort war
+„KA was das sein soll", und sie war berechtigt — die Ticket-Regel verlangt das
+vollständig kopierbare Kommando, und ich hatte eine Beschreibung hingeschrieben.
+Nachgetragen im Kurz-Testblock.
+
+**Was daraus dauerhaft wird:** Beide Befunde sind keine Eigenheit dieser App.
+Der Skill `ux-standards` hat sie deshalb aufgenommen — und bei der Gelegenheit
+eine Stelle korrigiert, die **aktiv in die Irre führte**: Sie empfahl für den
+Sprachwechsel `:key="localeStore.current"` an den Reitern. Genau das musste
+dieses Ticket rückgängig machen, weil es den Zustand aller Kindansichten mit
+abräumt. Ohne die Korrektur hätte ich denselben Fehler in der nächsten App
+wieder eingebaut, weil der Skill ihn empfiehlt.
+
 ### Offene Punkte
 
-- **Zeile #13 ist ungeprüft** — das Fenster ließ sich hier nicht verkleinern.
-  Der einzige Punkt, der ohne echten Bildschirm nicht abzuschließen ist.
-- **Zeile #8 bleibt ⚠️**, solange das Schaufenster keine einzige von Naive UI
-  selbst gestellte Zeichenkette zeigt. Kein Fehler, eine Lücke — Kandidat für
-  ein eigenes kleines Ticket.
+Bei Abschluss durch Mike verbleiben drei Zeilen ohne menschliche Bestätigung.
+Keine davon blockiert etwas, alle drei sind bewusst so stehengelassen:
+
+- **#8** — das Schaufenster zeigt keine einzige von Naive UI selbst gestellte
+  Zeichenkette; es gibt schlicht nichts zu sehen. Kein Fehler, eine Lücke des
+  Schaufensters. **Kandidat für ein eigenes kleines Ticket**, das einen
+  Leerzustand oder eine Datumsauswahl ergänzt.
+- **#18** — der Ausfall-Fall des Speichers. Durch Unit-Test und Mutant
+  abgesichert; das Kommando dafür steht jetzt im Kurz-Testblock, falls es
+  jemand doch von Hand sehen will.
+- **#19** — Rückfall auf Englisch. Als Unit-Test abgedeckt, von Hand nur mit
+  umgestellter Browsersprache zu sehen.
+
+Die neuen Zeilen **#20** und **#21** entstehen aus Mikes eigenen Befunden und
+warten noch auf seinen zweiten Blick; die Änderungen dazu sind gemessen und
+liegen in `6671962`.
 
 ### Nebenbefunde, nicht angefasst
 
