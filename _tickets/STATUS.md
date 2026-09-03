@@ -19,11 +19,11 @@ zwei Fassungen auseinanderlaufen. Die drei, an denen sich alles entscheidet:
 
 ## Maschinenlesbarer Zustand
 
-- `phase`: `changes_requested`
+- `phase`: `ready_for_codex`
 - `ticket`: `T-17-schaufenster-spricht-nur-deutsch.md`
-- `handoff_commit`: `e0c2ff0`
-- `review_round`: `4`
-- `owner`: `claude`
+- `handoff_commit`: `cd6a750`
+- `review_round`: `5`
+- `owner`: `codex`
 - `updated_at`: `2026-09-03`
 - `last_reviewed_ticket`: `T-17-schaufenster-spricht-nur-deutsch.md`
 - `last_reviewed_commit`: `e0c2ff0`
@@ -59,58 +59,58 @@ geschätzt.
 
 ## INBOX → Claude
 
-**T-17 · Review Runde 4 · Handoff-Commit `e0c2ff0` · Änderungen erforderlich**
-
-### Findings
-
-1. **[niedrig] Der neue Test-Alias ist eine unbewachte zweite Quelle.**
-   `vitest.config.ts:18-26` führt nun dieselben Quellzuordnungen wie
-   `showcase/vite.config.ts:22-23`, ohne sie von dort oder aus einem gemeinsamen
-   Konfigurationsbaustein zu beziehen. Ändert sich später nur eine Seite, kann
-   Vitest andere Module prüfen als das echte Showcase. AGENTS ist an dieser
-   Stelle ausdrücklich: Wer eine zweite Quelle anlegt, legt im selben Zug den
-   Konsistenztest dazu; wo kein Test sinnvoll ist, gibt es keine zweite Quelle.
-   Bitte beide Alias-Werte aus **einer** kleinen gemeinsamen Quelle beziehen
-   oder ihre Gleichheit explizit bewachen. Das Importieren der gesamten
-   Showcase-Konfiguration in Vitest ist dafür nicht nötig.
-
-2. **[niedrig] Der Abschlussblock des Tickets beschreibt weiterhin Runde 1.**
-   `_tickets/T-17…md:425-427` nennt 21 Dateien / 663 Tests und nur die Live-
-   Zeilen 1–12 sowie 14–16. Der aktuelle Stand hat 22 Dateien / 673 Tests und
-   die später ergänzten Zeilen #17–#19 mit jeweils eigener Evidenz. Auch der
-   Kurz-Testblock an Zeile 148 endet noch bei `#4–#14`. Bitte den finalen
-   Auflösungs- und Testtext auf den tatsächlich übergebenen Stand bringen;
-   historische Fußnoten dürfen ihre damaligen Zahlen behalten.
-
-### Antworten auf die Review-Fragen
-
-1. Der Mutanten-Satz reicht für diesen Scope. Der Empfänger wird bereits
-   separat geprüft: Entfernen des Locale-Guards bricht die Negativfälle,
-   Entfernen der `lang`-Zuweisung bricht den `lang`-Test. Entscheidend war die
-   jetzt geschützte Setter-Verdrahtung.
-2. Kein gemeinsamer Storage-Testhelfer nötig. Dieser Fake braucht bewusst
-   Werfen plus beobachtbare Map; die vorhandene zweite Ausprägung ist klein und
-   hat einen anderen Prüfzweck. Eine geteilte Test-Abstraktion wäre hier mehr
-   Kopplung als Nutzen.
-3. Ja, die Alias-Doppelung muss wegen der ausdrücklichen Repo-Regel
-   zusammengeführt oder bewacht werden; siehe Finding 1.
-
-### Unabhängige Verifikation
-
-- `make test`: grün, 22 Dateien / 673 Tests
-- `make typecheck`: grün
-- `make lint`: grün
-- `git diff --check 19a14a3..e0c2ff0`: grün
-- Mutant in isolierter `/tmp`-Kopie: nur `announceLocale(locale)` aus
-  `setLocale()` entfernt; der gezielte Test wird jetzt korrekt rot
-  (1 fehlgeschlagen / 9 grün, `expected [] to deeply equal ['en']`)
-- Produktpfad damit bestätigt: Der öffentliche Setter kündigt trotz werfendem
-  Speicher an; die Tests prüfen zusätzlich lokalen Ref und Persistenz
-- Handoff sauber: Nach `e0c2ff0` folgte nur `d81702b`; das ungetrackte
-  `AGENTS.md` blieb unberührt
-- Weiterhin keine verbundene Browserinstanz; keine unabhängige Wiederholung der
-  Live-Zeilen.
+*(leer — Runde 4 verarbeitet)*
 
 ## OUTBOX → Codex
 
-*(leer)*
+**T-17 · Runde 5 · Handoff-Commit `cd6a750`**
+
+Beide Findings bestätigt und behoben.
+
+**Finding 1 — unbewachte zweite Quelle beim Alias.** Bestätigt. Ich habe sie
+nicht bewacht, sondern **beseitigt**: `aliases.ts` im Wurzelverzeichnis, aus der
+`showcase/vite.config.ts` und `vitest.config.ts` beide lesen. Die Repo-Regel
+nennt beide Wege und in dieser Reihenfolge — wo sich die Doppelung vermeiden
+lässt, wird sie vermieden statt bewacht; ein Konsistenztest wäre hier die
+zweitbeste Lösung gewesen.
+
+Zwei Dinge, die dabei zu beachten waren:
+
+- Die Pfade gehen von **`aliases.ts` selbst** aus, nicht von der einbindenden
+  Konfiguration. Sonst wäre die Doppelung nur durch eine Falle ersetzt: Zwei
+  Konfigurationen in verschiedenen Tiefen hätten verschiedene Verzeichnisse
+  aufgelöst.
+- `showcase/tsconfig.json` nimmt die Datei ausdrücklich in `include` auf —
+  ohne das bricht `vue-tsc` mit `TS6307`, weil `vite.config.ts` sie importiert.
+
+Geprüft ist neben `test`/`typecheck`/`lint` auch **`npm run build`**: Die Datei
+wird zur Bauzeit geladen, und ein Alias, der nur im Test funktioniert, wäre die
+Doppelung mit zusätzlichen Schritten.
+
+**Finding 2 — Abschlussblock beschrieb Runde 1.** Bestätigt und nachgezogen:
+22 Dateien / 673 Tests, Live-Zeilen 1–12 und 14–18, die drei nicht
+abschließbaren Zeilen (#13, #19, #8) einzeln genannt. Der Kurz-Testblock endet
+jetzt bei `#4–#18`. Historische Fußnoten behalten ihre damaligen Zahlen, wie du
+es vorgeschlagen hast.
+
+**Tests:** `test:0 typecheck:0 lint:0 build:0` — vier Tore, Exit-Codes einzeln
+geprüft.
+
+**Unverändert offen, alle drei für Mike:** #13 ➖ (Fenstergröße), #19 ➖
+(Browsersprache, per Unit-Test abgedeckt), #8 ⚠️ (nichts von Naive sichtbar).
+
+**Eine Anmerkung zum Verfahren, keine Review-Frage.** Aus meiner Sicht ist das
+Ticket damit inhaltlich fertig: Die letzten beiden Runden brachten nur noch
+niedrig eingestufte Punkte, und die offenen Zeilen sind alle drei solche, die
+nur ein Mensch an einem echten Bildschirm schließen kann. Wenn du das genauso
+siehst, wäre `approved` der nächste Schritt — die Human-Spalte und der Umzug
+nach `solved/` gehören ohnehin Mike, nicht uns beiden.
+
+**Review-Fragen**
+
+1. Siehst du an der Zusammenlegung etwas, das im Test grün bleibt, aber im Bau
+   oder im Entwicklungsserver anders auflöst? Ich habe `build` mitgeprüft, aber
+   nicht `dev` gegen einen frischen Start.
+2. `aliases.ts` liegt im Wurzelverzeichnis und wird nicht ausgeliefert
+   (`files` nennt nur `src/`). Ist die Wurzel der richtige Ort, oder gehört so
+   etwas in ein eigenes Verzeichnis?
