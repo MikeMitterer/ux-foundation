@@ -424,6 +424,32 @@ Dazu beschrieb der Abschlussblock noch den Stand von Runde 1 (21 Dateien, 663
 Tests, Zeilen 1–16). Historische Fußnoten behalten ihre damaligen Zahlen; der
 Abschluss nennt jetzt den übergebenen Stand.
 
+### Runde 5: die dritte Spiegelung — und wo sie nicht zu beseitigen war
+
+Runde 4 hatte zwei der drei Stellen zusammengelegt; die dritte stand noch in
+`showcase/tsconfig.json` unter `paths`. Die lässt sich **nicht** beseitigen:
+`tsconfig.json` ist JSON und importiert nichts. Genau für diesen Fall sieht die
+Repo-Regel den Konsistenztest vor — dieselbe Lage wie bei den Breakpoints, wo
+SCSS kein TypeScript lesen kann.
+
+Beim Schreiben lief ich in die Falle, die in `AGENTS.md` steht: `aliases.ts`
+löste die Pfade auf Modulebene über `import.meta.url` auf, und unter
+`happy-dom` ist das keine Datei-URL — **der Test konnte ausgerechnet die Quelle
+nicht lesen, die er bewachen soll.**
+
+Die Datei hält jetzt zweierlei: `ALIAS_SOURCES` als reine Daten (Aliasname auf
+Pfad ab Wurzel) und `resolveAliases()`, das daraus absolute Pfade macht und
+`import.meta.url` erst **in** der Funktion anfasst. Vite und Vitest rufen die
+Funktion, der Test liest die Daten. Das ist nebenbei die bessere Aufteilung:
+Was verglichen wird, ist die Zuordnung, nicht ihre Auflösung.
+
+Gegengeprüft, wie üblich mit einem Mutanten statt mit einer Behauptung: Pfad in
+der tsconfig auf `./srcX/*` verbogen → Test rot; zurückgenommen → grün.
+
+**Die Lehre:** Eine gemeinsame Quelle muss von allen lesbar sein, die sie
+angeht — auch vom Test. Sonst hat man die Doppelung beseitigt und die
+Absicherung gleich mit.
+
 ### Offene Punkte
 
 - **Zeile #13 ist ungeprüft** — das Fenster ließ sich hier nicht verkleinern.
@@ -450,15 +476,16 @@ Beide außerhalb des Scopes, beide gemeldet statt still behoben:
 `ux-foundation` — Handoff-Commit siehe `STATUS.md`. Vier Review-Runden mit
 Codex; was jede gefunden hat, steht oben in ihrem eigenen Abschnitt.
 
-**Stand bei der Übergabe:** `make test` 22 Dateien / 673 Tests, `make typecheck`
-und `make lint` grün — Exit-Codes einzeln geprüft (`0/0/0`), nicht durch eine
-Pipe. Zusätzlich `npm run build` grün, weil die Alias-Zusammenlegung auch zur
-Bauzeit greifen muss.
+**Stand bei der Übergabe:** `make test` 23 Dateien / 676 Tests, dazu
+`typecheck`, `lint` und `npm run build` — vier Tore, Exit-Codes einzeln geprüft
+(`0/0/0/0`) und nicht durch eine Pipe. Der Bau gehört dazu, weil die
+Alias-Zusammenlegung auch zur Bauzeit greifen muss.
 
 **Live geprüft:** die Zeilen 1–12 sowie 14–18, jede mit eigener Evidenz in der
-Fußnote. Der Kanal zwischen den Dokumenten ist zusätzlich per Mutant
-abgesichert: Wer `announceLocale` oder `persistLocale` aus `setLocale` entfernt,
-bekommt einen roten Test — nachgemessen, nicht angenommen.
+Fußnote. Drei Stellen sind zusätzlich per Mutant abgesichert — nachgemessen,
+nicht angenommen: Wer `announceLocale` oder `persistLocale` aus `setLocale`
+entfernt, bekommt einen roten Test; wer den Alias in der `tsconfig.json`
+verbiegt, ebenso.
 
 **Nicht abschließbar von hier, drei Zeilen:** #13 ➖ (Fenstergröße ließ sich
 nicht ändern), #19 ➖ (Browsersprache nicht umstellbar; als Unit-Test

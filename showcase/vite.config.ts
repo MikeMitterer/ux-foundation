@@ -3,7 +3,7 @@ import { fileURLToPath, URL } from 'node:url'
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
 
-import { ALIASES } from '../aliases'
+import { resolveAliases } from '../aliases'
 
 /**
  * Konfiguration der Schaufenster-App.
@@ -18,7 +18,7 @@ export default defineConfig({
   plugins: [vue()],
 
   // Dieselben Zuordnungen wie im Testlauf, aus einer Quelle — siehe dort.
-  resolve: { alias: ALIASES },
+  resolve: { alias: resolveAliases() },
 
   css: {
     preprocessorOptions: {

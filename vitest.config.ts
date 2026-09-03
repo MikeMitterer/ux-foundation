@@ -1,7 +1,7 @@
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vitest/config'
 
-import { ALIASES } from './aliases'
+import { resolveAliases } from './aliases'
 
 /**
  * Tests laufen ohne Browser: Geprüft wird die Logik des Pakets, nicht das
@@ -19,7 +19,7 @@ import { ALIASES } from './aliases'
  */
 export default defineConfig({
   plugins: [vue()],
-  resolve: { alias: ALIASES },
+  resolve: { alias: resolveAliases() },
   test: {
     /*
      * `happy-dom` statt `node`: Ein Test hängt Komponenten ein, um das
