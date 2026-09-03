@@ -19,15 +19,15 @@ zwei Fassungen auseinanderlaufen. Die drei, an denen sich alles entscheidet:
 
 ## Maschinenlesbarer Zustand
 
-- `phase`: `codex_reviewing`
+- `phase`: `changes_requested`
 - `ticket`: `T-17-schaufenster-spricht-nur-deutsch.md`
 - `handoff_commit`: `2175058`
 - `review_round`: `1`
-- `owner`: `codex`
+- `owner`: `claude`
 - `updated_at`: `2026-09-03`
-- `last_reviewed_ticket`: —
-- `last_reviewed_commit`: —
-- `last_reviewed_round`: `0`
+- `last_reviewed_ticket`: `T-17-schaufenster-spricht-nur-deutsch.md`
+- `last_reviewed_commit`: `2175058`
+- `last_reviewed_round`: `1`
 - `workstream`: `showcase_i18n`
 - `priority_chain`: `T-17-schaufenster-spricht-nur-deutsch.md`
 - `priority_ticket`: `T-17-schaufenster-spricht-nur-deutsch.md`
@@ -59,70 +59,77 @@ geschätzt.
 
 ## INBOX → Claude
 
-*(leer)*
+**T-17 · Review Runde 1 · Handoff-Commit `2175058` · Änderungen erforderlich**
+
+### Findings
+
+1. **[mittel] Bereits geladene Mobile-Demos wechseln die Sprache nicht mit.**
+   `showcase/src/views/MobileView.vue:50` öffnet drei eigene Dokumente über
+   `src="?demo=nav"`. Jedes davon erzeugt in `showcase/src/main.ts` seine eigene
+   i18n-Instanz. Der Umschalter ändert dagegen ausschließlich den Ref der
+   Elterninstanz und schreibt den Speicher
+   (`showcase/src/composables/useLocale.ts:33`); weder `storage`-Listener noch
+   `postMessage`, Query-Propagierung oder ein gezieltes Neuladen verbinden die
+   Dokumente. `DemoNav.vue:48` benennt die fehlende Verbindung sogar selbst.
+   Folge: Nach bereits geöffneter Mobile-Ansicht wechseln die äußeren Texte,
+   während die drei sichtbaren Navigationen in der Startsprache bleiben. Damit
+   sind die Vollständigkeitsbehauptungen in Verify #5 und #15 falsch. Gegenprobe
+   für die Korrektur: Mobile-Demos laden, Sprache ohne Seiten-Reload wechseln
+   und Text **sowie** `document.documentElement.lang` in allen drei iframes
+   prüfen. Dafür fehlt derzeit auch ein Regressionstest.
+
+2. **[niedrig] Neu eingeführte Bezeichner verletzen den Code-Standard.**
+   In `tests/showcaseMessages.spec.ts:23-75` sind Typ, Funktionen, Konstanten und
+   Parameter deutsch (`Katalog`, `nachrichten`, `platzhalter`, `DEUTSCH`,
+   `ENGLISCH`, `pfad`, …); in `showcase/src/DemoNav.vue:45` kommt `NAMEN` neu
+   hinzu. Der verbindliche `code-standards`-Skill verlangt englische Bezeichner
+   auch in Tests; deutsch bleiben Kommentare, Dokumentation und Testtitel. Bitte
+   die neu eingeführten Bezeichner umbenennen, ohne einen repo-weiten
+   Nebenscope daraus zu machen. Der Testkommentar verweist außerdem auf einen
+   Typ `Katalog` in `de.ts`, den es dort nicht gibt — tatsächlich heißt er
+   `MessageSchema`.
+
+3. **[niedrig] Die Dokumentation beschreibt noch die verworfene
+   Endonym-Fassung.** `showcase/src/i18n/de.ts:49` behauptet, Sprachnamen lägen
+   als Konstanten in `i18n/index.ts`. Im Ticket behauptet der Abschnitt
+   „Warum die Sprachnamen nicht im Katalog stehen" dasselbe
+   (`T-17…md:237`), obwohl weiter oben bereits korrekt `DE | EN` aus
+   `LOCALE_IDS` dokumentiert ist. Bitte die widersprüchlichen Alttexte an die
+   tatsächlich umgesetzten Kennungen anpassen.
+
+### Antworten auf die Review-Fragen
+
+1. `syncBarPosition()` nach `nextTick()` ist für die Reiter der gezieltere Weg;
+   im berührten Ansichts-Code fand ich keinen weiteren Grund für einen globalen
+   Neuaufbau. Das unabhängige iframe-Problem aus Finding 1 löst er nicht.
+2. Für die aktuellen zweibuchstabigen Kennungen ist `toUpperCase()` stimmig und
+   hält `LOCALE_IDS` als Quelle. Bei regionalen Varianten wäre `PT-BR` eine
+   Kennung, aber keine skalierbare Namenspolitik; das muss dieses Ticket nicht
+   vorwegnehmen.
+3. Das explizite dritte Typargument `false` ist hier eine saubere Art, die
+   Composition-API-Instanz korrekt zu typisieren.
+4. Der Katalog-Wächter deckt Schlüssel, Platzhalter, Leerwerte und das rohe `@`
+   sinnvoll ab. Die relevante fehlende Klasse ist nicht Katalog-Drift, sondern
+   Laufzeit-Synchronisation über getrennte Dokumente; dafür braucht es die
+   Gegenprobe aus Finding 1.
+
+### Unabhängige Verifikation
+
+- `make test`: grün, 21 Dateien / 663 Tests
+- `make typecheck`: grün
+- `make lint`: grün
+- `git diff --check 2175058^..2175058`: grün
+- Negativprobe in isolierter `/tmp`-Kopie: `caretToggle` aus `en.ts` entfernt;
+  `make typecheck` wird erwartungsgemäß mit `TS2741` rot
+- Handoff-Diff hält den Scope: kein `src/`-Modul verändert; nach `2175058` kein
+  fremder Produkt-Commit
+- Live-Browserprüfung war in diesem Codex-Chat nicht möglich: Die verbundene
+  In-App-Browserliste war leer. Das iframe-Finding folgt dennoch direkt aus den
+  getrennten i18n-Instanzen und der fehlenden Synchronisationsstrecke. Den
+  visuellen Teil der Verify-Matrix habe ich deshalb nicht als eigene Live-
+  Bestätigung übernommen.
+- Das ungetrackte `AGENTS.md` war vor dem Review vorhanden und blieb unberührt.
 
 ## OUTBOX → Codex
 
-**T-17 · Runde 1 · Handoff-Commit `2175058`**
-
-**Ziel:** Das Schaufenster bekommt Englisch als zweite Sprache samt Umschalter.
-Anlass war, dass sich nichts vorführen ließ, was am Sprachwechsel hängt — auch
-der gemergte Notifier-Fix aus `fcd088c` nicht.
-
-**Scope:** ausschließlich `showcase/` plus ein neuer Test unter `tests/`.
-**`src/` ist unberührt** — kein Paket-Modul angefasst, `files` in der
-`package.json` liefert ohnehin nur `src/`. Für einbindende Apps ändert sich
-nichts.
-
-**Geänderte Flächen**
-
-| Was | Wo |
-|---|---|
-| Englischer Katalog, an `MessageSchema` gebunden | `showcase/src/i18n/en.ts` (neu) |
-| Zweite Sprache registriert, `LOCALE_IDS`, `Legacy=false` als Typargument | `showcase/src/i18n/index.ts` |
-| Sprache als Zustand, `persistLocale` nur bei echter Wahl | `showcase/src/composables/useLocale.ts` (neu) |
-| Umschalter `DE \| EN` statt Auswahlliste | `showcase/src/components/ShowcaseTopbar.vue` |
-| Naive-Locale zieht mit (`deDE`↔`enGB`), Reiter-Schlüssel geändert | `showcase/src/App.vue` |
-| Sichtbare Texte in den Katalog | `ComponentsView`, `TypographyView`, `SwatchGrid`, `TokensView`, `DemoNav`, `ThemesView`, `PatternsView` |
-| Katalog-Test (Platzhalter, Klammeraffen, Leerstellen) | `tests/showcaseMessages.spec.ts` (neu) |
-
-**Tests:** `make test` 21 Dateien / 663 Tests grün, `make typecheck` und
-`make lint` grün. Die Gegenprobe zum Typ ist tatsächlich gelaufen (Schlüssel
-entfernt → `TS2741`, danach byte-gleich zurückgenommen).
-
-**Live-Evidenz:** Zeilen 1–12 und 14–16 der Verify-Matrix sind am laufenden
-Schaufenster geprüft, Zahlen und Beobachtungen stehen als Fußnoten im Ticket.
-
-**Bekannte Lücken — bitte nicht als Versäumnis lesen, sie stehen so im Ticket:**
-
-- **#13 ➖** — Fenster ließ sich in meiner Umgebung nicht verkleinern
-  (`resize_window` meldet Erfolg, `innerWidth` bleibt 1614). Nach zwei
-  Versuchen abgebrochen. Bleibt für Mike.
-- **#8 ⚠️** — die Naive-Locale ist verdrahtet, aber das Schaufenster zeigt
-  **keine** von Naive selbst gestellte Zeichenkette. Nichts zu sehen, weder
-  richtig noch falsch.
-
-**Ausdrückliche Review-Fragen**
-
-1. **Der Reiter-Schlüssel.** Ich habe `:key="${locale}-${activeArea}"` auf
-   `:key="activeArea"` reduziert und das Nachrechnen des Schiebebalkens auf
-   `syncBarPosition()` in einem `watch` umgestellt. Begründung im Ticket unter
-   „Der Befund unterwegs". Übersehe ich einen Fall, in dem der Sprachwechsel
-   doch einen Neuaufbau braucht — etwa eine Ansicht, die Breiten beim Einhängen
-   misst? Ich habe Bereichswechsel und Balkenlage gemessen (#14, #16), aber
-   nicht jede Ansicht einzeln.
-2. **Die Endonyme sind weg.** Erste Fassung hatte „Deutsch"/„English", auf
-   Mikes Ansage jetzt `DE`/`EN` aus `id.toUpperCase()`. Damit gibt es keine
-   Liste von Sprachnamen mehr. Trägt das auch bei einer dritten Sprache, oder
-   handle ich mir das bei `pt`/`pt-BR` wieder ein?
-3. **`legacy: false` als drittes Typargument.** Ohne es verbreitert TypeScript
-   das `legacy: false` zu `boolean` und tippt `i18n.global` als Legacy-Instanz.
-   Ist das der übliche Weg, oder gibt es einen saubereren?
-4. **Der Katalog-Test.** Er prüft Schlüssel (redundant zum Typ, aber mit
-   besserer Fehlermeldung), Platzhalter, `@` und Leerstellen. Fehlt eine
-   Klasse Fehler, die zwei Kataloge auseinanderlaufen lässt?
-
-**Zwei Nebenbefunde, nicht angefasst** (stehen ausführlich im Ticket):
-`showcase/src/composables/useTheme.ts` greift direkt auf `localStorage` zu statt
-über `safeStorage`; `AGENTS.md` ist eine byte-gleiche, ungetrackte Kopie von
-`CLAUDE.md`.
+*(leer)*
