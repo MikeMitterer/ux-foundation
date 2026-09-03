@@ -19,11 +19,11 @@ zwei Fassungen auseinanderlaufen. Die drei, an denen sich alles entscheidet:
 
 ## Maschinenlesbarer Zustand
 
-- `phase`: `claude_working`
+- `phase`: `ready_for_codex`
 - `ticket`: `T-18-schaufenster-greift-am-fundament-vorbei.md`
-- `handoff_commit`: —
-- `review_round`: `0`
-- `owner`: `claude`
+- `handoff_commit`: `75485ae`
+- `review_round`: `1`
+- `owner`: `codex`
 - `updated_at`: `2026-09-03`
 - `last_reviewed_ticket`: `T-17-schaufenster-spricht-nur-deutsch.md`
 - `last_reviewed_commit`: `4dd5732`
@@ -63,24 +63,64 @@ geschätzt.
 
 ## OUTBOX → Codex
 
-*(leer)*
+**T-18 · Runde 1 · Handoff-Commit `75485ae`**
 
-## Zuletzt abgeschlossen
+**Ziel:** `showcase/src/composables/useTheme.ts` griff direkt auf den
+`localStorage` zu, mit eigenem `try`/`catch`, statt `safeStorage` aus dem Paket
+zu nehmen. Der Befund stammt aus Mikes Abnahme von T-17.
 
-**T-17 · Das Schaufenster spricht nur Deutsch** — abgenommen von Mike, liegt in
-`solved/`. Sechs Codex-Runden, dann seine Abnahme; die letzten beiden Befunde
-kamen von ihm und nicht aus dem Review, weil man sie nur beim Bedienen sieht.
+**Scope:** `showcase/src/composables/useTheme.ts` und ein neuer Test.
+**`src/` ist unberührt** — `safeStorage` war bereits exportiert
+(`src/index.ts:68`), es kommt nichts Neues an die öffentliche Fläche.
 
-Zwei Dinge daraus, die über das Ticket hinausreichen:
+**Kein Fehler im Verhalten, und das ist der Punkt.** Der alte Code fing den Wurf
+korrekt ab und tat funktional dasselbe. Eine *richtige* Kopie verursacht keinen
+Fehler, also drängt nichts auf ihre Ablösung — sie überlebt länger als eine
+falsche. Die Entstehung erklärt sie: Die Datei ist eine Stunde **älter** als
+`safeStorage` (11:40 gegen 12:46 am selben Tag) und wurde seither nie wieder
+angefasst, weshalb „was man ohnehin anfasst, zieht mit" nie auslöste.
 
-- Der Skill `ux-standards` empfahl für den Sprachwechsel `:key` an den Reitern.
-  Genau das musste dieses Ticket rückgängig machen — der Schlüssel räumt den
-  Zustand aller Kindansichten mit ab. Die Stelle ist korrigiert und um den
-  Tabellenfall (springende Spaltenbreiten) ergänzt.
-- **Zwei Nebenbefunde stehen weiter offen** und sind Mikes Entscheidung:
-  `showcase/src/composables/useTheme.ts` greift direkt auf `localStorage` zu
-  statt über `safeStorage`; `AGENTS.md` ist eine byte-gleiche, ungetrackte
-  Kopie von `CLAUDE.md`.
-- Ein Kandidat für ein eigenes kleines Ticket: Das Schaufenster zeigt keine
-  einzige von Naive UI selbst gestellte Zeichenkette, weshalb sich deren
-  Locale-Verdrahtung dort nicht ansehen lässt (Zeile #8).
+**Geänderte Flächen**
+
+| Was | Wo |
+|---|---|
+| Ablösung durch `safeStorage.read`/`.write`, eigenes `try`/`catch` entfällt | `showcase/src/composables/useTheme.ts` |
+| Wächter gegen direkten Zugriff in beiden Quellbäumen | `tests/storageAccess.spec.ts` (neu) |
+
+**Tests:** 24 Dateien / 678 Tests. Vier Tore, Exit-Codes einzeln geprüft:
+`test:0 typecheck:0 lint:0 build:0`.
+
+**Live-Evidenz:** alle sieben Verify-Zeilen, Zahlen in den Fußnoten. Beide
+Ausfallpfade sind im Browser gefahren — Schreiben wirft und Zugriff wirft —,
+jeweils mit der Gegenprobe, dass wirklich nichts geschrieben wurde.
+
+**Der Wächter war dreimal falsch, bevor er stimmte.** Alle drei Fehler ließen
+ihn **grün** aussehen: Der Ausdruck schloss `window.localStorage` aus (Punkt im
+Riegel), er suchte nur Eigenschaftszugriffe und übersah damit sowohl
+`?.getItem` als auch das nackte `window.localStorage ?? null` in `safeStorage`
+selbst, und das Entfernen der Kommentare schluckte Zeilenumbrüche, sodass er die
+falsche Zeile meldete. Aufgedeckt hat alle drei derselbe zweite Test — der, der
+prüft, ob die Ausnahme überhaupt gesehen wird. Steht ausführlich im Ticket.
+
+**Bekannte Einschränkung:** Live geprüft ist der Schreibweg. Der Leseweg beim
+**Aufbau** der App ließ sich von hier nicht blockieren — der Riegel müsste vor
+dem ersten Skript stehen. Abgedeckt durch `tests/safeStorage.spec.ts` im Paket.
+
+**Ein Fehler beim Arbeiten, den ich melde statt zu verschweigen:** Beim ersten
+Mutanten-Lauf habe ich mit `git checkout --` zurückgesetzt, bevor die Ablösung
+committet war — und damit meine eigene Änderung mitgerissen. `git checkout --`
+stellt HEAD her, nicht den Stand von vorhin. Reihenfolge ab jetzt: erst
+committen, dann mutieren.
+
+**Review-Fragen**
+
+1. **Die Ausnahmeliste des Wächters hat genau einen Eintrag.** Wächst sie, ist
+   der Test falsch und nicht der Code — so steht es im Ticket. Siehst du einen
+   berechtigten zweiten Fall, den ich vorwegnehmen müsste?
+2. **Das Entfernen der Kommentare** ist eine Handarbeit (Blockkommentare,
+   HTML-Kommentare, Zeilenkommentare außer nach `:` wegen `https://`). Fällt
+   dir ein Muster ein, an dem sie falsch liegt — etwa `localStorage` in einer
+   Zeichenkette oder in einem Template-Literal?
+3. **`safeStorage.write` liefert `true`/`false`, und ich werte es nicht aus.**
+   Begründet im Code: Misslingt es, gilt der Anstrich nur für diese Sitzung.
+   Trägst du das mit, oder gehört dem Nutzer eine Rückmeldung?
