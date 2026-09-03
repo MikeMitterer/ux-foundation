@@ -1,9 +1,9 @@
 /**
  * Deutscher Message-Katalog — Source of Truth für die Key-Struktur.
  *
- * Deutsch ist die Basissprache; Englisch wird nachgezogen, sobald es einen
- * Grund gibt. Bis dahin genügt ein Katalog — die Pflicht, allen sichtbaren
- * Text darüber laufen zu lassen, gilt trotzdem ab der ersten Komponente.
+ * Deutsch ist die Basissprache, `en.ts` zieht nach. Diese Datei entscheidet,
+ * welche Schlüssel es gibt; der abgeleitete Typ `Katalog` unten hält die
+ * Übersetzung daran fest.
  */
 export const de = {
   app: {
@@ -35,10 +35,24 @@ export const de = {
 
   themes: {
     heading: 'Themes',
-    hint: 'Dreizehn Paletten. Der Anstrich hängt an `data-theme` am Wurzelelement; die Wahl bleibt im Browser gespeichert. Gleicher Name heißt in jeder App dieselbe Farbe — sonst hat der Name keinen Wert.',
+    /*
+     * Die Zahl kommt aus `THEME_IDS`, sie steht nicht im Text: Ein Katalog, der
+     * „Dreizehn Paletten" behauptet, ist beim vierzehnten falsch — und dann
+     * gleich in beiden Sprachen.
+     */
+    hint: '{count} Paletten. Der Anstrich hängt an `data-theme` am Wurzelelement; die Wahl bleibt im Browser gespeichert. Gleicher Name heißt in jeder App dieselbe Farbe — sonst hat der Name keinen Wert.',
     active: 'aktiv',
     barTreatment: 'Leisten',
     switchLabel: 'Theme wählen',
+  },
+
+  /*
+   * Nur die Beschriftung. Die Sprachnamen selbst sind Endonyme und stehen als
+   * Konstante in `i18n/index.ts` — sie dürfen sich mit der Sprache gerade
+   * nicht ändern.
+   */
+  locale: {
+    switchLabel: 'Sprache wählen',
   },
 
   tokens: {
@@ -79,7 +93,24 @@ export const de = {
     size: 'Größe',
     weight: 'Gewicht',
     note: 'Sonstiges',
+    /*
+     * Die Rollen-Tabelle. Sie stand einmal als Konstante im Template und war
+     * damit halb übersetzt: Kopfzeile aus dem Katalog, Inhalt fest verdrahtet
+     * deutsch. Größe und Gewicht bleiben dort — das sind Werte, keine Texte.
+     */
+    roleWordmark: 'Wortmarke',
+    roleNavItem: 'Menüpunkt, Reiter',
+    roleCardTitle: 'Kartentitel, Feldbeschriftung',
+    roleSectionLabel: 'Abschnittsüberschrift',
+    roleTableCell: 'Tabellenzelle',
+    roleKpiValue: 'Wert einer Kennzahl',
+    noteWordmark: 'leicht negative Laufweite',
+    noteNavItem: 'keine Großbuchstaben',
+    noteSectionLabel: 'Großbuchstaben, +0.025em',
+    noteTableCell: 'Zahlen tabular-nums',
     sample: 'Fast jeder Wunsch bringt Verzicht mit sich — 1234567890',
+    /* Probeglyphen der Textfarben-Kachel — „Ag" zeigt Ober- und Unterlänge. */
+    glyphSample: 'Ag',
     tabularSample: 'Tabellenziffern',
     tabularHint:
       'Zahlen mit Bedeutung tragen `tabular-nums` und stehen rechtsbündig. Ohne das springen die Ziffern beim Aktualisieren.',
@@ -105,7 +136,22 @@ export const de = {
       'Dialoge kommen aus Naive UI und erben ihre Farben aus denselben Token wie der Rest der Seite.',
     confirm: 'Bestätigen',
     cancel: 'Abbrechen',
+    tertiary: 'Tertiär',
+    error: 'Fehler',
     inputPlaceholder: 'Text eingeben',
+    /*
+     * Platzhalter für die Auswahlliste. Auch sie stehen im Katalog: „Alpha"
+     * schreibt sich in beiden Sprachen gleich, aber das ist ein Zufall des
+     * Wortes und keine Regel — die Ausnahme wäre die Stelle, an der beim
+     * nächsten Mal wieder ein deutsches Wort im Template landet.
+     */
+    optionAlpha: 'Alpha',
+    optionBeta: 'Beta',
+    tagOk: 'OK',
+    tagNear: 'Knapp',
+    tagOut: 'Außerhalb',
+    alertTitle: 'Hinweis',
+    alertBody: 'Die Farben stammen aus denselben Token wie der Rest der Seite.',
   },
 
   table: {
@@ -235,6 +281,19 @@ export const de = {
     copy: 'Kopieren',
     copied: 'Kopiert',
   },
-} as const
+}
 
+/**
+ * Die Form, an die jeder weitere Katalog gebunden ist.
+ *
+ * Bewusst **ohne** `as const`: Damit trüge der Typ die Literale
+ * („UX-Foundation"), und gegen die ließe sich keine Übersetzung prüfen — sie
+ * müsste wörtlich dasselbe sagen. Verbreitert auf `string` bleibt genau das
+ * übrig, was zählt: gleiche Gruppen, gleiche Schlüssel, nichts darüber und
+ * nichts darunter. Fehlt einer in `en.ts`, ist `make typecheck` rot.
+ *
+ * Das ist die Absicherung, die die Repo-Regel für eine zweite Quelle verlangt.
+ * Was ein Typ nicht sehen kann — Platzhalter, Klammeraffen, leere Einträge —,
+ * prüft `tests/showcaseMessages.spec.ts`.
+ */
 export type MessageSchema = typeof de

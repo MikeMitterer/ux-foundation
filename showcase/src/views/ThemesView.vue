@@ -30,7 +30,7 @@ const labels = computed(
   <ShowcaseSection
     anchor="themes"
     :title="t('themes.heading')"
-    :hint="t('themes.hint')"
+    :hint="t('themes.hint', { count: THEME_IDS.length })"
   >
     <UxThemePicker
       :current="current"

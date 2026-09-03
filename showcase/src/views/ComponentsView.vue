@@ -6,7 +6,7 @@
  * Farben tragen wie der Rest. Ohne die Brücke liefen sie farblich daneben her,
  * und das fällt erst in einem anderen Theme auf.
  */
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   NAlert,
@@ -44,10 +44,15 @@ const numberValue = ref<number | null>(42)
 const switchValue = ref(true)
 const selectValue = ref<string | null>('a')
 
-const selectOptions = [
-  { label: 'Alpha', value: 'a' },
-  { label: 'Beta', value: 'b' },
-]
+/*
+ * `computed`, nicht Konstante: Beschriftungen, die einmal beim Aufbau
+ * ausgewertet werden, bleiben nach einem Sprachwechsel in der alten Sprache
+ * stehen — derselbe Fehler wie bei einer Toast-Überschrift als Wert.
+ */
+const selectOptions = computed(() => [
+  { label: t('components.optionAlpha'), value: 'a' },
+  { label: t('components.optionBeta'), value: 'b' },
+])
 
 interface Row {
   symbol: string
@@ -56,12 +61,18 @@ interface Row {
   change: number
 }
 
-const columns: DataTableColumns<Row> = [
-  { title: 'Symbol', key: 'symbol' },
-  { title: 'Name', key: 'name' },
-  { title: 'Wert', key: 'value', align: 'right' },
-  { title: 'Veränderung', key: 'change', align: 'right' },
-]
+/*
+ * Ebenfalls `computed`: Naive nimmt die Spaltenköpfe als Wert entgegen, und
+ * ein Wert folgt der Sprache nicht. Die Schlüssel gab es schon — `table.value`
+ * und `table.change` standen ungenutzt im Katalog, während diese Datei die
+ * Wörter selbst tippte.
+ */
+const columns = computed<DataTableColumns<Row>>(() => [
+  { title: t('table.symbol'), key: 'symbol' },
+  { title: t('table.name'), key: 'name' },
+  { title: t('table.value'), key: 'value', align: 'right' },
+  { title: t('table.change'), key: 'change', align: 'right' },
+])
 
 const rows: Row[] = [
   { symbol: 'VGWL.DE', name: 'Vanguard FTSE All-World', value: 81800, change: 1.8 },
@@ -96,10 +107,10 @@ const rows: Row[] = [
         </NButton>
         <NButton>{{ t('components.cancel') }}</NButton>
         <NButton tertiary>
-          Tertiär
+          {{ t('components.tertiary') }}
         </NButton>
         <NButton type="error">
-          Fehler
+          {{ t('components.error') }}
         </NButton>
         <NButton @click="dialogOpen = true">
           {{ t('components.openDialog') }}
@@ -143,20 +154,20 @@ const rows: Row[] = [
       <div class="stack">
         <div class="row">
           <NTag type="success">
-            OK
+            {{ t('components.tagOk') }}
           </NTag>
           <NTag type="warning">
-            Knapp
+            {{ t('components.tagNear') }}
           </NTag>
           <NTag type="error">
-            Außerhalb
+            {{ t('components.tagOut') }}
           </NTag>
         </div>
         <NAlert
           type="info"
-          title="Hinweis"
+          :title="t('components.alertTitle')"
         >
-          Die Farben stammen aus denselben Token wie der Rest der Seite.
+          {{ t('components.alertBody') }}
         </NAlert>
       </div>
     </NCard>

@@ -42,9 +42,16 @@ watch(
  * die Bereiche mehrerer Apps ab, und sieben Punkte nebeneinander würden hier
  * genau die Regel verletzen, die dieser Abschnitt vorführt.
  */
-const punkte: { name: NavIconName; label: string }[] = (
-  ['dashboard', 'instruments', 'fx', 'settings'] as const
-).map((name) => ({ name, label: t(`demo.${name}`) }))
+const NAMEN = ['dashboard', 'instruments', 'fx', 'settings'] as const satisfies readonly NavIconName[]
+
+/*
+ * `computed`, obwohl es hier heute nichts ändert: Diese Seite lebt in einem
+ * eigenen iframe, und der Umschalter der Elternseite lädt sie nicht neu — die
+ * Beschriftung *kann* sich also gar nicht ändern. Eine Konstante wäre trotzdem
+ * das falsche Vorbild: Sie friert die Sprache beim Aufbau ein, und wer die
+ * Zeile später anderswo abschreibt, erbt den Fehler.
+ */
+const punkte = computed(() => NAMEN.map((name) => ({ name, label: t(`demo.${name}`) })))
 </script>
 
 <template>

@@ -4,16 +4,26 @@ import { useI18n } from 'vue-i18n'
 
 import ShowcaseSection from '@/components/ShowcaseSection.vue'
 
-const { t } = useI18n()
+const { t, n } = useI18n()
 
-/** Rollen laut Skill — Größe und Gewicht sind hier nicht verhandelbar. */
+/**
+ * Rollen laut Skill — Größe und Gewicht sind hier nicht verhandelbar.
+ *
+ * `role` und `note` sind **Katalog-Schlüssel**, keine Texte: Die Tabelle war
+ * sonst halb übersetzt — Kopfzeile aus dem Katalog, Inhalt fest verdrahtet
+ * deutsch. Größe und Gewicht bleiben Werte; die übersetzt niemand.
+ *
+ * `note: null` heißt „keine Anmerkung" und zeigt einen Gedankenstrich. Ein
+ * leerer Katalog-Eintrag wäre die schlechtere Lösung: Er sieht aus wie ein
+ * vergessener und der Test der Kataloge schlägt darauf an.
+ */
 const ROLES = [
-  { role: 'Wortmarke', size: '--font-lg', weight: 600, note: 'leicht negative Laufweite' },
-  { role: 'Menüpunkt, Reiter', size: '--font-sm', weight: 400, note: 'keine Großbuchstaben' },
-  { role: 'Kartentitel, Feldbeschriftung', size: '--font-sm', weight: 500, note: '' },
-  { role: 'Abschnittsüberschrift', size: '--font-xs', weight: 500, note: 'Großbuchstaben, +0.025em' },
-  { role: 'Tabellenzelle', size: '--font-sm', weight: 400, note: 'Zahlen tabular-nums' },
-  { role: 'Wert einer Kennzahl', size: '--font-base', weight: 600, note: '' },
+  { role: 'roleWordmark', size: '--font-lg', weight: 600, note: 'noteWordmark' },
+  { role: 'roleNavItem', size: '--font-sm', weight: 400, note: 'noteNavItem' },
+  { role: 'roleCardTitle', size: '--font-sm', weight: 500, note: null },
+  { role: 'roleSectionLabel', size: '--font-xs', weight: 500, note: 'noteSectionLabel' },
+  { role: 'roleTableCell', size: '--font-sm', weight: 400, note: 'noteTableCell' },
+  { role: 'roleKpiValue', size: '--font-base', weight: 600, note: null },
 ] as const
 </script>
 
@@ -61,13 +71,13 @@ const ROLES = [
             v-for="entry in ROLES"
             :key="entry.role"
           >
-            <td>{{ entry.role }}</td>
+            <td>{{ t(`typography.${entry.role}`) }}</td>
             <td><code>{{ entry.size }}</code></td>
             <td class="roles__num">
               {{ entry.weight }}
             </td>
             <td class="roles__note">
-              {{ entry.note || '—' }}
+              {{ entry.note ? t(`typography.${entry.note}`) : '—' }}
             </td>
           </tr>
         </tbody>
@@ -87,8 +97,15 @@ const ROLES = [
             v-for="value in [1234.5, 88.25, 100000, 7.5]"
             :key="value"
           >
+            <!--
+              `n()` und nicht `toFixed(2)`: Das Zahlenformat schaltet mit der
+              Sprache mit — 1.234,50 gegen 1,234.50. Eine Beschriftung zu
+              übersetzen und die Zahl darunter im Format der anderen Sprache
+              stehen zu lassen ist der übliche Fehler, und ausgerechnet in der
+              Ansicht, die Ziffern vorführt, wäre er am sichtbarsten.
+            -->
             <td class="roles__num roles__num--tabular">
-              {{ value.toFixed(2) }}
+              {{ n(value, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
             </td>
           </tr>
         </tbody>

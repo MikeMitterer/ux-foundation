@@ -13,10 +13,13 @@
  * Mobil-Verhalten beim Ziehen am Browserrand und nicht bloß eingerahmt im
  * Mobil-Abschnitt.
  *
- * Der Theme-Umschalter steht hier **entgegen** der Regel, dass er in die
- * Einstellungen gehört. Diese App handelt von Themes — er ist ihr
- * Arbeitsmittel, nicht Konfiguration. Eine Ausnahme mit Grund, und der Grund
- * steht hier, damit ihn niemand für Nachlässigkeit hält.
+ * Theme- **und** Sprachumschalter stehen hier **entgegen** der Regel, dass
+ * beide in die Einstellungen gehören. Der Grund ist bei beiden derselbe: Diese
+ * App handelt vom Vorführen, und man wechselt beim Prüfen ständig statt zweimal
+ * im Leben — eine Einstellungsseite hat sie ohnehin nicht. Eine Ausnahme mit
+ * Grund, und der Grund steht hier, damit ihn niemand für Nachlässigkeit hält.
+ *
+ * Beide sitzen rechts, weil dort steht, was **keine** Navigation ist.
  *
  * `NSelect` und **kein** natives `select`: Das native zeichnet das
  * Betriebssystem, nicht das Theme — daneben sieht jede Naive-Komponente aus
@@ -28,11 +31,14 @@ import { useI18n } from 'vue-i18n'
 import { NSelect } from 'naive-ui'
 
 import { THEME_IDS, THEMES, UxIcon, UxTopbar, type ThemeId } from '@ux/index'
+import { LOCALE_IDS } from '@/i18n'
 import { useTheme } from '@/composables/useTheme'
+import { useLocale } from '@/composables/useLocale'
 import { AREAS, useSections, type Area } from '@/composables/useSections'
 
 const { t } = useI18n()
 const { current, setTheme } = useTheme()
+const { current: locale, setLocale } = useLocale()
 const { activeArea, openArea } = useSections()
 
 const istAktiv = (area: Area): boolean => area.id === activeArea.value
@@ -51,6 +57,15 @@ const themeOptions = computed(() =>
     preview: THEMES[id].preview,
   })),
 )
+
+/*
+ * Die Beschriftung ist die Kennung in Großbuchstaben — `de` wird zu `DE`.
+ *
+ * Deshalb steht hier keine Liste von Sprachnamen: Sie wäre eine zweite Quelle
+ * neben `LOCALE_IDS` und müsste bei jeder neuen Sprache nachgezogen werden.
+ * Nebenbei löst das dasselbe Problem, das Endonyme lösen — ein Kürzel wird
+ * nicht übersetzt und heißt in jeder Oberfläche gleich.
+ */
 </script>
 
 <template>
@@ -123,6 +138,49 @@ const themeOptions = computed(() =>
     </template>
 
     <template #actions>
+      <!--
+        Die Sprache steht **vor** dem Theme: Sie ändert den Text der Zeile, in
+        der sie selbst sitzt. Wer sie zuerst findet, liest den Rest schon in
+        seiner Sprache.
+
+        Bewusst **keine** Auswahlliste, sondern beide Kennungen nebeneinander:
+        Bei zwei Sprachen kostet eine Liste zwei Klicks für etwas, das mit einem
+        geht — aufklappen, dann wählen —, und sie verbirgt die Alternative, bis
+        man sie sucht. Ab etwa vier Sprachen kippt das; dann ist die Liste
+        wieder richtig.
+
+        `role="group"` statt einzelner Beschriftungen: Die beiden Knöpfe sind
+        eine Sache mit zwei Zuständen. `aria-pressed` sagt, welcher gilt —
+        Farbe allein trägt die Aussage nicht.
+      -->
+      <div
+        class="locale"
+        role="group"
+        :aria-label="t('locale.switchLabel')"
+      >
+        <template
+          v-for="(id, index) in LOCALE_IDS"
+          :key="id"
+        >
+          <span
+            v-if="index > 0"
+            class="locale__pipe"
+            aria-hidden="true"
+          >
+            |
+          </span>
+          <button
+            type="button"
+            class="locale__item"
+            :class="{ 'locale__item--active': id === locale }"
+            :aria-pressed="id === locale"
+            @click="setLocale(id)"
+          >
+            {{ id.toUpperCase() }}
+          </button>
+        </template>
+      </div>
+
       <NSelect
         :value="current"
         :options="themeOptions"
@@ -185,6 +243,49 @@ const themeOptions = computed(() =>
     height: 2px;
     border-radius: var(--radius-full);
     background: rgb(var(--accent));
+  }
+}
+
+.locale {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+
+  &__pipe {
+    color: rgb(var(--text-bar-secondary) / 0.4);
+    user-select: none;
+  }
+
+  &__item {
+    padding: 0.375rem var(--space-2);
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    font: inherit;
+    font-size: var(--font-sm);
+    /*
+     * Kein Gewichtswechsel für den aktiven Zustand: Bei zwei Buchstaben
+     * verschiebt das die Nachbarn um ein, zwei Pixel, und die Zeile zuckt bei
+     * jedem Wechsel. Die Farbe trägt es, und die aktive Sprache steht ohnehin
+     * in der ganzen Oberfläche darunter.
+     */
+    color: rgb(var(--text-bar-secondary));
+    cursor: pointer;
+
+    &:hover {
+      color: rgb(var(--text-bar));
+      background: rgb(var(--surface-raised) / 0.5);
+    }
+
+    &--active {
+      color: rgb(var(--text-bar));
+    }
+
+    /* Finger, nicht Mauszeiger — am Schreibtisch bliebe der Knopf schlank. */
+    @media (pointer: coarse) {
+      min-width: 44px;
+      min-height: 44px;
+    }
   }
 }
 

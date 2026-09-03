@@ -30,14 +30,22 @@ const quotesMissing = ref(false)
 const targetsExceeded = ref(false)
 const missingCount = ref(3)
 
+/*
+ * Überschrift **als Funktion**, wie der Fließtext.
+ *
+ * Ein Wert würde einmal beim Aufbau ausgewertet und bliebe auf der Sprache von
+ * damals stehen: Nach einem Sprachwechsel ohne Neuladen stünde „Kurse fehlen"
+ * über einem englischen Text. Ein Getter beim Aufrufer hilft nicht — `notify`
+ * reicht die Optionen als Spread weiter, und der kopiert den Wert.
+ */
 notify(quotesMissing, {
-  title: t('patterns.quotesMissingTitle'),
+  title: () => t('patterns.quotesMissingTitle'),
   content: () => t('patterns.quotesMissingBody', { count: missingCount.value }),
   type: 'error',
 })
 
 notify(targetsExceeded, {
-  title: t('patterns.targetsTitle'),
+  title: () => t('patterns.targetsTitle'),
   content: () => t('patterns.targetsBody'),
   type: 'warning',
 })
@@ -75,7 +83,7 @@ const stapelTimer: ReturnType<typeof setTimeout>[] = []
 
 stapel.forEach((aktiv, index) => {
   notify(aktiv, {
-    title: t('patterns.stackTitle', { n: index + 1 }),
+    title: () => t('patterns.stackTitle', { n: index + 1 }),
     content: () => t('patterns.stackBody', { n: index + 1, max: STAPEL_GROESSE }),
     type: 'info',
   })

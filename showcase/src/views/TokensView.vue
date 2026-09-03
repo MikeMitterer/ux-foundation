@@ -46,6 +46,7 @@ const BRAND = ['--brand-from', '--brand-to', '--brand-contrast', '--brand-word']
       :tokens="TEXT"
       contrast-against="--surface-card"
       as-text
+      :glyph-sample="t('typography.glyphSample')"
       :revision="current"
     />
     <SwatchGrid

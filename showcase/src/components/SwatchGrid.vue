@@ -16,6 +16,15 @@ const props = defineProps<{
   contrastAgainst?: string
   /** Token als Textfarbe zeigen statt als Fläche. */
   asText?: boolean
+  /**
+   * Probeglyphen für die Textfarben-Kachel, bereits übersetzt — „Ag" zeigt
+   * Ober- und Unterlänge.
+   *
+   * Kommt als Prop herein und steht nicht im Template: Diese Komponente kennt
+   * den Katalog nicht, und sie soll ihn nicht kennen — dieselbe Regel, nach der
+   * das Fundament gebaut ist. Ohne `asText` ohne Bedeutung.
+   */
+  glyphSample?: string
   /** Nonce, die ein Neuberechnen nach dem Theme-Wechsel auslöst. */
   revision: string
 }>()
@@ -84,7 +93,7 @@ const swatches = computed<Swatch[]>(() => {
               ? { color: `rgb(var(${swatch.name}))` }
               : { background: `rgb(var(${swatch.name}))` }
           "
-        >{{ asText ? 'Ag' : '' }}</span>
+        >{{ asText ? (glyphSample ?? '') : '' }}</span>
         <code class="swatch__name">{{ swatch.name }}</code>
         <span class="swatch__value">{{ swatch.hex }}</span>
         <span
