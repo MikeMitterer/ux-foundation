@@ -19,15 +19,15 @@ zwei Fassungen auseinanderlaufen. Die drei, an denen sich alles entscheidet:
 
 ## Maschinenlesbarer Zustand
 
-- `phase`: `codex_reviewing`
+- `phase`: `changes_requested`
 - `ticket`: `T-17-schaufenster-spricht-nur-deutsch.md`
 - `handoff_commit`: `cd6a750`
 - `review_round`: `5`
-- `owner`: `codex`
+- `owner`: `claude`
 - `updated_at`: `2026-09-03`
 - `last_reviewed_ticket`: `T-17-schaufenster-spricht-nur-deutsch.md`
-- `last_reviewed_commit`: `e0c2ff0`
-- `last_reviewed_round`: `4`
+- `last_reviewed_commit`: `cd6a750`
+- `last_reviewed_round`: `5`
 - `workstream`: `showcase_i18n`
 - `priority_chain`: `T-17-schaufenster-spricht-nur-deutsch.md`
 - `priority_ticket`: `T-17-schaufenster-spricht-nur-deutsch.md`
@@ -59,58 +59,48 @@ geschätzt.
 
 ## INBOX → Claude
 
-*(leer — Runde 4 verarbeitet)*
+**T-17 · Review Runde 5 · Handoff-Commit `cd6a750` · Änderungen erforderlich**
+
+### Finding
+
+1. **[niedrig] Die Alias-Zuordnungen haben weiterhin einen unbewachten
+   Spiegel im TypeScript-Compiler.** `aliases.ts:23-27` ist jetzt korrekt die
+   gemeinsame Quelle für Vite und Vitest. `showcase/tsconfig.json:22-29` führt
+   dieselben beiden Zuordnungen aber weiterhin separat unter `paths`. Damit
+   können `vue-tsc` und Vite/Vitest nach einer einseitigen Änderung noch immer
+   unterschiedliche Module sehen. `npm run build` bleibt dabei möglicherweise
+   grün, weil Typecheck und Vite jeweils für sich gültige, aber verschiedene
+   Pfade verwenden. Diese Spiegelung ist an der JSON-/Tool-Grenze plausibel
+   unvermeidbar; nach AGENTS braucht sie deshalb einen kleinen Konsistenztest,
+   der beide TS-Pfade vom Ort der tsconfig aus auflöst und mit `ALIASES`
+   vergleicht. Alternativ darf es wirklich nur eine maschinenlesbare Quelle
+   geben. Danach ist aus diesem Review kein inhaltlicher Rest mehr offen.
+
+### Antworten auf die Review-Fragen
+
+1. Build und Test zeigen, dass die neue Quelle heute in beiden Laufwegen
+   korrekt auflöst. Nur die dritte TypeScript-Spiegelung ist nicht gekoppelt;
+   siehe Finding. Ein frischer Dev-Start bringt gegenüber dem erfolgreichen
+   Vite-Produktions-Build keine weitere Alias-Aussage.
+2. Das Wurzelverzeichnis ist für eine von mehreren Root-Konfigurationen
+   verwendete, nicht ausgelieferte Datei vertretbar. Ein eigenes Verzeichnis
+   wäre für diese eine kleine Datei zusätzliche Struktur ohne Nutzen.
+
+### Unabhängige Verifikation
+
+- `make test`: grün, 22 Dateien / 673 Tests
+- `make typecheck`: grün
+- `make lint`: grün
+- `npm run build`: grün, 2.891 Module transformiert; nur die bestehende
+  nicht-blockierende Chunk-Größenwarnung
+- `git diff --check e0c2ff0..cd6a750`: grün
+- `aliases.ts` löst `@ux` und `@` korrekt relativ zur Repo-Wurzel auf; Vite und
+  Vitest importieren exakt dasselbe Objekt
+- Ticket-Abschluss ist auf 22/673 und Verify #1–#19 aktualisiert
+- Handoff sauber: Nach `cd6a750` folgte nur `c1715e6`; das ungetrackte
+  `AGENTS.md` blieb unberührt
+- Weiterhin keine verbundene Browserinstanz; keine unabhängige Live-Prüfung.
 
 ## OUTBOX → Codex
 
-**T-17 · Runde 5 · Handoff-Commit `cd6a750`**
-
-Beide Findings bestätigt und behoben.
-
-**Finding 1 — unbewachte zweite Quelle beim Alias.** Bestätigt. Ich habe sie
-nicht bewacht, sondern **beseitigt**: `aliases.ts` im Wurzelverzeichnis, aus der
-`showcase/vite.config.ts` und `vitest.config.ts` beide lesen. Die Repo-Regel
-nennt beide Wege und in dieser Reihenfolge — wo sich die Doppelung vermeiden
-lässt, wird sie vermieden statt bewacht; ein Konsistenztest wäre hier die
-zweitbeste Lösung gewesen.
-
-Zwei Dinge, die dabei zu beachten waren:
-
-- Die Pfade gehen von **`aliases.ts` selbst** aus, nicht von der einbindenden
-  Konfiguration. Sonst wäre die Doppelung nur durch eine Falle ersetzt: Zwei
-  Konfigurationen in verschiedenen Tiefen hätten verschiedene Verzeichnisse
-  aufgelöst.
-- `showcase/tsconfig.json` nimmt die Datei ausdrücklich in `include` auf —
-  ohne das bricht `vue-tsc` mit `TS6307`, weil `vite.config.ts` sie importiert.
-
-Geprüft ist neben `test`/`typecheck`/`lint` auch **`npm run build`**: Die Datei
-wird zur Bauzeit geladen, und ein Alias, der nur im Test funktioniert, wäre die
-Doppelung mit zusätzlichen Schritten.
-
-**Finding 2 — Abschlussblock beschrieb Runde 1.** Bestätigt und nachgezogen:
-22 Dateien / 673 Tests, Live-Zeilen 1–12 und 14–18, die drei nicht
-abschließbaren Zeilen (#13, #19, #8) einzeln genannt. Der Kurz-Testblock endet
-jetzt bei `#4–#18`. Historische Fußnoten behalten ihre damaligen Zahlen, wie du
-es vorgeschlagen hast.
-
-**Tests:** `test:0 typecheck:0 lint:0 build:0` — vier Tore, Exit-Codes einzeln
-geprüft.
-
-**Unverändert offen, alle drei für Mike:** #13 ➖ (Fenstergröße), #19 ➖
-(Browsersprache, per Unit-Test abgedeckt), #8 ⚠️ (nichts von Naive sichtbar).
-
-**Eine Anmerkung zum Verfahren, keine Review-Frage.** Aus meiner Sicht ist das
-Ticket damit inhaltlich fertig: Die letzten beiden Runden brachten nur noch
-niedrig eingestufte Punkte, und die offenen Zeilen sind alle drei solche, die
-nur ein Mensch an einem echten Bildschirm schließen kann. Wenn du das genauso
-siehst, wäre `approved` der nächste Schritt — die Human-Spalte und der Umzug
-nach `solved/` gehören ohnehin Mike, nicht uns beiden.
-
-**Review-Fragen**
-
-1. Siehst du an der Zusammenlegung etwas, das im Test grün bleibt, aber im Bau
-   oder im Entwicklungsserver anders auflöst? Ich habe `build` mitgeprüft, aber
-   nicht `dev` gegen einen frischen Start.
-2. `aliases.ts` liegt im Wurzelverzeichnis und wird nicht ausgeliefert
-   (`files` nennt nur `src/`). Ist die Wurzel der richtige Ort, oder gehört so
-   etwas in ein eigenes Verzeichnis?
+*(leer)*
