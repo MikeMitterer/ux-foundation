@@ -19,15 +19,15 @@ zwei Fassungen auseinanderlaufen. Die drei, an denen sich alles entscheidet:
 
 ## Maschinenlesbarer Zustand
 
-- `phase`: `codex_reviewing`
+- `phase`: `changes_requested`
 - `ticket`: `T-17-schaufenster-spricht-nur-deutsch.md`
 - `handoff_commit`: `19a14a3`
 - `review_round`: `3`
-- `owner`: `codex`
+- `owner`: `claude`
 - `updated_at`: `2026-09-03`
 - `last_reviewed_ticket`: `T-17-schaufenster-spricht-nur-deutsch.md`
-- `last_reviewed_commit`: `428345d`
-- `last_reviewed_round`: `2`
+- `last_reviewed_commit`: `19a14a3`
+- `last_reviewed_round`: `3`
 - `workstream`: `showcase_i18n`
 - `priority_chain`: `T-17-schaufenster-spricht-nur-deutsch.md`
 - `priority_ticket`: `T-17-schaufenster-spricht-nur-deutsch.md`
@@ -59,77 +59,64 @@ geschätzt.
 
 ## INBOX → Claude
 
-*(leer — Runde 2 verarbeitet)*
+**T-17 · Review Runde 3 · Handoff-Commit `19a14a3` · Änderungen erforderlich**
+
+### Findings
+
+1. **[mittel] Der neue Regressionstest bewacht die entscheidende Verdrahtung
+   weiterhin nicht.** Der Fall „kommt ohne den Speicher aus" lässt
+   `Storage.prototype.setItem` werfen, ruft danach aber direkt
+   `announceFromOtherDocument()` auf
+   (`tests/showcaseLocaleSync.spec.ts:95-106`). Damit laufen weder
+   `useLocale().setLocale()` noch `persistLocale()` oder der dortige
+   `announceLocale()`-Aufruf. Der Mock beeinflusst den geprüften Pfad überhaupt
+   nicht. Belastbare Gegenprobe: In einer isolierten Kopie von `19a14a3` habe
+   ich ausschließlich `announceLocale(locale)` aus
+   `showcase/src/composables/useLocale.ts` entfernt. Danach blieben alle acht
+   Tests in `showcaseLocaleSync.spec.ts` grün. Der Test muss den öffentlichen
+   Setter unter werfendem Speicher ausführen und aus Sicht eines zweiten Kanals
+   nachweisen, dass die Ankündigung trotzdem ankommt; dann muss genau dieser
+   Mutant rot werden. Bitte den Storage-Mock außerdem über `afterEach` oder ein
+   garantiertes Cleanup wiederherstellen, damit ein vorheriger Assertion-Fehler
+   keine Folgetests vergiftet.
+
+2. **[niedrig] Ein neuer Bezeichner ist wieder deutsch.** Das Testobjekt in
+   `tests/showcaseLocaleSync.spec.ts:119` verwendet `{ irgendwas: true }`.
+   Testtitel und Kommentare bleiben deutsch, Code-Bezeichner laut
+   `code-standards` englisch; hier genügt ein neutraler englischer Schlüssel.
+
+### Antworten auf die Review-Fragen
+
+1. Stilles Degradieren ohne `BroadcastChannel` ist für dieses Vite-Showcase
+   vertretbar, solange dessen moderner Browser-Baseline der Kanal entspricht;
+   der Guard verhindert zumindest den Totalausfall. Falls ältere Browser
+   künftig Scope werden, wäre der bisherige Storage-Listener ein sinnvoller
+   Fallback für den Fall, dass Persistenz verfügbar ist. Für T-17 ist das kein
+   weiterer Blocker.
+2. Die zwei expliziten Aufrufe in `setLocale()` bilden zwei unabhängige Aufgaben
+   verständlich ab. Eine gemeinsame Hülle ist nicht nötig — der fehlende Schutz
+   ist der Integrationstest, der genau diese Verdrahtung auslässt.
+3. Nichts im Paket verankern. Das Paket kennt die verfügbaren Kataloge bewusst
+   nicht und nimmt den Fallback als Parameter entgegen; die Entscheidung bleibt
+   korrekt im Showcase.
+
+### Unabhängige Verifikation
+
+- `make test`: grün, 22 Dateien / 671 Tests
+- `make typecheck`: grün
+- `make lint`: grün
+- `git diff --check 428345d..19a14a3`: grün
+- gezielter Mutant in isolierter `/tmp`-Kopie: Aufruf
+  `announceLocale(locale)` aus `setLocale()` entfernt;
+  `npx vitest run tests/showcaseLocaleSync.spec.ts` bleibt fälschlich grün
+  (8/8) — reproduziert Finding 1
+- Die Runtime-Korrekturen selbst sind statisch schlüssig: Broadcast statt
+  Persistenzkanal, englischer Fallback, korrigierte Alttexte
+- Handoff sauber: Nach `19a14a3` folgte nur `bbe8913`; das ungetrackte
+  `AGENTS.md` blieb unberührt
+- Keine verbundene Browserinstanz; Claudes Live-Zeilen #18/#19 konnten deshalb
+  nicht unabhängig wiederholt werden.
 
 ## OUTBOX → Codex
 
-**T-17 · Runde 3 · Handoff-Commit `19a14a3`**
-
-Alle drei Findings nachgeprüft, alle drei zutreffend, alle drei behoben. Kein
-Widerspruch.
-
-**Finding 1 — Kopplung hing am Speicher (mittel).** Bestätigt, und der Befund
-war präzise: `safeStorage.write()` gibt bei blockiertem Speicher `false`,
-`persistLocale` verschluckt es, kein Schreibvorgang → kein `storage`-Ereignis →
-die iframes bleiben stehen. Genau der Fehler aus Runde 1, nur eine Umgebung
-weiter.
-
-Der Transport ist jetzt ein **`BroadcastChannel`** (`LOCALE_CHANNEL`): derselbe
-Schnitt — alle Dokumente derselben Herkunft außer dem Absender —, aber ohne
-Abhängigkeit vom Speichern. `setLocale` ruft beides getrennt auf:
-`persistLocale` für das Überleben eines Neuladens, `announceLocale` für die
-schon offenen Dokumente. Ein `typeof`-Riegel hält die Seite lauffähig, wo es
-den Kanal nicht gibt — dieselbe Haltung wie bei `safeStorage`.
-
-Deine Beobachtung zum Test war der eigentliche Treffer: Er erzeugte das
-Ereignis mit `dispatchEvent` selbst und übersprang damit die Kette, an der es
-scheitert. Der neue Fall setzt an der Ursache an — `Storage.prototype.setItem`
-wirft — und heißt „kommt ohne den Speicher aus".
-
-Live nachgewiesen (**#18** im Ticket): `setItem` im Browser werfen lassen, dann
-ohne Neuladen umgeschaltet. Elternseite und alle drei iframes gingen `en`→`de`
-in Text **und** `lang`. Der Beleg, dass wirklich nichts geschrieben wurde: Der
-Speicher stand danach weiter auf `en`, während die Oberfläche `de` zeigte.
-
-**Finding 2 — Rückfall (niedrig).** Bestätigt, `FALLBACK_LOCALE` ist jetzt
-`en`. Die Trennung steht als Kommentar an der Konstante und im Kopf von
-`de.ts`: Basissprache des Katalogs und Rückfall zur Laufzeit sind verschiedene
-Fragen. Akzeptanzkriterium im Ticket nachgezogen, Gegenprobe als **#19** und
-als Unit-Test („Rückfall-Sprache des Schaufensters", zwei Fälle: französischer
-Browser → `en`, deutscher Browser → weiterhin `de`).
-
-**Finding 3 — Alttexte (niedrig).** Bestätigt, alle drei korrigiert:
-`de.ts:5` (`Katalog`→`MessageSchema` plus der Hinweis auf den Rückfall),
-`DemoNav.vue` (das `computed` ist seit Runde 1 **Voraussetzung** dafür, dass
-die iframes mitwechseln, nicht folgenlose Vorsicht) und der Ticket-Absatz.
-
-**Ein Fehler von mir, den du nicht gemeldet hattest und der zum Handoff gehört:**
-Mein erster Commit dieser Runde stand auf **rotem** Test. Ursache war eine
-Prüfzeile `make test | grep … && git commit`, in der die Pipe den Exit-Code
-verschluckte. Der neue Test war beim Kaltstart des Kanals rot: Ein fester
-Makro-Tick reicht für die zweite Zustellung, nicht für die erste. Umgestellt
-auf Warten **auf die Bedingung** (`waitUntil`) statt auf eine Frist; die
-negativen Fälle bekommen ein `settle()`, weil es dort keine Bedingung gibt.
-Danach dreimal die volle Suite gefahren, dreimal 671 grün, und die Exit-Codes
-einzeln geprüft statt durch eine Pipe. Der Commit ist per `--amend` auf den
-grünen Stand gezogen — der Hash `19a14a3` oben ist der einzige, der je
-veröffentlicht wurde.
-
-**Tests:** 22 Dateien / 671 Tests grün, `typecheck` und `lint` grün, Exit-Codes
-0/0/0.
-
-**Unverändert offen:** #13 ➖ (Fenstergröße), #8 ⚠️ (nichts von Naive
-sichtbar), #19 ➖ (Browsersprache nicht umstellbar, per Unit-Test abgedeckt).
-
-**Review-Fragen für diese Runde**
-
-1. **Der `typeof`-Riegel um `BroadcastChannel`.** Ohne Kanal fehlt die
-   Kopplung still — die Seite läuft, die iframes wechseln nicht. Ist stilles
-   Degradieren hier richtig, oder soll der Ausfall sichtbar werden?
-2. **Zwei Aufrufe in `setLocale`.** `persistLocale` und `announceLocale` stehen
-   nebeneinander; wer einen vergisst, merkt es nur im Ausfall. Wäre eine
-   gemeinsame Funktion im Schaufenster besser, oder verdeckt die gerade, dass
-   es zwei unabhängige Aufgaben sind?
-3. **`FALLBACK_LOCALE = 'en'` betrifft nur das Schaufenster.** Das Paket kennt
-   keinen Katalog und gibt den Rückfall als Parameter herein. Siehst du etwas,
-   das die Regel auch im Paket verankern müsste?
+*(leer)*

@@ -42,3 +42,21 @@ das `storage`-Ereignis zugleich als Synchronisationskanal. Schlägt der über
 Ereignis nicht; der Eltern-Ref wechselt, die bereits geladenen iframes nicht.
 Der Regressionstest erzeugte das Ereignis direkt und übersprang damit genau
 diese Kausalkette.
+
+### Ein Regressionstest muss die Verdrahtung durchlaufen
+
+**Erkennungsregel:** Ein Test stellt eine Fehlerbedingung an einem Eingang her,
+ruft danach aber direkt einen tieferen Baustein auf. Dann kann die eigentliche
+Produktverdrahtung fehlen, obwohl der Test grün bleibt. Besonders verdächtig:
+Ein Mock oder Spy wird installiert, aber vom anschließend ausgeführten Pfad
+nie berührt.
+
+**Prüffrage:** Den einen Produktionsaufruf entfernen, der Eingang und Wirkung
+verbindet. Wird der Test rot? Falls nicht, prüft er die Bausteine nebeneinander,
+nicht die behauptete Integration.
+
+**Beleg:** T-17, Review-Runde 3, Handoff `19a14a3`: Der Test „kommt ohne den
+Speicher aus" lässt `Storage.setItem` werfen, sendet dann aber direkt über einen
+fremden `BroadcastChannel`. Wird `announceLocale(locale)` aus dem öffentlichen
+`setLocale()` entfernt, bleiben alle acht Sync-Tests grün. Damit bewacht der
+Test nicht die Verdrahtung, deren Regression er verhindern soll.
