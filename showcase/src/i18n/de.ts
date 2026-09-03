@@ -2,8 +2,12 @@
  * Deutscher Message-Katalog — Source of Truth für die Key-Struktur.
  *
  * Deutsch ist die Basissprache, `en.ts` zieht nach. Diese Datei entscheidet,
- * welche Schlüssel es gibt; der abgeleitete Typ `Katalog` unten hält die
+ * welche Schlüssel es gibt; der abgeleitete Typ `MessageSchema` unten hält die
  * Übersetzung daran fest.
+ *
+ * Basissprache heißt **nicht** Rückfall-Sprache: Womit die App startet, wenn
+ * der Browser keine der geführten Sprachen führt, steht als `FALLBACK_LOCALE`
+ * in `index.ts` — und das ist Englisch.
  */
 export const de = {
   app: {

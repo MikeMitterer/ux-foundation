@@ -42,6 +42,8 @@ Legende: ✅ live bestätigt · ⚠️ bestätigt mit Einschränkung (Fußnote) 
 | 15 | Reiter „Naive UI" und „Schrift", Sprache wechseln | Spaltenköpfe, Knöpfe, Etiketten, Hinweis und die Rollen-Tabelle wechseln mit — nichts bleibt deutsch stehen | ✅¹² | |
 | 16 | Bereiche Grundlagen / Komponenten / Verhalten durchklicken | je Bereich der richtige Reitersatz, **ein** sichtbarer Abschnitt (Regression zu #14) | ✅¹³ | |
 | 17 | Reiter „Mobil" **laden**, dann Sprache wechseln **ohne** Neuladen | alle drei eingebetteten Navigationen wechseln mit — Beschriftungen **und** `lang` im jeweiligen iframe | ✅¹⁴ | |
+| 18 | dasselbe mit **blockiertem Speicher** (`Storage.prototype.setItem` wirft) | wechselt trotzdem — die Kopplung hängt nicht daran, ob geschrieben werden konnte | ✅¹⁵ | |
+| 19 | `localStorage` leeren, Browsersprache auf Französisch, neu laden | startet **englisch**, nicht deutsch — der Rückfall ist `en` | ➖¹⁶ | |
 
 > ¹ **(CC):** `make test` 21 Dateien / 663 Tests grün, `make typecheck` und
 > `make lint` ohne Ausgabe (2026-09-03). Der neue `tests/showcaseMessages.spec.ts`
@@ -118,9 +120,24 @@ Legende: ✅ live bestätigt · ⚠️ bestätigt mit Einschränkung (Fußnote) 
 > „Übersicht/Papiere/Devisen/Einstellungen"), dann **ohne** Neuladen auf `EN`
 > geklickt. Danach in **allen drei**: `lang="en"` und
 > „Dashboard/Instruments/FX/Settings". Abgesichert durch
-> `tests/showcaseLocaleSync.spec.ts` — der Test feuert das `storage`-Ereignis
-> und prüft auch die Ränder: fremder Schlüssel, unbekannte Sprache, geleerter
-> Speicher.
+> `tests/showcaseLocaleSync.spec.ts`. **Der Transport hat sich in Runde 2
+> geändert** — statt des `storage`-Ereignisses trägt jetzt ein
+> `BroadcastChannel`; warum, steht in #18.
+>
+> ¹⁵ **(CC):** live, und das ist der Nachweis, auf den es ankommt.
+> `Storage.prototype.setItem` so überschrieben, dass es wirft — genau der Fall,
+> den `safeStorage` abfängt und `persistLocale` verschluckt. Danach ohne
+> Neuladen umgeschaltet: Elternseite und **alle drei** iframes gingen von `en`
+> auf `de`, Beschriftung („Dashboard"→„Übersicht") wie `lang`. Der Beweis, dass
+> der Speicher wirklich nicht mitschrieb: Er stand danach weiterhin auf `en`,
+> während die Oberfläche `de` zeigte. Mit dem alten `storage`-Transport wäre an
+> dieser Stelle nichts passiert.
+>
+> ¹⁶ **(CC):** **Keine Live-Verifikation** — die Browsersprache lässt sich von
+> hier aus nicht umstellen, dieselbe Grenze wie bei #11. Abgedeckt ist der Fall
+> als Unit-Test in `tests/showcaseLocaleSync.spec.ts` („Rückfall-Sprache des
+> Schaufensters"), der `navigator.languages` auf Französisch stellt und `en`
+> erwartet — und gegenprüft, dass ein deutscher Browser weiterhin `de` bekommt.
 
 ### Kurz-Testblock
 
@@ -213,8 +230,11 @@ Drei Erweiterungen auf Mikes Ansage während der Arbeit, alle im Schaufenster:
    `columns` und `selectOptions` standen als Konstante und wären auch mit
    Katalog-Schlüsseln nach einem Sprachwechsel eingefroren geblieben — dieselbe
    Klasse Fehler wie die Toast-Überschrift, die dieses Ticket ausgelöst hat.
-   Sie sind jetzt `computed`. `DemoNav.vue` ebenso, obwohl es dort heute nichts
-   ändert (eigener iframe) — als Vorbild, das niemand falsch abschreibt.
+   Sie sind jetzt `computed`. `DemoNav.vue` ebenso — dort stand zunächst als
+   Begründung, es ändere ohnehin nichts, weil die Seite in einem eigenen iframe
+   lebt. Das war nur so lange richtig, wie die iframes gar nicht mitwechselten;
+   seit dem Kanal aus Runde 1 ist es die **Voraussetzung** dafür, dass sie es
+   tun.
 
 Nicht beauftragt, aber im selben Zug erledigt, weil es sonst in **zwei**
 Katalogen veraltet wäre: Die Zahl der Paletten stand als Wort im Text
@@ -231,7 +251,10 @@ falsch, es sind **vierzehn**.
 - [ ] Umschalter in der Kopfzeile, rechts bei den Nicht-Navigations-Elementen
 - [ ] Naive UI zieht mit: `deDE`/`enGB` und `dateDeDE`/`dateEnGB`
 - [ ] `document.documentElement.lang` zieht mit (über `persistLocale`)
-- [ ] Reihenfolge bleibt: gespeicherte Wahl → Browsersprache → `de`
+- [ ] Reihenfolge bleibt: gespeicherte Wahl → Browsersprache → Rückfall, und
+      der Rückfall ist **`en`**: Basissprache des Katalogs und Rückfall zur
+      Laufzeit sind zwei verschiedene Fragen — wer weder Deutsch noch Englisch
+      spricht, kommt mit Englisch weiter
 - [ ] Die drei `notify`-Aufrufe in `PatternsView.vue` geben `title` als
       **Funktion** herein — sonst bleibt der Fix aus `fcd088c` unsichtbar
 
@@ -302,6 +325,39 @@ die neuen. Dazu zeigte ein Kommentar noch auf einen Typ `Katalog`, den es nie
 gab — er heißt `MessageSchema`. Und Katalog-Kommentar wie Ticket-Abschnitt
 beschrieben weiter die verworfene Endonym-Fassung; beide sagen jetzt, was
 tatsächlich dasteht.
+
+### Runde 2: der Fix von Runde 1 hing an einer Bequemlichkeit
+
+Codex' Befund war präzise und traf eine Stelle, die man nur im Ausfall sieht.
+
+Die Brücke aus Runde 1 lag auf dem `storage`-Ereignis. Das entsteht aber nur,
+**wenn tatsächlich geschrieben wurde** — und der Speicher ist hier ausdrücklich
+optional: `safeStorage` gibt es, weil sein Zugriff in abgeschotteten Browsern
+wirft, und `persistLocale` verschluckt ein Misslingen mit Absicht. Im
+Privatmodus oder bei blockierten Cookies wechselte also die Elternseite, und die
+drei iframes blieben stehen — genau der Fehler, den Runde 1 beheben sollte, nur
+eine Umgebung weiter.
+
+Mein eigener Test verdeckte das, weil er das Ereignis mit `dispatchEvent`
+selbst erzeugte und damit die Kausalkette übersprang, an der es scheitert. Ein
+Test, der die halbe Kette nachbaut, prüft die Kette nicht.
+
+Der Transport ist jetzt ein `BroadcastChannel`: derselbe Schnitt — alle
+Dokumente derselben Herkunft außer dem Absender —, aber ohne Abhängigkeit vom
+Speichern. Speichern und Ansagen sind zwei getrennte Aufgaben und dürfen
+einander nicht mitreißen: Das eine lässt die Wahl ein Neuladen überleben, das
+andere holt die schon offenen Dokumente nach.
+
+**Die Lehre, und sie ist allgemeiner als dieser Fall:** Wenn ein Test den Kanal
+selbst herstellt, den er prüfen soll, prüft er den Kanal nicht. #18 setzt
+deshalb an der Ursache an — Speicher werfen lassen — statt am Symptom.
+
+Dazu zwei kleinere Punkte: Die Rückfall-Sprache stand auf `de`. Basissprache des
+Katalogs und Rückfall zur Laufzeit sind aber verschiedene Fragen — wer weder
+Deutsch noch Englisch spricht, kommt mit Englisch weiter; jetzt `en`. Und drei
+Kommentare beschrieben noch den Stand vor Runde 1, darunter ausgerechnet der in
+`DemoNav.vue`, der behauptete, die Beschriftung im iframe könne sich gar nicht
+ändern.
 
 ### Offene Punkte
 

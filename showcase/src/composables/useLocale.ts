@@ -14,7 +14,7 @@
 import { readonly, type Ref } from 'vue'
 
 import { persistLocale } from '@ux/index'
-import { i18n, STORAGE_KEY, type LocaleId } from '@/i18n'
+import { announceLocale, i18n, STORAGE_KEY, type LocaleId } from '@/i18n'
 
 const current = i18n.global.locale
 
@@ -26,7 +26,12 @@ export function useLocale(): {
     current: readonly(current),
     setLocale: (locale: LocaleId): void => {
       current.value = locale
+      // Zwei getrennte Aufgaben: `persistLocale` lässt die Wahl ein Neuladen
+      // überleben (und zieht `lang` mit), `announceLocale` holt die schon
+      // offenen Dokumente nach. Der Speicher darf ausfallen, ohne dass die
+      // eingebetteten Ansichten in der alten Sprache stehenbleiben.
       persistLocale(locale, STORAGE_KEY)
+      announceLocale(locale)
     },
   }
 }

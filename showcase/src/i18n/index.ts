@@ -16,8 +16,21 @@ import { en } from './en'
 export const LOCALE_IDS = ['de', 'en'] as const
 export type LocaleId = (typeof LOCALE_IDS)[number]
 
-const FALLBACK_LOCALE: LocaleId = 'de'
+/**
+ * Womit die App startet, wenn weder Wahl noch Browsersprache passen.
+ *
+ * **Englisch, nicht Deutsch** — und das ist kein Widerspruch dazu, dass `de.ts`
+ * der Basiskatalog ist. Die beiden beantworten verschiedene Fragen: Der
+ * Basiskatalog sagt, in welcher Sprache geschrieben und woraus übersetzt wird;
+ * der Rückfall sagt, was jemand sieht, der **keine** der geführten Sprachen
+ * spricht. Für den ist Englisch die bessere Vermutung.
+ */
+export const FALLBACK_LOCALE: LocaleId = 'en'
+
 export const STORAGE_KEY = 'ux-foundation.showcase.locale'
+
+/** Name des Kanals, über den die Dokumente einander die Wahl mitteilen. */
+export const LOCALE_CHANNEL = 'ux-foundation.showcase.locale'
 
 /**
  * Ist das eine Sprache, für die es einen Katalog gibt?
@@ -65,21 +78,51 @@ export const i18n = createI18n<[MessageSchema], LocaleId, false>({
 document.documentElement.lang = i18n.global.locale.value
 
 /*
- * Ein Dokument folgt einer Wahl, die in einem **anderen** getroffen wurde.
+ * Der Kanal zwischen den Dokumenten.
  *
  * Jedes iframe baut seine eigene i18n-Instanz auf; der Ref der Elternseite
  * erreicht sie nicht. Ohne diese Brücke wechselte ringsherum alles, während
  * die drei eingebetteten Navigationen in ihrer Startsprache stehenblieben.
  *
- * `storage` ist der passende Kanal, weil er genau so geschnitten ist, wie es
- * hier gebraucht wird: Er feuert in allen Dokumenten derselben Herkunft —
- * **außer** in dem, das geschrieben hat. Das schreibende aktualisiert sich über
- * seinen eigenen Ref, die übrigen hierüber; niemand wird doppelt gesetzt.
- * Nebenbei ziehen damit auch zwei Browser-Tabs des Schaufensters gleich.
+ * **Hier stand einmal `storage`** — dasselbe Ereignis, das der Browser
+ * auslöst, wenn ein Dokument den Speicher schreibt. Das war falsch, und zwar
+ * an einer Stelle, die man nur im Ausfall sieht: Der Speicher ist ausdrücklich
+ * optional. `safeStorage` gibt es, weil sein Zugriff in abgeschotteten
+ * Browsern **wirft**, und `persistLocale` verschluckt ein Misslingen mit
+ * Absicht — die Wahl gilt dann eben nur für diese Sitzung. Genau dann entsteht
+ * aber kein `storage`-Ereignis: Die Elternseite wechselt, die iframes bleiben
+ * stehen. Eine Anzeige darf nicht davon abhängen, ob eine Bequemlichkeit
+ * funktioniert hat.
+ *
+ * `BroadcastChannel` hängt an nichts davon und ist genauso geschnitten: Er
+ * stellt an alle Dokumente derselben Herkunft zu — **außer** an den Absender.
+ * Der aktualisiert sich über seinen eigenen Ref, die übrigen hierüber; niemand
+ * wird doppelt gesetzt. Nebenbei ziehen zwei Browser-Tabs gleich mit.
+ *
+ * Der `typeof`-Riegel folgt derselben Haltung wie `safeStorage`: In einem
+ * Browser ohne den Kanal fehlt die Kopplung — die Seite läuft trotzdem, statt
+ * an einem `ReferenceError` weiß zu bleiben.
  */
-window.addEventListener('storage', (event) => {
-  if (event.key !== STORAGE_KEY || !isLocaleId(event.newValue)) return
+const localeChannel =
+  typeof BroadcastChannel === 'undefined' ? null : new BroadcastChannel(LOCALE_CHANNEL)
 
-  i18n.global.locale.value = event.newValue
-  document.documentElement.lang = event.newValue
+localeChannel?.addEventListener('message', (event) => {
+  const announced: unknown = event.data
+  if (typeof announced !== 'string' || !isLocaleId(announced)) return
+
+  i18n.global.locale.value = announced
+  document.documentElement.lang = announced
 })
+
+/**
+ * Sagt den anderen Dokumenten, dass die Sprache gewechselt hat.
+ *
+ * Getrennt vom Speichern, weil beides Verschiedenes leistet: Der Speicher lässt
+ * die Wahl ein Neuladen überleben, der Kanal die schon offenen Dokumente
+ * nachziehen. Scheitert das eine, muss das andere weiter tun.
+ *
+ * @param locale Die neu gewählte Sprache.
+ */
+export function announceLocale(locale: LocaleId): void {
+  localeChannel?.postMessage(locale)
+}

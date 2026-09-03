@@ -50,11 +50,12 @@ const ITEM_NAMES = [
 ] as const satisfies readonly NavIconName[]
 
 /*
- * `computed`, obwohl es hier heute nichts ändert: Diese Seite lebt in einem
- * eigenen iframe, und der Umschalter der Elternseite lädt sie nicht neu — die
- * Beschriftung *kann* sich also gar nicht ändern. Eine Konstante wäre trotzdem
- * das falsche Vorbild: Sie friert die Sprache beim Aufbau ein, und wer die
- * Zeile später anderswo abschreibt, erbt den Fehler.
+ * `computed` und nicht Konstante — und das ist hier keine Vorsichtsmaßnahme,
+ * sondern Voraussetzung: Diese Seite lebt in einem eigenen iframe und wird beim
+ * Sprachwechsel **nicht** neu geladen. Sie erfährt davon über den Kanal in
+ * `i18n/index.ts`. Eine Konstante fröre die Sprache beim Aufbau ein, und die
+ * drei eingebetteten Navigationen blieben stehen, während ringsherum alles
+ * wechselt.
  */
 const items = computed(() => ITEM_NAMES.map((name) => ({ name, label: t(`demo.${name}`) })))
 </script>
