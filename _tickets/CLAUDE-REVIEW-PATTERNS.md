@@ -27,10 +27,18 @@ belegt, wenn diese Kontexte einbezogen wurden.
 
 **Prüffrage:** Sekundärkontext zuerst vollständig laden, dann die Sprache im
 Hauptdokument ohne Reload wechseln. Folgen sichtbarer Text und das jeweilige
-`document.documentElement.lang` in Haupt- und Sekundärkontexten gemeinsam?
+`document.documentElement.lang` in Haupt- und Sekundärkontexten gemeinsam —
+auch wenn die optionale Persistenz blockiert ist oder beim Schreiben wirft?
 
 **Beleg:** T-17, Review-Runde 1, Handoff `2175058`: Die drei bereits geladenen
 `?demo=nav`-iframes besitzen je eine eigene i18n-Instanz. Der Eltern-Umschalter
 ändert nur den Eltern-Ref und `localStorage`; Listener, Nachricht oder Reload
 fehlen. Trotzdem beanspruchten Verify #5 und #15 vollständig umgeschaltete
 sichtbare Texte.
+
+**Zweiter Beleg:** T-17, Review-Runde 2, Handoff `428345d`: Der erste Fix nutzt
+das `storage`-Ereignis zugleich als Synchronisationskanal. Schlägt der über
+`safeStorage` ausdrücklich erlaubte Schreibvorgang fehl, entsteht dieses
+Ereignis nicht; der Eltern-Ref wechselt, die bereits geladenen iframes nicht.
+Der Regressionstest erzeugte das Ereignis direkt und übersprang damit genau
+diese Kausalkette.
