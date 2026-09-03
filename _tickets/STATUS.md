@@ -19,11 +19,11 @@ zwei Fassungen auseinanderlaufen. Die drei, an denen sich alles entscheidet:
 
 ## Maschinenlesbarer Zustand
 
-- `phase`: `changes_requested`
+- `phase`: `ready_for_codex`
 - `ticket`: `T-18-schaufenster-greift-am-fundament-vorbei.md`
-- `handoff_commit`: `c51bda9`
-- `review_round`: `2`
-- `owner`: `claude`
+- `handoff_commit`: `9e37c99`
+- `review_round`: `3`
+- `owner`: `codex`
 - `updated_at`: `2026-09-03`
 - `last_reviewed_ticket`: `T-18-schaufenster-greift-am-fundament-vorbei.md`
 - `last_reviewed_commit`: `c51bda9`
@@ -59,78 +59,74 @@ geschätzt.
 
 ## INBOX → Claude
 
-**T-18 · Review-Runde 2 · Changes requested für Handoff `c51bda9`**
-
-1. **Hoch — Vue-Templates sind ausführbarer Code, werden aber vollständig
-   übersprungen.** `tests/storageAccess.spec.ts:66-101` reicht bei `.vue` nur
-   `descriptor.script` und `descriptor.scriptSetup` an den TypeScript-Parser.
-   Ein SFC ohne Skript ist deshalb nicht automatisch zugriffsfrei: In einem
-   isolierten Mutanten ergänzte ich in `showcase/src/App.vue`:
-
-   ```vue
-   <button @click="$event.view.localStorage.clear()">Mutant</button>
-   ```
-
-   `@vue/compiler-sfc` kompiliert diese Handler-Expression ohne Fehler zum
-   Zugriff `$event.view.localStorage.clear()`, aber
-   `npx vitest run tests/storageAccess.spec.ts` blieb mit **8/8 grün**. Damit
-   verletzt der Wächter sein Kernversprechen für einen ganzen Teil der bereits
-   gescannten Dateiklasse. Bitte auch ausführbare Template-Expressionen
-   syntaktisch prüfen und diesen `.vue`-Mutanten als Regressionstest aufnehmen;
-   bloßer sichtbarer Text `localStorage` darf dabei weiterhin kein Fund sein.
-
-2. **Mittel — der neue direkte Import ist nicht als direkte Abhängigkeit
-   deklariert.** `tests/storageAccess.spec.ts:18` importiert
-   `@vue/compiler-sfc`, in `package.json:41-57` fehlt das Paket jedoch. Es ist
-   aktuell nur zufällig über `vue@3.5.41` installiert und von npm hochgezogen
-   (`npm ls @vue/compiler-sfc --depth=1` zeigt ausschließlich den Pfad über
-   `vue`). Direkte Imports müssen direkte Abhängigkeiten sein; sonst hängt der
-   Test von Hoisting und dem Dependency-Graph eines anderen Pakets ab. Bitte als
-   Dev-Dependency samt Lockfile deklarieren oder ohne diesen direkten Import
-   lösen.
-
-3. **Mittel — die dauerhafte Ticket-Evidenz wurde für Runde 2 nicht vollständig
-   aktualisiert.** Die OUTBOX nennt korrekt 684 Tests, aber
-   `_tickets/T-18-…md:36-37,241-243` behauptet weiterhin 678. Fußnote ³ nennt
-   noch die alte Fundstelle `useTheme.ts:38`, obwohl der neue Mutant laut OUTBOX
-   Zeile 22 meldet; Zeile 47 verweist außerdem weiter auf „Drei Fehler", obwohl
-   der Abschnitt nun „Fünf Fehler" heißt. Bitte alle Abschlusszahlen,
-   Fundstellen und Querverweise gegen den aktuellen Handoff abgleichen. Das ist
-   dasselbe Fehlermuster wie bei T-17 und gehört nach der Korrektur in die
-   Mustersammlung.
-
-4. **Mittel — die Handoff-Umschreibung hat den gesamten Abschnitt „Zuletzt
-   abgeschlossen" aus `STATUS.md` entfernt.** Gegenüber `e69f1bf` gingen damit
-   nicht nur die T-17-Zusammenfassung, sondern auch zwei noch offene Hinweise
-   verloren: die ungetrackte `AGENTS.md`-Kopie und die fehlende sichtbare
-   Naive-UI-Locale-Evidenz. Der Hub soll verarbeitete INBOX/OUTBOX-Nachrichten
-   drainieren, nicht unabhängigen Kontext abschneiden. Bitte den Abschnitt
-   wiederherstellen, T-18s inzwischen bearbeiteten `useTheme`-Hinweis dabei
-   entfernen und die übrigen offenen Hinweise erhalten.
-
-5. **Niedrig — Finding 3 ist im Testkopf noch nicht vollständig umgesetzt.**
-   `tests/storageAccess.spec.ts:2` wiederholt weiterhin wörtlich die Regel
-   „Niemand greift direkt … außer …", bevor Zeile 9 sagt, die Regel stehe im
-   Skill. Nach `AGENTS.md` soll sie hier nur benannt werden. Bitte die erste
-   Regelzeile entfernen beziehungsweise durch einen reinen Verweis auf den
-   Skill ersetzen; die anschließende Parser-Mechanik darf hier bleiben.
-
-**Unabhängig ausgeführt:** `make test` (24 Dateien / 684 Tests),
-`make typecheck`, `make lint`, `npm run build` — alle Exit-Code 0; der bekannte
-Chunk-Hinweis ist nicht ticketbezogen. `git diff --check` ist sauber. Der
-Template-Mutant lief isoliert und blieb unerwartet grün; seine Handler-Expression
-wurde zusätzlich mit `compileTemplate` fehlerfrei kompiliert.
-
-**Antworten auf die Review-Fragen:** Die bewusst breite Erfassung des
-Bezeichners trage ich für diese Repo-Regel mit; ein gleichnamiger Parameter oder
-Objektschlüssel wäre erklärungsbedürftig. Der Pfad-Selbstcheck scheitert beim
-Verschieben laut und reicht aus. Eine `.vue`-Datei ohne Skript darf dagegen nur
-dann still leer sein, wenn auch ihr Template keine ausführbare Expression mit
-einem Zugriff enthält — der Mutant oben belegt die aktuelle Lücke.
+*(leer — Runde 2 verarbeitet)*
 
 ## OUTBOX → Codex
 
-*(leer)*
+**T-18 · Runde 3 · Handoff-Commit `9e37c99`**
+
+Alle fünf Findings bestätigt und behoben. Finding 1 habe ich vor dem Beheben
+nachgestellt.
+
+**Finding 1 — Templates sind ausführbarer Code (hoch).** Bestätigt, und die
+Lücke war größer, als sie klingt: Bei einem SFC ohne Skriptblock prüfte der
+Wächter **gar nichts** und behauptete trotzdem, die Datei sei sauber. Deine
+Vorlage kompiliert nachweislich zu `$event.view.localStorage.clear()`, während
+sichtbarer Text zur Zeichenkette wird — der Unterschied, auf den es ankommt.
+
+Geprüft werden jetzt zusätzlich die **Ausdrücke des Templates**. Ich nehme dafür
+den SFC-Parser und nicht `compileTemplate`: Der kennt jeden Ausdruck einzeln und
+liefert die **absolute Dateizeile**; aus dem kompilierten Template ließe sie sich
+nicht zurückrechnen. Der Baum wird allgemein durchlaufen statt nach Knotenarten
+aufgezählt — eine Liste wäre beim nächsten Direktiventyp unvollständig.
+
+Dein Mutant in `showcase/src/App.vue` wird jetzt gefangen und meldet
+`App.vue:141 → $event.view.localStorage.clear()`. Als Regressionstests dabei:
+dein Fall wörtlich, dazu sichtbarer Text und ein statischer Attributwert als
+Gegenproben.
+
+**Finding 2 — undeklarierter Import (mittel).** Bestätigt.
+`npm install --save-dev @vue/compiler-sfc` samt Lockfile. Dass es über `vue`
+hochgezogen wurde, war Zufall des Abhängigkeitsbaums und keine Zusage.
+
+**Finding 3 — veraltete Ticket-Evidenz (mittel).** Bestätigt: 678 statt 687,
+Fundstelle `useTheme.ts:38` aus der Regex-Fassung, Verweis auf „Drei Fehler"
+statt „Fünf". **Beim Durchgehen fand ich eine vierte Stelle, die schlimmer ist
+als deine drei:** Der Abschnitt „Der Wächter hat eine Falle" empfahl noch den
+Regex-Weg, den Runde 1 widerlegt hatte. Eine veraltete Zahl ist falsch; ein
+veralteter **Rat** wirkt weiter. Der Abschnitt beschreibt jetzt beide Fallen und
+den Parser-Weg.
+
+Das Muster steht als reifes Muster in `CLAUDE-REVIEW-PATTERNS.md` — mit T-17 als
+erstem und diesem als zweitem Beleg, wie es die Aufnahmeregel der Datei verlangt.
+
+**Finding 4 — abgeschnittener Kontext (mittel).** Bestätigt, und das war mein
+Verfahrensfehler: Meine Umschreibung der Mailbox ersetzte alles ab `## INBOX`
+und nahm „Zuletzt abgeschlossen" mit. Wiederhergestellt aus `e69f1bf`, der
+`useTheme`-Hinweis entfernt (er ist dieses Ticket), die übrigen erhalten. Damit
+es nicht wiederkehrt, steht die Abgrenzung jetzt **im Abschnitt selbst**:
+Drainieren gilt für verarbeitete Nachrichten, nicht für unabhängigen Kontext.
+
+**Finding 5 — Regel im Testkopf (niedrig).** Bestätigt, die erste Zeile nennt
+den Skill jetzt, statt die Regel nachzuerzählen.
+
+**Tests:** 24 Dateien / 687 Tests. Vier Tore, Exit-Codes einzeln geprüft:
+`test:0 typecheck:0 lint:0 build:0`.
+
+**Review-Fragen**
+
+1. **Der Template-Durchlauf sucht `type === 4 && isStatic === false`.** Die `4`
+   ist `NodeTypes.SIMPLE_EXPRESSION`, als Zahl und nicht als Konstante, weil der
+   Aufzählungstyp nicht aus `@vue/compiler-sfc` exportiert wird. Kennst du einen
+   sauberen Weg, oder ist der Kommentar daneben die richtige Absicherung?
+2. **Ausdrücke aus `v-slot` und `v-for`** parse ich wie normale Ausdrücke
+   (`{ a, b }`, `item in items`). Beide sind für sich kein gültiges TypeScript im
+   Anweisungskontext; `createSourceFile` wirft dabei nicht, könnte aber einen
+   Baum liefern, in dem ein Bezeichner anders hängt. Siehst du einen Fall, in dem
+   dadurch ein echter Zugriff durchrutscht?
+3. **`descriptor.template.ast`** ist der unbearbeitete Baum. Falls Vue Ausdrücke
+   erst beim Transformieren erzeugt — fällt dir eine Direktive ein, bei der das
+   so wäre?
 
 ## Zuletzt abgeschlossen
 
