@@ -1,8 +1,11 @@
 # Claude-Review-Muster
 
 Diese Datei sammelt wiederkehrende, verallgemeinerbare Fehlermuster aus den
-Codex-Reviews dieses Repos. Sie ist die dauerhafte Lernschicht; einzelne
-Ticketfehler bleiben im Ticket und in git.
+Claude-Implementierungen und den anschließenden Codex-Reviews dieses Repos. Sie
+ist die dauerhafte Lernschicht. Einzelne Ticketfehler bleiben grundsätzlich im
+Ticket und in git; bestätigte Vorfälle dürfen zusätzlich unten als
+**Evidenzinventar** stehen, wenn sie ausdrücklich als Rohstoff für einen
+späteren Skill gesammelt werden.
 
 Ein Muster wird erst aufgenommen, wenn mindestens zwei unabhängige Belege
 vorliegen oder eine ausdrückliche Vollständigkeitsbehauptung nachweislich falsch
@@ -13,9 +16,11 @@ war. Jeder Eintrag enthält:
 3. **Belege** — Ticket, Review-Runde, Commit und knappe Beobachtung.
 
 Die Datei wird vor jedem inhaltlichen Review vollständig gelesen. Sie enthält
-keine offene Arbeitsliste und keine unbestätigten Vermutungen.
+keine offene Arbeitsliste und keine unbestätigten Vermutungen. Das Inventar ist
+noch keine neue Regel: Erst ein reifes Muster wird zur Prüfanweisung oder später
+zum Skill-Baustein.
 
-## Übersicht
+## Reife Muster
 
 ### Vollständige Sprachumschaltung endet nicht am Dokumentrand
 
@@ -60,3 +65,165 @@ Speicher aus" lässt `Storage.setItem` werfen, sendet dann aber direkt über ein
 fremden `BroadcastChannel`. Wird `announceLocale(locale)` aus dem öffentlichen
 `setLocale()` entfernt, bleiben alle acht Sync-Tests grün. Damit bewacht der
 Test nicht die Verdrahtung, deren Regression er verhindern soll.
+
+**Zweiter Beleg:** T-17, Runde 3: `happy-dom` stellte gar keinen
+`localStorage` bereit. Der installierte Spy wurde deshalb nie berührt und der
+vermeintliche Ausfalltest stellte seine Vorbedingung nicht her. Erst ein eigener
+Speicher, dessen `setItem` tatsächlich wirft, plus ein Test über
+`useLocale().setLocale()` machte die Aussage belastbar. Handoff `e0c2ff0`
+schließt die Lücke; der Mutant ohne `announceLocale(locale)` wird dort rot.
+
+### Globale Zustandswechsel dürfen Kindzustand nicht durch Remounting löschen
+
+**Erkennungsregel:** Ein globaler Zustand wie Sprache oder Theme steckt in
+einem Vue-`key` weit oben im Baum. Die gewünschte Neuberechnung eines Widgets
+erkauft sich damit einen vollständigen Abriss aller Kindansichten samt lokaler
+Refs, offenen Dialogen, Toast-Ankern und Eingaben.
+
+**Prüffrage:** In einer Kindansicht einen beobachtbaren Zustand öffnen, dann den
+globalen Zustand wechseln. Bleiben Komponentenidentität und Kindzustand
+erhalten, während nur die wirklich betroffene Geometrie neu berechnet wird?
+
+**Beleg:** T-17, Entwicklung vor Handoff `2175058`: Der Sprachwechsel stand im
+`key` der Reiter. Ein offener Toast blieb verwaist in der alten Sprache, sein
+Zustandsschalter sprang auf `false`. Die gezielte Lösung war
+`syncBarPosition()` nach `nextTick()`. Besonders relevant: Der damalige
+`ux-standards`-Skill empfahl den schädlichen Sprach-`key` selbst; Mike ließ die
+Regel nach seiner Abnahme korrigieren.
+
+### Eine Source of Truth muss wirklich alle Verbraucher erfassen
+
+**Erkennungsregel:** Zwei Konfigurationen werden zusammengeführt und die Arbeit
+als „eine Quelle" bezeichnet, ohne vorher alle Verbraucher derselben Zuordnung
+zu suchen. Ein dritter Spiegel bleibt zurück oder entsteht beim Testen neu.
+
+**Prüffrage:** Projektweit nach jedem Schlüssel und jedem aufgelösten Wert
+suchen. Lesen alle technisch fähigen Verbraucher dieselbe Quelle? Bewacht bei
+einer unvermeidbaren Spiegelung ein negativer Konsistenztest sowohl Schlüsselmenge
+als auch Zielwerte?
+
+**Belege:** T-17, Handoff `e0c2ff0`: Der für den Setter-Test ergänzte `@`-Alias
+stand danach unabhängig in Vite und Vitest. Handoff `cd6a750` führte beide über
+`aliases.ts` zusammen, übersah aber die dritte Spiegelung unter `paths` in
+`showcase/tsconfig.json`. Erst Handoff `4dd5732` ergänzte den Wächter; der Mutant
+`./src/*` → `./srcX/*` wird rot.
+
+### Ein Sprachwechsel verändert auch Geometrie und Zustandswahrnehmung
+
+**Erkennungsregel:** Die Prüfung vergleicht nur Textwerte vor und nach dem
+Sprachwechsel. Unterschiedliche Wortlängen verschieben aber Tabs, Tabellen und
+Bedienelemente; ein aktiver Zustand kann zudem semantisch korrekt markiert und
+visuell trotzdem kaum erkennbar sein.
+
+**Prüffrage:** Vor und nach dem Wechsel Bounding-Boxes beziehungsweise
+Spaltenbreiten messen und aktive/inaktive Zustände nicht nur per ARIA, sondern
+auch visuell vergleichen. Bleibt das Raster ruhig und ist der Zustand ohne
+Farbsehen erkennbar?
+
+**Belege:** T-17, Mikes Abnahme nach sechs Codex-Runden: Die Naive-UI-Spalten
+wanderten beim Wechsel um bis zu 42 px; die aktive und inaktive Sprachkennung
+unterschieden sich nur mit 1,76:1. Commit `6671962` stabilisierte die
+vorhersehbaren Spaltenbreiten und ergänzte eine Fläche für die aktive Kennung.
+Beide Fehler waren bei reinen Text- und Strukturprüfungen unsichtbar geblieben.
+
+### Verifikation muss ihren Exit-Code und ihre Vorbedingungen beweisen
+
+**Erkennungsregel:** Ein grüner Bericht entsteht aus einer Shell-Pipeline, einer
+festen Wartezeit oder einem Mock, dessen Nutzung nicht nachgewiesen wird.
+Mutationen werden anschließend über eine Arbeitskopie statt gegen git
+zurückgenommen.
+
+**Prüffrage:** Werden die relevanten Befehle einzeln ausgewertet? Wartet ein
+asynchroner Test auf die Bedingung statt auf eine geschätzte Anzahl Ticks? Zeigt
+eine Assertion, dass der Mock wirklich im geprüften Pfad lag? Ist die Datei nach
+einem Mutanten gegen git sauber?
+
+**Belege:** T-17, Runde 3: `make test | grep … && git commit` übernahm den
+Exit-Code von `grep` und ließ einen roten Test bis zum Commit durch. Eine feste
+Wartezeit bestand nach warmem Kanal, scheiterte aber beim Kaltstart. Später
+schlug das Zurückkopieren mutierter Dateien wegen eines interaktiven `cp`-Alias
+fehl; erst der Vergleich gegen git zeigte die stehengebliebene Mutation. Die
+finale Praxis waren einzelne Exit-Codes, `waitUntil()` und isolierte Mutanten in
+`/tmp`.
+
+### Review-Evidenz für Menschen ist ein ausführbarer Ablauf
+
+**Erkennungsregel:** Eine Verify-Zeile beschreibt intern korrekt, was technisch
+passieren soll, gibt dem Menschen aber weder einen kopierbaren Befehl noch einen
+sichtbaren Sollzustand. Die Human-Spalte bleibt dann nicht wegen eines Fehlers,
+sondern wegen unbrauchbarer Anleitung offen.
+
+**Prüffrage:** Kann jemand ohne Kontext jeden Schritt kopieren oder klicken und
+danach eindeutig Soll gegen Ist vergleichen? Stehen Vorbereitung,
+Rückgängigmachen und beobachtbarer Nachweis vollständig im Ticket?
+
+**Beleg:** T-17, Verify #18 bei Mikes Abnahme: „`Storage.prototype.setItem`
+wirft" war für den Reviewer nicht ausführbar; seine Rückmeldung „KA was das
+sein soll" war berechtigt. Erst ein vollständiger Konsolenblock im
+Kurz-Testblock machte die Prüfung übergabefähig.
+
+## T-17 · bestätigtes Fehlerinventar für einen späteren Skill
+
+Dieses Inventar konserviert auch einmalige Vorfälle. Es ist absichtlich
+vollständiger als die reifen Muster oben und dient später als Datensatz für
+Trigger, Negativbeispiele und Gegenproben.
+
+### Implementierung und Laufzeit
+
+1. **Sprach-`key` remountete die gesamte Reiterfläche.** Kindzustand und
+   Toast-Anker gingen verloren; gezielte Widget-Synchronisation war nötig.
+2. **Die erste Übergabe vergaß eigenständige Dokumente.** Drei sichtbare
+   `?demo=nav`-iframes behielten Sprache und `lang`, obwohl Verify #5/#15 „alle
+   sichtbaren Texte" beanspruchten. Handoff `2175058`, Review-Runde 1.
+3. **`lang` lag im falschen Modul.** Nur Dokumente mit `useLocale()` setzten es;
+   die iframes ohne Umschalter hatten gar kein `lang`.
+4. **Der erste iframe-Fix koppelte Anzeige an Bequemlichkeitsspeicher.** Bei
+   blockiertem `localStorage` entstand kein `storage`-Ereignis und derselbe
+   sichtbare Fehler kehrte zurück. Handoff `428345d`, Review-Runde 2.
+5. **Basiskatalog und Runtime-Fallback wurden verwechselt.** Trotz vorhandenem
+   Englisch blieb `FALLBACK_LOCALE` auf `de`, entgegen `code-standards`.
+6. **Der Sprachwechsel ließ Tabellengeometrie springen.** Erst Mikes Bedienung
+   zeigte die um bis zu 42 px wandernden Spalten. Behoben in `6671962`.
+7. **Der aktive Sprachzustand war visuell zu leise.** ARIA war korrekt, die
+   sichtbare Differenz betrug aber nur 1,76:1 und beruhte allein auf Farbe.
+
+### Tests und Arbeitsverfahren
+
+8. **Der erste Sync-Test erzeugte das `storage`-Ereignis selbst.** Er prüfte den
+   Empfänger, nicht den echten Weg vom Umschalter zum iframe.
+9. **Der zweite Sync-Test mockte einen unbenutzten Eingang.** `Storage.setItem`
+   sollte werfen, wurde im Testpfad aber nie aufgerufen; happy-dom hatte ohnehin
+   keinen Speicher. Handoff `19a14a3`, Review-Runde 3.
+10. **Der Setter war unbewacht.** Entfernen von `announceLocale(locale)` ließ
+    alle acht vermeintlichen Sync-Tests grün. Erst Handoff `e0c2ff0` machte den
+    Mutanten rot.
+11. **Eine feste Tick-Zahl machte den ersten Kanaltest kaltstartabhängig.** Die
+    zweite Zustellung war schnell genug, die erste nicht; `waitUntil()` ersetzte
+    die geschätzte Frist.
+12. **Eine Shell-Pipeline maskierte einen roten Test.** Der Commit-Schritt sah
+    den Erfolg von `grep`, nicht den Fehler von `make test`.
+13. **Das Zurücknehmen eines Mutanten scheiterte unbemerkt.** Ein interaktiver
+    `cp`-Alias verhinderte das Überschreiben; nur `git diff` entdeckte die noch
+    mutierte Produktdatei.
+14. **`import.meta.url` wurde trotz dokumentierter Repo-Falle auf Modulebene
+    ausgewertet.** Unter happy-dom war es keine Datei-URL; der neue Alias-Wächter
+    konnte seine eigene Quelle nicht importieren. Handoff `4dd5732` verlagerte
+    die Auflösung in `resolveAliases()`.
+
+### Standards, Quellen und Dokumentation
+
+15. **Neuer Code verwendete deutsche Bezeichner.** Unter anderem `Katalog`,
+    `nachrichten`, `DEUTSCH` und `NAMEN` widersprachen `code-standards`; nur die
+    neu eingeführten Namen wurden umgestellt.
+16. **Kommentare überlebten verworfene Entwürfe.** Endonyme sollten angeblich
+    noch Konstanten sein, `DemoNav` könne nicht mitwechseln und der Typ heiße
+    `Katalog`; alle Aussagen waren nach den Änderungen falsch.
+17. **Der Ticket-Abschluss blieb auf Runde 1 stehen.** Testzahlen, Verify-Bereich
+    und offene Zeilen wurden nach mehreren Handoffs nicht aktualisiert.
+18. **Der Test-Alias erzeugte eine neue zweite Quelle.** Vite und Vitest liefen
+    zunächst über getrennte Zuordnungen. Die erste Konsolidierung übersah danach
+    `showcase/tsconfig.json`; erst der negative Alias-Wächter schloss alle
+    Verbraucher ein.
+19. **Eine technisch korrekte Human-Prüfung war nicht ausführbar beschrieben.**
+    Verify #18 nannte nur den gewünschten Wurf statt eines vollständigen
+    Konsolenablaufs.
