@@ -19,18 +19,22 @@ zwei Fassungen auseinanderlaufen. Die drei, an denen sich alles entscheidet:
 
 ## Maschinenlesbarer Zustand
 
-- `phase`: `approved`
-- `ticket`: `T-17-schaufenster-spricht-nur-deutsch.md`
-- `handoff_commit`: `4dd5732`
-- `review_round`: `6`
+- `phase`: `idle`
+- `ticket`: —
+- `handoff_commit`: —
+- `review_round`: `0`
 - `owner`: `mike`
 - `updated_at`: `2026-09-03`
 - `last_reviewed_ticket`: `T-17-schaufenster-spricht-nur-deutsch.md`
 - `last_reviewed_commit`: `4dd5732`
 - `last_reviewed_round`: `6`
-- `workstream`: `showcase_i18n`
-- `priority_chain`: `T-17-schaufenster-spricht-nur-deutsch.md`
-- `priority_ticket`: `T-17-schaufenster-spricht-nur-deutsch.md`
+- `workstream`: —
+- `priority_chain`: —
+- `priority_ticket`: —
+
+**Kein Ticket in Arbeit.** `idle` steht nicht in der Phasenliste unten, weil
+die den *Lauf* eines Tickets beschreibt; hier läuft gerade keiner. Wer das
+nächste anlegt, setzt Ticket, `owner` und `phase` zusammen mit ihm.
 
 Erlaubte Phasen: `claude_working` → `ready_for_codex` → `codex_reviewing` →
 `changes_requested` **oder** `approved`; `blocked` nur bei einem echten
@@ -59,56 +63,28 @@ geschätzt.
 
 ## INBOX → Claude
 
-*(leer — Runde 6 verarbeitet, Freigabe erteilt)*
+*(leer)*
 
 ## OUTBOX → Codex
 
-*(leer — T-17 ist durch)*
+*(leer)*
 
-## An Mike · T-17 wartet auf deine Verifikation
+## Zuletzt abgeschlossen
 
-**Freigegeben nach sechs Review-Runden**, letzter Stand `4dd5732`. Die Arbeit
-liegt auf `t-17-schaufenster-spricht-nur-deutsch`, **nicht** auf `master` und
-nicht gepusht.
+**T-17 · Das Schaufenster spricht nur Deutsch** — abgenommen von Mike, liegt in
+`solved/`. Sechs Codex-Runden, dann seine Abnahme; die letzten beiden Befunde
+kamen von ihm und nicht aus dem Review, weil man sie nur beim Bedienen sieht.
 
-`make test` 23 Dateien / 676 Tests, dazu `typecheck`, `lint` und
-`npm run build` — Exit-Codes einzeln geprüft: `0/0/0/0`.
+Zwei Dinge daraus, die über das Ticket hinausreichen:
 
-### Was du siehst, wenn du `make dev` startest
-
-Oben rechts steht `DE | EN`. Der Rest der Verify-Matrix im Ticket ist von mir
-live geprüft und mit Zahlen belegt; **drei Zeilen konnte ich nicht schließen**,
-und nur die brauchen dich:
-
-| # | Was | Warum ich es nicht konnte |
-|---|---|---|
-| **13** | Fenster auf 375 px ziehen, Sprache wechseln: Kopfzeile bleibt einzeilig, kein waagrechter Überhang | Das Fenster ließ sich von hier nicht verkleinern — `resize_window` meldet Erfolg, `innerWidth` bleibt 1614 |
-| **19** | Browsersprache auf eine ohne Katalog stellen (z.B. Französisch), `localStorage` leeren, neu laden: startet **englisch** | Browsersprache von hier nicht umstellbar; als Unit-Test abgedeckt |
-| **8** | Naives **eigene** Beschriftungen folgen der Sprache | Das Schaufenster zeigt derzeit keine einzige davon — nichts zu sehen, weder richtig noch falsch |
-
-Zeile #8 ist kein Fehler dieses Tickets, sondern eine Lücke des Schaufensters:
-Alle sichtbaren Texte kommen aus unserem Katalog, Datumsauswahl und
-Blätterleiste gibt es nicht. Wenn dir das einen Nachtrag wert ist, wäre ein
-kleines eigenes Ticket der Ort dafür.
-
-### Der interessanteste Fund, falls du nur eines ansiehst
-
-Reiter **Verhalten**: Anzeigedauer auf 0, „Kurse fehlen" einschalten, dann bei
-**offenem** Toast die Sprache wechseln. Überschrift und Text ziehen mit, und es
-bleibt derselbe Toast. Das ist der Fix aus `fcd088c`, den man vorher nicht
-sehen konnte — und er war zwischenzeitlich unsichtbar, weil der Reiter-Schlüssel
-die ganze Ansicht neu aufbaute und den Zustand mitriss. Steht im Ticket unter
-„Der Befund unterwegs".
-
-### Zwei Nebenbefunde, bewusst nicht angefasst
-
-1. `showcase/src/composables/useTheme.ts` greift **direkt** auf `localStorage`
-   zu statt über `safeStorage` — ausgerechnet im Schaufenster, das das Paket
-   vorführen soll.
-2. `AGENTS.md` ist eine byte-gleiche, **ungetrackte** Kopie von `CLAUDE.md`.
-   Zwei Dateien, derselbe Regeltext; ein Symlink löste es. Deine Entscheidung.
-
-### Was noch offen ist, wenn du zufrieden bist
-
-`git mv` des Tickets nach `solved/`, die `Human`-Spalte und der Merge auf
-`master` gehören dir. Ich habe nichts davon angefasst.
+- Der Skill `ux-standards` empfahl für den Sprachwechsel `:key` an den Reitern.
+  Genau das musste dieses Ticket rückgängig machen — der Schlüssel räumt den
+  Zustand aller Kindansichten mit ab. Die Stelle ist korrigiert und um den
+  Tabellenfall (springende Spaltenbreiten) ergänzt.
+- **Zwei Nebenbefunde stehen weiter offen** und sind Mikes Entscheidung:
+  `showcase/src/composables/useTheme.ts` greift direkt auf `localStorage` zu
+  statt über `safeStorage`; `AGENTS.md` ist eine byte-gleiche, ungetrackte
+  Kopie von `CLAUDE.md`.
+- Ein Kandidat für ein eigenes kleines Ticket: Das Schaufenster zeigt keine
+  einzige von Naive UI selbst gestellte Zeichenkette, weshalb sich deren
+  Locale-Verdrahtung dort nicht ansehen lässt (Zeile #8).
