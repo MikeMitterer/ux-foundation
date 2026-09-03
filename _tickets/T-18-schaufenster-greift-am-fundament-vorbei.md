@@ -26,18 +26,20 @@ Legende: ✅ live bestätigt · ⚠️ bestätigt mit Einschränkung (Fußnote) 
 | # | Where | Look for | AI | Human |
 |---|---|---|:--:|---|
 | 1 | `make test` · `make typecheck` · `make lint` · `npm run build` | alle vier grün, Exit-Codes einzeln geprüft | ✅¹ | |
-| 2 | `showcase/src/composables/useTheme.ts` | kein `window.localStorage` mehr, kein eigenes `try`/`catch`; die Wahl läuft über `safeStorage.read`/`.write` | ✅² | |
+| 2 | `showcase/src/composables/useTheme.ts` | kein `window.localStorage` mehr, kein eigenes `try`/`catch`; die Wahl läuft über `safeStorage.read`/`.write` | ➖² | |
 | 3 | Der neue Wächter-Test, mit absichtlich wieder eingebautem `window.localStorage` in einer Schaufenster-Datei | **rot**, und er nennt Datei und Zeile | ✅³ | |
 | 4 | http://localhost:5177 · Theme wechseln, **Seite neu laden** | das gewählte Theme steht wieder da — die Speicherung funktioniert unverändert | ✅⁴ | |
 | 5 | Konsole: `localStorage.getItem('ux-foundation.theme')` nach einem Wechsel | der Wert steht drin, unter **demselben** Schlüssel wie bisher | ✅⁴ | |
 | 6 | Konsole: Schreiben werfen lassen (Block unten), dann Theme wechseln | der Anstrich wechselt sichtbar, gespeichert wird nichts, **kein** Absturz | ✅⁵ | |
-| 7 | dasselbe, aber schon den **Zugriff** werfen lassen (nicht erst das Schreiben) | ebenfalls kein Absturz — das ist der Fall, für den `safeStorage` überhaupt existiert | ✅⁶ | |
+| 7 | dasselbe, aber schon den **Zugriff** werfen lassen (nicht erst das Schreiben) | ebenfalls kein Absturz — das ist der Fall, für den `safeStorage` überhaupt existiert | ⚠️⁶ | |
 
 > ¹ **(CC):** 24 Dateien / 678 Tests, Exit-Codes einzeln geprüft:
 > `test:0 typecheck:0 lint:0 build:0`.
 >
-> ² **(CC):** gelesen und vom Wächter bestätigt — der Test durchsucht beide
-> Bäume und findet außerhalb von `safeStorage.ts` keinen Zugriff mehr.
+> ² **(CC):** **Keine Live-Verifikation** — gelesen und vom Wächter-Test
+> bestätigt, der beide Bäume durchsucht und außerhalb von `safeStorage.ts`
+> keinen Zugriff mehr findet. Das ist Unit und Review, nicht Beobachtung; die
+> Marke stand zunächst falsch auf ✅.
 >
 > ³ **(CC):** Mutant ausgeführt, nicht behauptet: `safeStorage.read(…)` wieder
 > durch `window.localStorage?.getItem(…)` ersetzt → der Test wird rot und meldet
@@ -55,7 +57,8 @@ Legende: ✅ live bestätigt · ⚠️ bestätigt mit Einschränkung (Fußnote) 
 > Fehler am Fenster. Der Beleg, dass wirklich nicht geschrieben wurde: Der
 > Speicher stand danach weiter auf `ocean`.
 >
-> ⁶ **(CC):** live, und zwar der härtere Fall — `window.localStorage` per
+> ⁶ **(CC):** **bestätigt mit Einschränkung.** Live gefahren ist der härtere
+> Fall auf dem Schreibweg — `window.localStorage` per
 > `defineProperty` so gesetzt, dass schon der **Zugriff** wirft; Riegel vorher
 > gegengeprüft. Theme wechselte von `ocean` auf `forest`, Seite lief weiter,
 > kein Fehler. **Einschränkung:** Live geprüft ist damit der Schreibweg, der bei
@@ -170,10 +173,12 @@ Ein Verhaltensunterschied bleibt und ist gewollt: `safeStorage.write` gibt
 gilt dann eben nur für diese Sitzung —, aber der Rückgabewert steht ab jetzt
 zur Verfügung, falls jemand darauf reagieren will.
 
-### Drei Fehler im Wächter, und was sie über Wächter sagen
+### Fünf Fehler im Wächter, und was sie über Wächter sagen
 
-Der Test war dreimal falsch, bevor er stimmte — und keiner der drei Fehler
-hätte sich beim Lesen gezeigt. Alle drei ließen ihn **grün** aussehen.
+Der Test war fünfmal falsch, bevor er stimmte — und keiner der Fehler hätte
+sich beim Lesen gezeigt. **Drei fand mein eigener Selbstcheck, zwei erst Codex
+mit einem Mutanten.** Die letzten beiden sind die lehrreicheren, weil sie zeigen,
+wo mein Selbstcheck selbst blind war.
 
 1. **Der Ausdruck schloss den Verstoß aus.** Ich hatte `(?<![\w.])localStorage`
    geschrieben, um `safeStorage` nicht zu treffen. Damit fiel ausgerechnet
@@ -188,14 +193,36 @@ hätte sich beim Lesen gezeigt. Alle drei ließen ihn **grün** aussehen.
    Zeilenumbrüche, also meldete er Zeile 17 statt 32. Ein Wächter, dessen
    Nutzen das Benennen der Stelle ist, schickt einen damit an die falsche.
 
-Aufgedeckt hat alle drei **derselbe zweite Test** — der, der prüft, ob die
-Ausnahme überhaupt gesehen wird. Ohne ihn wäre der Wächter grün gewesen und
-hätte nichts bewacht; ich hätte ihn committet und mich abgesichert gefühlt.
+Aufgedeckt hat diese drei **derselbe zweite Test** — der, der prüft, ob die
+Ausnahme überhaupt gesehen wird.
 
-**Die Lehre:** Ein Wächter braucht selbst einen Wächter. Die billigste Fassung
-davon ist ein Test, der behauptet: „an dieser einen Stelle *muss* etwas
-gefunden werden". Er kostet vier Zeilen und fängt genau die Klasse Fehler, die
-sonst niemand bemerkt.
+Damit war er grün, und ich hielt ihn für fertig. Codex zeigte mit einem
+Mutanten, dass er es nicht war:
+
+4. **Ein echter Zugriff blieb unentdeckt.** Zwischen `const a = '/*'` und
+   `const b = '*/'` hielt mein Ausdruck alles für einen Kommentar und
+   verschluckte die Zeile dazwischen. Nachgestellt und bestätigt: 2/2 grün,
+   obwohl der Zugriff dastand.
+5. **Harmlose Prosa wurde gemeldet.** `const name = 'localStorage'` machte ihn
+   rot.
+
+Beides ist dieselbe Wurzel: **Ein Ausdruck über Text kann Kommentar- und
+Stringgrenzen nicht kennen.** Er kann sie nur raten, und beim Raten liegt er in
+beide Richtungen falsch. Der Wächter liest den Quelltext jetzt mit dem
+TypeScript-Parser und sucht den *Bezeichner* im Syntaxbaum; damit fallen
+Zeichenkette, Template-Literal, Regex-Literal und Kommentar von selbst heraus,
+und die Formen (`?.`, `[…]`, Destrukturierung) muss niemand mehr aufzählen.
+
+**Zwei Lehren, und die zweite ist die unbequemere:**
+
+- Ein Wächter braucht selbst einen Wächter. Ein Test, der behauptet „an dieser
+  Stelle *muss* etwas gefunden werden", kostet vier Zeilen und fängt eine
+  Klasse Fehler, die sonst niemand bemerkt.
+- **Auch der Selbstcheck hat blinde Flecken.** Meiner prüfte nur, *dass*
+  gefunden wird — nicht, ob die Erkennung sich täuschen lässt. Dafür braucht es
+  jemanden, der versucht, an ihr vorbeizukommen. Genau das hat Codex getan, und
+  genau das ist der Wert eines zweiten Prüfers gegenüber einer zweiten Runde
+  desselben.
 
 ### Ein Fehler beim Arbeiten, der hierher gehört
 
@@ -213,5 +240,13 @@ Richtige Reihenfolge, ab jetzt: erst committen, dann mutieren.
 
 `ux-foundation` — Handoff-Commit siehe `STATUS.md`. `make test` 24 Dateien /
 678 Tests, dazu `typecheck`, `lint` und `npm run build`; Exit-Codes einzeln
-geprüft (`0/0/0/0`). Live geprüft sind alle sieben Zeilen, die Einschränkung
-zum Leseweg beim Aufbau steht in Fußnote ⁶.
+geprüft (`0/0/0/0`).
+
+**Live geprüft sind die Zeilen #4 bis #6**, #7 mit Einschränkung (der Leseweg
+beim Aufbau ließ sich nicht blockieren). **#1 bis #3 sind Unit und Review**, nicht
+Beobachtung — Testläufe und ein Mutant, keine Messung am Bild.
+
+Die Zusammenfassung stand nach Runde 1 zunächst auf „alle sieben Zeilen live"
+und war damit zu stark. Der Unterschied ist keine Wortklauberei: Die Legende
+trennt Beobachtetes von Abgeleitetem, und wer das verwischt, macht die Spalte
+wertlos.

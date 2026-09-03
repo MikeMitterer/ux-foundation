@@ -20,32 +20,13 @@ import {
 
 const STORAGE_KEY = 'ux-foundation.theme'
 
-/**
- * Liest das gespeicherte Theme.
- *
- * Über `safeStorage` aus dem Paket, weil der Zugriff auf den Speicher in
- * abgeschotteten Browsern wirft — nicht erst das Lesen, schon der bloße
- * Zugriff. Der Anstrich ist eine Bequemlichkeit; dafür soll die App nicht
- * stehenbleiben.
- *
- * Hier stand einmal ein eigenes `try`/`catch`, das genau dasselbe tat. Es war
- * nicht falsch, nur doppelt: Die Datei entstand eine Stunde vor `safeStorage`
- * und wurde danach nie wieder angefasst. Eine richtige Kopie verursacht keinen
- * Fehler — deshalb überlebt sie länger als eine falsche, und deshalb bewacht
- * `tests/storageAccess.spec.ts` die Regel jetzt, statt sie nur aufzuschreiben.
- */
+/** Liest das gespeicherte Theme; `null`, wenn keines oder ein unbekanntes. */
 function readStoredTheme(): ThemeId | null {
   const stored = safeStorage.read(STORAGE_KEY)
   return isThemeId(stored) ? stored : null
 }
 
-/**
- * Schreibt die Wahl.
- *
- * Der Rückgabewert von `safeStorage.write` bleibt ungenutzt, und das ist eine
- * Entscheidung: Misslingt es, gilt der Anstrich eben nur für diese Sitzung.
- * Eine Meldung dafür wäre lauter als die Sache wert ist.
- */
+/** Schreibt die Wahl; das Misslingen wird nicht ausgewertet. */
 function writeStoredTheme(theme: ThemeId): void {
   safeStorage.write(STORAGE_KEY, theme)
 }
