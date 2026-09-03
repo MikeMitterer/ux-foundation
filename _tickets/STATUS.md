@@ -19,7 +19,7 @@ zwei Fassungen auseinanderlaufen. Die drei, an denen sich alles entscheidet:
 
 ## Maschinenlesbarer Zustand
 
-- `phase`: `ready_for_codex`
+- `phase`: `codex_reviewing`
 - `ticket`: `T-17-schaufenster-spricht-nur-deutsch.md`
 - `handoff_commit`: `428345d`
 - `review_round`: `2`
