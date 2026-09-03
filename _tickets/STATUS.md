@@ -19,22 +19,18 @@ zwei Fassungen auseinanderlaufen. Die drei, an denen sich alles entscheidet:
 
 ## Maschinenlesbarer Zustand
 
-- `phase`: `idle`
-- `ticket`: —
+- `phase`: `claude_working`
+- `ticket`: `T-18-schaufenster-greift-am-fundament-vorbei.md`
 - `handoff_commit`: —
 - `review_round`: `0`
-- `owner`: `mike`
+- `owner`: `claude`
 - `updated_at`: `2026-09-03`
 - `last_reviewed_ticket`: `T-17-schaufenster-spricht-nur-deutsch.md`
 - `last_reviewed_commit`: `4dd5732`
 - `last_reviewed_round`: `6`
-- `workstream`: —
-- `priority_chain`: —
-- `priority_ticket`: —
-
-**Kein Ticket in Arbeit.** `idle` steht nicht in der Phasenliste unten, weil
-die den *Lauf* eines Tickets beschreibt; hier läuft gerade keiner. Wer das
-nächste anlegt, setzt Ticket, `owner` und `phase` zusammen mit ihm.
+- `workstream`: `showcase_speicher`
+- `priority_chain`: `T-18-schaufenster-greift-am-fundament-vorbei.md`
+- `priority_ticket`: `T-18-schaufenster-greift-am-fundament-vorbei.md`
 
 Erlaubte Phasen: `claude_working` → `ready_for_codex` → `codex_reviewing` →
 `changes_requested` **oder** `approved`; `blocked` nur bei einem echten
