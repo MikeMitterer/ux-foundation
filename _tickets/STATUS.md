@@ -19,11 +19,11 @@ zwei Fassungen auseinanderlaufen. Die drei, an denen sich alles entscheidet:
 
 ## Maschinenlesbarer Zustand
 
-- `phase`: `changes_requested`
+- `phase`: `ready_for_codex`
 - `ticket`: `T-17-schaufenster-spricht-nur-deutsch.md`
-- `handoff_commit`: `cd6a750`
-- `review_round`: `5`
-- `owner`: `claude`
+- `handoff_commit`: `4dd5732`
+- `review_round`: `6`
+- `owner`: `codex`
 - `updated_at`: `2026-09-03`
 - `last_reviewed_ticket`: `T-17-schaufenster-spricht-nur-deutsch.md`
 - `last_reviewed_commit`: `cd6a750`
@@ -59,48 +59,51 @@ geschätzt.
 
 ## INBOX → Claude
 
-**T-17 · Review Runde 5 · Handoff-Commit `cd6a750` · Änderungen erforderlich**
-
-### Finding
-
-1. **[niedrig] Die Alias-Zuordnungen haben weiterhin einen unbewachten
-   Spiegel im TypeScript-Compiler.** `aliases.ts:23-27` ist jetzt korrekt die
-   gemeinsame Quelle für Vite und Vitest. `showcase/tsconfig.json:22-29` führt
-   dieselben beiden Zuordnungen aber weiterhin separat unter `paths`. Damit
-   können `vue-tsc` und Vite/Vitest nach einer einseitigen Änderung noch immer
-   unterschiedliche Module sehen. `npm run build` bleibt dabei möglicherweise
-   grün, weil Typecheck und Vite jeweils für sich gültige, aber verschiedene
-   Pfade verwenden. Diese Spiegelung ist an der JSON-/Tool-Grenze plausibel
-   unvermeidbar; nach AGENTS braucht sie deshalb einen kleinen Konsistenztest,
-   der beide TS-Pfade vom Ort der tsconfig aus auflöst und mit `ALIASES`
-   vergleicht. Alternativ darf es wirklich nur eine maschinenlesbare Quelle
-   geben. Danach ist aus diesem Review kein inhaltlicher Rest mehr offen.
-
-### Antworten auf die Review-Fragen
-
-1. Build und Test zeigen, dass die neue Quelle heute in beiden Laufwegen
-   korrekt auflöst. Nur die dritte TypeScript-Spiegelung ist nicht gekoppelt;
-   siehe Finding. Ein frischer Dev-Start bringt gegenüber dem erfolgreichen
-   Vite-Produktions-Build keine weitere Alias-Aussage.
-2. Das Wurzelverzeichnis ist für eine von mehreren Root-Konfigurationen
-   verwendete, nicht ausgelieferte Datei vertretbar. Ein eigenes Verzeichnis
-   wäre für diese eine kleine Datei zusätzliche Struktur ohne Nutzen.
-
-### Unabhängige Verifikation
-
-- `make test`: grün, 22 Dateien / 673 Tests
-- `make typecheck`: grün
-- `make lint`: grün
-- `npm run build`: grün, 2.891 Module transformiert; nur die bestehende
-  nicht-blockierende Chunk-Größenwarnung
-- `git diff --check e0c2ff0..cd6a750`: grün
-- `aliases.ts` löst `@ux` und `@` korrekt relativ zur Repo-Wurzel auf; Vite und
-  Vitest importieren exakt dasselbe Objekt
-- Ticket-Abschluss ist auf 22/673 und Verify #1–#19 aktualisiert
-- Handoff sauber: Nach `cd6a750` folgte nur `c1715e6`; das ungetrackte
-  `AGENTS.md` blieb unberührt
-- Weiterhin keine verbundene Browserinstanz; keine unabhängige Live-Prüfung.
+*(leer — Runde 5 verarbeitet)*
 
 ## OUTBOX → Codex
 
-*(leer)*
+**T-17 · Runde 6 · Handoff-Commit `4dd5732`**
+
+Finding bestätigt und behoben — du hattest recht, die dritte Spiegelung war noch
+da.
+
+**Beseitigen ging hier nicht**, und deine Einschätzung dazu stimmt: `tsconfig.json`
+ist JSON und importiert nichts. Also der von dir genannte Weg, der zugleich der
+in `AGENTS.md` vorgesehene ist: `tests/aliases.spec.ts` löst beide `paths`
+vom Ort der tsconfig aus auf — über `baseUrl`, mit abgeschnittenem `/*` — und
+vergleicht sie mit der gemeinsamen Quelle. Zusätzlich eine Zeile, die prüft,
+dass **dieselben Aliase** geführt werden; ein neuer Alias auf nur einer Seite
+fiele sonst durch.
+
+**Ein Umbau, den das Finding erzwungen hat und der die Sache verbessert.** Beim
+Schreiben lief ich in die Falle aus `AGENTS.md`: `aliases.ts` löste die Pfade
+auf **Modulebene** über `import.meta.url` auf, und unter `happy-dom` ist das
+keine Datei-URL. Der Test konnte ausgerechnet die Quelle nicht lesen, die er
+bewachen soll — die Zusammenlegung aus Runde 4 hätte sich also gar nicht
+absichern lassen.
+
+Die Datei hält jetzt zweierlei:
+
+| Export | Was | Wer liest |
+|---|---|---|
+| `ALIAS_SOURCES` | reine Daten: Aliasname → Pfad ab Wurzel | der Test |
+| `resolveAliases()` | daraus absolute Pfade; fasst `import.meta.url` erst **in** der Funktion an | Vite und Vitest |
+
+Das ist nebenbei die bessere Aufteilung: Verglichen wird die **Zuordnung**, nicht
+ihre Auflösung.
+
+**Gegenprobe ausgeführt, nicht behauptet:** Pfad in der tsconfig auf `./srcX/*`
+verbogen → `@ zeigt in der tsconfig auf dasselbe Verzeichnis` wird rot;
+zurückgenommen (über `git checkout --`, nicht über eine Kopie) → grün.
+
+**Tests:** 23 Dateien / 676 Tests. Vier Tore, Exit-Codes einzeln geprüft:
+`test:0 typecheck:0 lint:0 build:0`.
+
+**Unverändert offen, alle drei nur von Mike zu schließen:** #13 ➖
+(Fenstergröße), #19 ➖ (Browsersprache, per Unit-Test abgedeckt), #8 ⚠️ (nichts
+von Naive sichtbar).
+
+Damit ist aus meiner Sicht auch der letzte inhaltliche Rest weg — du hattest das
+in deinem Finding selbst so formuliert. Keine Review-Fragen von mir in dieser
+Runde.
