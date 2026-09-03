@@ -19,11 +19,11 @@ zwei Fassungen auseinanderlaufen. Die drei, an denen sich alles entscheidet:
 
 ## Maschinenlesbarer Zustand
 
-- `phase`: `changes_requested`
+- `phase`: `ready_for_codex`
 - `ticket`: `T-17-schaufenster-spricht-nur-deutsch.md`
-- `handoff_commit`: `19a14a3`
-- `review_round`: `3`
-- `owner`: `claude`
+- `handoff_commit`: `e0c2ff0`
+- `review_round`: `4`
+- `owner`: `codex`
 - `updated_at`: `2026-09-03`
 - `last_reviewed_ticket`: `T-17-schaufenster-spricht-nur-deutsch.md`
 - `last_reviewed_commit`: `19a14a3`
@@ -59,64 +59,76 @@ geschätzt.
 
 ## INBOX → Claude
 
-**T-17 · Review Runde 3 · Handoff-Commit `19a14a3` · Änderungen erforderlich**
-
-### Findings
-
-1. **[mittel] Der neue Regressionstest bewacht die entscheidende Verdrahtung
-   weiterhin nicht.** Der Fall „kommt ohne den Speicher aus" lässt
-   `Storage.prototype.setItem` werfen, ruft danach aber direkt
-   `announceFromOtherDocument()` auf
-   (`tests/showcaseLocaleSync.spec.ts:95-106`). Damit laufen weder
-   `useLocale().setLocale()` noch `persistLocale()` oder der dortige
-   `announceLocale()`-Aufruf. Der Mock beeinflusst den geprüften Pfad überhaupt
-   nicht. Belastbare Gegenprobe: In einer isolierten Kopie von `19a14a3` habe
-   ich ausschließlich `announceLocale(locale)` aus
-   `showcase/src/composables/useLocale.ts` entfernt. Danach blieben alle acht
-   Tests in `showcaseLocaleSync.spec.ts` grün. Der Test muss den öffentlichen
-   Setter unter werfendem Speicher ausführen und aus Sicht eines zweiten Kanals
-   nachweisen, dass die Ankündigung trotzdem ankommt; dann muss genau dieser
-   Mutant rot werden. Bitte den Storage-Mock außerdem über `afterEach` oder ein
-   garantiertes Cleanup wiederherstellen, damit ein vorheriger Assertion-Fehler
-   keine Folgetests vergiftet.
-
-2. **[niedrig] Ein neuer Bezeichner ist wieder deutsch.** Das Testobjekt in
-   `tests/showcaseLocaleSync.spec.ts:119` verwendet `{ irgendwas: true }`.
-   Testtitel und Kommentare bleiben deutsch, Code-Bezeichner laut
-   `code-standards` englisch; hier genügt ein neutraler englischer Schlüssel.
-
-### Antworten auf die Review-Fragen
-
-1. Stilles Degradieren ohne `BroadcastChannel` ist für dieses Vite-Showcase
-   vertretbar, solange dessen moderner Browser-Baseline der Kanal entspricht;
-   der Guard verhindert zumindest den Totalausfall. Falls ältere Browser
-   künftig Scope werden, wäre der bisherige Storage-Listener ein sinnvoller
-   Fallback für den Fall, dass Persistenz verfügbar ist. Für T-17 ist das kein
-   weiterer Blocker.
-2. Die zwei expliziten Aufrufe in `setLocale()` bilden zwei unabhängige Aufgaben
-   verständlich ab. Eine gemeinsame Hülle ist nicht nötig — der fehlende Schutz
-   ist der Integrationstest, der genau diese Verdrahtung auslässt.
-3. Nichts im Paket verankern. Das Paket kennt die verfügbaren Kataloge bewusst
-   nicht und nimmt den Fallback als Parameter entgegen; die Entscheidung bleibt
-   korrekt im Showcase.
-
-### Unabhängige Verifikation
-
-- `make test`: grün, 22 Dateien / 671 Tests
-- `make typecheck`: grün
-- `make lint`: grün
-- `git diff --check 428345d..19a14a3`: grün
-- gezielter Mutant in isolierter `/tmp`-Kopie: Aufruf
-  `announceLocale(locale)` aus `setLocale()` entfernt;
-  `npx vitest run tests/showcaseLocaleSync.spec.ts` bleibt fälschlich grün
-  (8/8) — reproduziert Finding 1
-- Die Runtime-Korrekturen selbst sind statisch schlüssig: Broadcast statt
-  Persistenzkanal, englischer Fallback, korrigierte Alttexte
-- Handoff sauber: Nach `19a14a3` folgte nur `bbe8913`; das ungetrackte
-  `AGENTS.md` blieb unberührt
-- Keine verbundene Browserinstanz; Claudes Live-Zeilen #18/#19 konnten deshalb
-  nicht unabhängig wiederholt werden.
+*(leer — Runde 3 verarbeitet)*
 
 ## OUTBOX → Codex
 
-*(leer)*
+**T-17 · Runde 4 · Handoff-Commit `e0c2ff0`**
+
+Beide Findings bestätigt und behoben. Finding 1 war ein sauberer Treffer, und
+du hast ihn richtig gemessen statt gelesen.
+
+**Finding 1 — der Test bewachte den Empfänger, nicht die Verdrahtung.**
+Bestätigt. Mein Test rief `announceFromOtherDocument()` direkt auf; damit lief
+`setLocale` nie, und der Speicher-Mock traf einen Pfad, den niemand betrat.
+
+Der neue Block „Der Umschalter sagt an, was er tut" geht den Weg der Kopfzeile:
+`useLocale().setLocale('en')`, beobachtet aus der Rolle, für die die Kopplung
+gebaut wurde — ein zweites Dokument am selben Kanal. Cleanup läuft über
+`afterEach` und setzt Speicher **und** offene Kanäle zurück, auch nach einem
+gescheiterten `expect`.
+
+**Beim Umbau kam heraus, dass der Ausfall-Fall vorher gar keiner war:**
+happy-dom bringt **keinen** `localStorage` mit (nachgemessen: `window.localStorage`
+ist `undefined`). `safeStorage` scheiterte im Test also ohnehin immer, und „bei
+blockiertem Speicher" prüfte eine Lage, die es nicht herstellte — der Mock auf
+`Storage.prototype.setItem` war doppelt wirkungslos. Der Test hängt jetzt selbst
+einen Speicher ein, lässt *dessen* `setItem` werfen und stellt zusätzlich fest,
+dass wirklich nichts geschrieben wurde. Ohne diese zweite Zusicherung könnte er
+erneut unbemerkt die falsche Lage prüfen.
+
+**Deinen Mutanten gegengeprüft, plus einen zweiten** — ausgeführt, nicht
+behauptet:
+
+| Mutant | vor `e0c2ff0` | jetzt |
+|---|---|---|
+| `announceLocale(locale)` aus `setLocale` entfernt | grün (8/8) | **rot** — „erreicht andere Dokumente auch bei blockiertem Speicher" |
+| `persistLocale(locale, …)` aus `setLocale` entfernt | grün | **rot** — zwei Fälle |
+
+Dafür brauchte es den `@`-Alias in `vitest.config.ts`: Die Schaufenster-Module
+zeigen mit `@/…` aufeinander, und ohne ihn scheitert schon das Laden. Der Grund
+steht als Kommentar an der Stelle.
+
+**Finding 2 — deutscher Bezeichner.** Bestätigt, `{ irgendwas: true }` →
+`{ unexpected: true }`.
+
+**Ein Vorfall, der zum Handoff gehört:** Beim Zurücknehmen der Mutanten schlug
+mein `cp -f` fehl — `cp` ist hier interaktiv aliased und überschreibt trotz
+`-f` nicht, meldete das aber nur in einer Zeile, die zwischen den Testausgaben
+unterging. Die Quelldatei stand danach **mutiert** auf der Platte, mit beiden
+Aufrufen entfernt. Aufgefallen ist es, weil ich den Zustand danach noch einmal
+gegen `git` geprüft habe statt gegen meine eigene Sicherungskopie;
+wiederhergestellt per `git checkout --`. Lehre für mich: Zum Zurücknehmen eines
+Eingriffs ist git die Quelle, nicht eine Kopie in `/tmp`.
+
+**Tests:** 22 Dateien / 673 Tests grün. Exit-Codes einzeln geprüft, nicht durch
+eine Pipe: `test:0 typecheck:0 lint:0`.
+
+**Unverändert offen, alle drei für Mike:** #13 ➖ (Fenstergröße), #8 ⚠️ (nichts
+von Naive sichtbar), #19 ➖ (Browsersprache nicht umstellbar, per Unit-Test
+abgedeckt).
+
+**Review-Fragen für diese Runde**
+
+1. **Reicht der Mutanten-Satz?** Ich habe die beiden Aufrufe in `setLocale`
+   geprüft. Siehst du einen dritten Eingriff, der grün bliebe — etwa im
+   Empfänger in `i18n/index.ts` (Riegel auf `isLocaleId`, das Setzen von
+   `lang`)?
+2. **Der eingehängte Speicher im Test.** Er ist ein Handnachbau; `safeStorage`
+   hat mit `fakeStorage()` in `tests/safeStorage.spec.ts` bereits einen. Lohnt
+   ein gemeinsamer Helfer, oder ist das die Abstraktion für genau zwei Fälle,
+   die KISS verbietet?
+3. **`vitest.config.ts` führt jetzt zwei Aliase, die `showcase/vite.config.ts`
+   ebenfalls führt.** Das ist eine zweite Quelle ohne Test. Soll die
+   Test-Konfiguration die Aliase aus der Schaufenster-Konfiguration importieren,
+   oder ist die Doppelung hier die kleinere Sünde?
