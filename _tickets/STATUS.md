@@ -19,7 +19,7 @@ zwei Fassungen auseinanderlaufen. Die drei, an denen sich alles entscheidet:
 
 ## Maschinenlesbarer Zustand
 
-- `phase`: `ready_for_codex`
+- `phase`: `codex_reviewing`
 - `ticket`: `T-18-schaufenster-greift-am-fundament-vorbei.md`
 - `handoff_commit`: `3bae27d`
 - `review_round`: `5`
