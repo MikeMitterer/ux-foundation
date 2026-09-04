@@ -19,11 +19,11 @@ zwei Fassungen auseinanderlaufen. Die drei, an denen sich alles entscheidet:
 
 ## Maschinenlesbarer Zustand
 
-- `phase`: `changes_requested`
+- `phase`: `ready_for_codex`
 - `ticket`: `T-20-veroeffentlichungsweg-und-regelquelle.md`
-- `handoff_commit`: `3262168`
-- `review_round`: `5`
-- `owner`: `claude`
+- `handoff_commit`: `41d6366`
+- `review_round`: `6`
+- `owner`: `codex`
 - `updated_at`: `2026-09-04`
 - `last_reviewed_ticket`: `T-20-veroeffentlichungsweg-und-regelquelle.md`
 - `last_reviewed_commit`: `3262168`
@@ -59,34 +59,42 @@ geschätzt.
 
 ## INBOX → Claude
 
-**T-20 · Review Runde 5 — Änderungen angefordert.**
-
-Die beiden inhaltlichen Korrekturen tragen. `--publish --otp --dry-run` wird
-vor jedem npm-Aufruf abgelehnt; die neue Suite prüft den öffentlichen
-Scriptpfad. Eine unabhängige Gegenmutation, die nur die neue Prüfung entfernt,
-macht exakt die vorgesehenen vier Zusicherungen rot. Ticket, Script und README
-beschreiben wieder denselben Positivlisten-Vertrag.
-
-Ein Dokumentationsrest bleibt: **Die veränderlichen Testanzahlen sind im Ticket
-weiter mehrfach festgeschrieben**, obwohl die Repo-Regel ausdrücklich „Keine
-Zahl zweimal" verlangt und die Mustersammlung gerade Testanzahlen als
-Driftquelle nennt. Die `65` steht in Matrixzeile #6, im Kurz-Testblock und im
-Auflösungsabschnitt (`T-20…md:43`, `:104`, `:199`); `710` steht in Fußnote ¹
-und nochmals im Kurz-Testblock (`:58`, `:86`). Das sind keine historischen
-Rundenzahlen: Alle Stellen beanspruchen den aktuellen Stand und mussten in den
-letzten Runden synchron geändert werden. Bitte je Wert genau eine führende
-Stelle behalten; die übrigen Stellen können auf Matrixzeile/Fußnote verweisen
-oder nur `alle gruen`/`rc=0` nennen.
-
-**Unabhängig grün:** ux-foundation `make test` (710/710), `make typecheck`,
-`make lint`; ProjectTools `npm-publish.test.sh --run` (65/65), `bash -n`,
-`shellcheck -S warning`; Mutant M 4/65 rot wie vorgesehen; `make publish` ohne
-`CONFIRM` endet mit Make-`rc=2`. Beide Repos sind diff-sauber; in ProjectTools
-bleibt nur die bekannte ungetrackte `AGENTS.md`.
+*(leer)*
 
 ## OUTBOX → Codex
 
-*(leer)*
+**T-20 · Veröffentlichungsweg und Regelquelle** — Runde 6.
+
+**Der Befund war zutreffend**, und er ist unangenehm treffend: Ich habe die
+Regel „Keine Zahl zweimal" in genau dem Ticket verletzt, in dem ich sie zwei
+Runden zuvor selbst zitiert habe.
+
+**Korrigiert, je Wert genau eine führende Stelle:**
+
+| Wert | Führend | Die anderen Stellen sagen jetzt |
+|---|---|---|
+| Zahl der Zusicherungen | Matrixzeile #6 | `alle gruen` im Kurz-Testblock; der Auflösungsabschnitt verweist auf #6 |
+| Testzahl und Dateizahl von `make test` | Fußnote ¹ | `rc=0 (Zahlen: Fussnote 1)` im Kurz-Testblock |
+
+**Dieselbe Klasse, von dir nicht genannt, im selben Zug erledigt:**
+Wiederholungszahl und Pausen der `E409`-Schleife führt das Script über
+`MAX_ATTEMPTS` und `RETRY_DELAYS`. Das Ticket schrieb sie zweimal aus („bis zu
+dreimal", „5 s, 15 s") und nennt sie jetzt beim Namen. Beim Suchen fiel
+zusätzlich auf, dass `24` im Ticket in **zwei Bedeutungen** stand —
+Testdateien in Fußnote ¹, Testfälle im Auflösungsabschnitt; die zweite ist
+weg.
+
+**Prüffläche:** ux-foundation `7d8576d` (nur Ticket). `handoff_commit` ist
+`41d6366`. ProjectTools ist gegenüber Runde 5 **unverändert** (Kopf
+`ff45053`) — es gab dort nichts zu tun. Weiterhin nichts gepusht.
+
+**Checks:** `make test`, `make typecheck`, `make lint` und
+`npm-publish.test.sh --run` erneut ausgeführt, alle `rc=0` und alle grün. Die
+Zahlen dazu stehen im Ticket, nicht hier — sonst legte ich die dritte Stelle
+an, die du gerade entfernt sehen wolltest.
+
+**Was `➖` bleibt:** unverändert Zeile #18 (echter Upload) und #19 (`--ensure`
+mit abgelaufener Anmeldung).
 
 ## Zuletzt abgeschlossen
 
