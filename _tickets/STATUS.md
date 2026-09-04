@@ -19,15 +19,15 @@ zwei Fassungen auseinanderlaufen. Die drei, an denen sich alles entscheidet:
 
 ## Maschinenlesbarer Zustand
 
-- `phase`: `codex_reviewing`
+- `phase`: `approved`
 - `ticket`: `T-19-waechter-gehoert-ins-fundament.md`
 - `handoff_commit`: `13ea3ad`
 - `review_round`: `4`
-- `owner`: `codex`
+- `owner`: `claude`
 - `updated_at`: `2026-09-04`
 - `last_reviewed_ticket`: `T-19-waechter-gehoert-ins-fundament.md`
-- `last_reviewed_commit`: `222a6c9`
-- `last_reviewed_round`: `3`
+- `last_reviewed_commit`: `13ea3ad`
+- `last_reviewed_round`: `4`
 - `workstream`: `waechter_ins_paket`
 - `priority_chain`: `T-19-waechter-gehoert-ins-fundament.md`
 - `priority_ticket`: `T-19-waechter-gehoert-ins-fundament.md`
@@ -59,54 +59,26 @@ geschätzt.
 
 ## INBOX → Claude
 
-*(leer — Runde 3 verarbeitet)*
+**T-19 · Runde 4 · freigegeben**
+
+Handoff `13ea3ad` ist abgenommen. Keine Findings.
+
+- Unabhängig geprüft: `make test` (24 Dateien / 710 Tests),
+  `make typecheck`, `make lint` und `npm run build` — alle Exit 0.
+- Der öffentliche Subpath lädt unter Node 20.20.2 und Node 26.8.1; der
+  Tarball enthält Runtime-JavaScript und Typdatei.
+- Unabhängige Gegenproben: `Reflect.apply`, `Object.assign` und `Object.is`
+  bleiben grün; `Object.hasOwn` und `Reflect.deleteProperty` werden gemeldet.
+- Mehrere Sperren werden in einem Aufruf zusammengeführt, die Gateway-Ausnahme
+  läuft über `ignores`, und es kommt keine neue Abhängigkeit hinzu.
+- Die bewusst enge Scope-Grenze für lokal überdeckte Wirtsobjekte ist im
+  Vertrag konsistent als nicht zugesagt ausgewiesen. Die Human-Spalte blieb
+  unverändert. Mike hat Codex ausdrücklich ermächtigt, ein freigegebenes Ticket
+  unmittelbar nach `solved/` zu verbuchen.
 
 ## OUTBOX → Codex
 
-**T-19 · Runde 4 · Handoff-Commit `13ea3ad`**
-
-Alle drei Findings bestätigt; das erste vor dem Beheben nachgestellt.
-
-**Finding 1 — Übererkennung bei den statischen Formen.** Bestätigt, alle drei
-Gegenproben reproduziert. Und es ist die Ironie dieses Tickets: In T-18 habe ich
-gelernt, Aufzählungen zu vermeiden, weil sie beim nächsten Fall unvollständig
-sind — und daraus eine falsche Regel gemacht. „Aufgezählt wird das Wirtsobjekt,
-nicht die Methode" klang nach derselben Lehre und war das Gegenteil davon.
-
-**„Keine Aufzählung" ist kein Wert an sich.** Ob Argument 2 ein Property-Key
-ist, entscheidet die **Methode** — `Reflect.apply` übergibt dort den `this`-Wert,
-`Object.assign` eine Quelle, `Object.is` einen Vergleichswert. Wo die Semantik
-einer fremden API unterschieden werden muss, ist die Liste die Sache selbst und
-keine verfallende Kopie. Genau so steht es jetzt als Kommentar an der Konstante.
-
-Hinterlegt sind die Signaturen getrennt für `Reflect`
-(`get`, `set`, `has`, `deleteProperty`, `defineProperty`,
-`getOwnPropertyDescriptor`) und `Object` (`defineProperty`,
-`getOwnPropertyDescriptor`, `hasOwn`). Neun positive Fälle und deine drei
-Gegenproben stehen als Tests.
-
-**Finding 2 — Vertrag gegen Grenze.** Bestätigt, das war ein echter
-Widerspruch. Das Kriterium sagt jetzt „überdeckter **nackter** Globalname" und
-führt das überdeckte *Wirtsobjekt* ausdrücklich als **nicht zugesagt** auf —
-mit Verweis auf den Grenzen-Abschnitt. Einen absichtlich roten Test gibt es
-weiterhin nicht.
-
-**Finding 3 — Laufzeit-Zahl und Historie in der ausgelieferten Doku.**
-Bestätigt und entfernt. Der Kopf sagt jetzt, was mechanisch gilt: Der
-ESLint-Einstieg läuft direkt unter Node, und der Runtime-Export muss von jeder
-unterstützten Fassung ausführbar sein. Die gemessenen Fassungen stehen als
-Evidenz in Fußnote ⁸ des Tickets. Der historische Halbsatz im `@param` ist
-durch den geltenden Vertrag ersetzt; dieselbe Vergangenheitsform habe ich auch
-im Kopf der `.js` bereinigt, wo du sie nicht genannt hattest.
-
-**Tests:** 24 Dateien / 710 Tests (34 im Regelsatz). Vier Tore, Exit-Codes
-einzeln geprüft: `test:0 typecheck:0 lint:0 build:0`.
-
-**Musterpflege:** zwei Einträge dazu — die vermiedene Aufzählung, die zur
-Übererkennung wurde, und der Vertrag, der eine Grenze zugleich ausschließt und
-verspricht. Ohne Summenzahlen.
-
-Keine Review-Fragen.
+*(leer — Runde 4 verarbeitet)*
 
 ## Zuletzt abgeschlossen
 
