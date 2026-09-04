@@ -35,8 +35,9 @@ Legende: ✅ live bestätigt · ⚠️ bestätigt mit Einschränkung (Fußnote) 
 | 8 | `tests/restrictedGlobals.spec.ts` | die erzeugten Regeln finden und übersehen am echten Linter, was sie sollen | ✅⁷ | |
 | 9 | Selbstimport unter **Node 20 und Node 26** | der veröffentlichte Subpath lädt in **beiden** | ✅⁸ | |
 | 10 | derselbe Test, Abschnitt „Mehrere Sperren" | zwei Sperren in einem Aufruf verlieren einander nicht | ✅⁹ | |
+| 11 | derselbe Test, `Reflect.apply` / `Object.assign` / `Object.is` | **kein** Fund — dort ist Argument 2 kein Eigenschaftsname | ✅¹⁰ | |
 
-> ¹ **(CC):** 24 Dateien / 701 Tests, Exit-Codes einzeln geprüft:
+> ¹ **(CC):** 24 Dateien / 710 Tests, Exit-Codes einzeln geprüft:
 > `test:0 typecheck:0 lint:0 build:0`.
 >
 > ² **(CC):** gelesen. Der Grund steht im Kopf der Datei: Eine
@@ -64,7 +65,7 @@ Legende: ✅ live bestätigt · ⚠️ bestätigt mit Einschränkung (Fußnote) 
 > ⁶ **(CC):** `npm pack --dry-run` listet `src/eslint/index.js` (5.1 kB) und
 > `src/eslint/index.d.ts` (1.3 kB); 29 Dateien insgesamt.
 >
-> ⁷ **(CC):** 25 Fälle über den echten Linter — darunter die drei Fehlalarme
+> ⁷ **(CC):** 34 Fälle über den echten Linter — darunter die drei Fehlalarme
 > aus Runde 2: `Reflect.get(config, …)`, `Object.defineProperty(config, …)` und
 > ein anderer Eigenschaftsname melden jetzt **nichts**. Der Test stellt zudem
 > sicher, dass keine Meldung ohne Regel-Kennung durchgeht; ein Parse-Fehler
@@ -78,6 +79,10 @@ Legende: ✅ live bestätigt · ⚠️ bestätigt mit Einschränkung (Fußnote) 
 > ⁹ **(CC):** `noDirectGlobals([storage, fetch])` meldet beide. Vor dem Umbau
 > überschrieb ein zweiter Aufruf den ersten still, und die Speicher-Sperre war
 > weg.
+>
+> ¹⁰ **(CC):** die drei Fehlalarme aus Runde 3, nachgestellt und behoben. Der
+> Selektor prüft jetzt zusätzlich die **Methode**; neun positive Signaturen
+> stehen als Gegenstück daneben, von `Reflect.get` bis `Object.hasOwn`.
 
 ### Kurz-Testblock
 
@@ -215,7 +220,13 @@ Der Ansatz stimmte, die Umsetzung nicht. Alle drei sind nachgestellt worden:
   meldet ESLint weiterhin, weil `no-restricted-properties` syntaktisch
   arbeitet. Das steht im Kopf des Moduls und ist **nicht** als Test
   festgeschrieben: Ein `toBe(1)` darauf machte die Schwäche zum Vertrag, ein
-  `toBe(0)` wäre schlicht falsch.
+  `toBe(0)` wäre schlicht falsch. Das Akzeptanzkriterium sagt deshalb
+  ausdrücklich „überdeckter **nackter** Globalname" — es darf die Grenze nicht
+  gleichzeitig ausschließen und versprechen.
+- **Ob Argument 2 ein Eigenschaftsname ist, entscheidet die Methode.** Der
+  Selektor führt die Methoden deshalb auf. Das ist keine verfallende Kopie,
+  sondern die Semantik der fremden API: `Reflect.apply` übergibt dort den
+  `this`-Wert, `Object.assign` eine Quelle, `Object.is` einen Vergleichswert.
 - **Ein zur Laufzeit zusammengesetzter Schlüssel** (`window['local' + 'Storage']`)
   wird nicht gefunden.
 - **`no-restricted-syntax` ist eine geteilte Regel-Kennung.** Nutzt die App sie
@@ -229,9 +240,16 @@ Der Ansatz stimmte, die Umsetzung nicht. Alle drei sind nachgestellt worden:
       Node 20 **und** Node 26
 - [x] **Keine** neuen Abhängigkeiten — weder Peer noch Dev
 - [x] Erkannt werden nackter Name, Punkt- und Klammernotation, Destrukturierung,
-      `Reflect`/`Object` **am Wirtsobjekt** und Template-Ausdrücke
-- [x] **Nicht** erkannt werden überdeckte Namen, Typknoten, Objektschlüssel,
-      Zeichenketten, Kommentare und statische Formen an lokalen Werten
+      Template-Ausdrücke und die statischen Formen, **deren zweites Argument ein
+      Eigenschaftsname ist** (`Reflect.get`, `Object.defineProperty`, …), am
+      Wirtsobjekt
+- [x] **Nicht** erkannt werden: der überdeckte **nackte** Globalname, Typknoten,
+      Objektschlüssel, Zeichenketten, Kommentare, statische Formen an lokalen
+      Werten und Methoden, bei denen Argument 2 kein Eigenschaftsname ist
+      (`Reflect.apply`, `Object.assign`, `Object.is`)
+- [ ] **Ausdrücklich nicht zugesagt:** ein überdecktes *Wirtsobjekt*
+      (`function read(window) { … }`) wird weiterhin gemeldet — siehe „Die
+      Grenzen"; das Kriterium darüber gilt nur für den nackten Namen
 - [x] Mehrere Sperren in einem Aufruf verlieren einander nicht; die Ausnahme
       läuft über `ignores` und schaltet keine fremden Regeln ab
 - [x] Das Repo bewacht sich selbst über `make lint`
@@ -268,10 +286,10 @@ Integrationsentscheidung für T-18 gehört Mike und wird hier nicht vorweggenomm
 ### Auflösung
 
 `ux-foundation` — Handoff-Commit siehe `STATUS.md`. `make test` 24 Dateien /
-701 Tests, dazu `typecheck`, `lint` und `npm run build`; Exit-Codes einzeln
+710 Tests, dazu `typecheck`, `lint` und `npm run build`; Exit-Codes einzeln
 geprüft (`0/0/0/0`).
 
-Live geprüft sind **#1**, **#5** bis **#10**. **#2 bis #4** sind Lesen, also
+Live geprüft sind **#1**, **#5** bis **#11**. **#2 bis #4** sind Lesen, also
 `➖`.
 
 **Das Ergebnis ist kleiner als beide Vorentwürfe und kann mehr.** Aus einem

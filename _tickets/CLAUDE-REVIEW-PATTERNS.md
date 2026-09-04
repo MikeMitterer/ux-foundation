@@ -276,7 +276,18 @@ war es das falsche Werkzeug.
     belegten dieselben Regel-Kennungen; der zweite überschrieb den ersten
     lautlos. Wer eine `rules`-Fabrik veröffentlicht, muss die vollständige Liste
     in **einem** Aufruf zusammenführen.
-15. **Eine Ausnahme schaltete fremde Regeln mit ab.** `allowDirectGlobal` setzte
+15. **Eine vermiedene Aufzählung wurde zur Übererkennung.** Um keine Liste zu
+    führen, prüfte der Selektor nur das Objekt vor dem Methodennamen — womit
+    `Reflect.apply(window, 'x', [])`, `Object.assign(window, 'x')` und
+    `Object.is(window, 'x')` anschlugen, obwohl dort kein Eigenschaftsname
+    steht. „Keine Aufzählung" ist kein Wert an sich: Wo die **Semantik einer
+    fremden API** unterschieden werden muss, ist die Liste die Sache selbst und
+    keine verfallende Kopie.
+16. **Der Vertrag schloss eine Grenze aus und versprach sie zugleich.** Die
+    Moduldokumentation nannte die Scope-Grenze ehrlich, das Akzeptanzkriterium
+    sagte pauschal „überdeckte Namen werden nicht erkannt". Wer eine Grenze
+    benennt, muss sie an **jeder** Stelle gleich benennen.
+17. **Eine Ausnahme schaltete fremde Regeln mit ab.** `allowDirectGlobal` setzte
     drei ESLint-Regeln auf `off` und traf damit auch Einschränkungen, die die
     App unabhängig gesetzt hatte. Ausnahmen gehören über den Geltungsbereich
     (`ignores`), nicht über das Abschalten geteilter Regel-Kennungen.
@@ -292,7 +303,7 @@ war es das falsche Werkzeug.
     und `@ux/testing` wurde als Beleg für den veröffentlichten Subpath geführt,
     obwohl es der interne Alias ist. Ein Test über den Barrel beweist die
     `exports`-Auflösung nicht.
-16. **Eine Prüfung meldete null Funde, und das Werkzeug war in Ordnung.** Beim
+18. **Eine Prüfung meldete null Funde, und das Werkzeug war in Ordnung.** Beim
     Mutantenlauf zählte ein `grep` die Meldung nicht, weil das Muster die
     Backticks im Text nicht enthielt. Die Fehlersuche begann folgerichtig am
     Wächter — obwohl der Fehler in der Prüfung steckte. Merksatz: Bei „null

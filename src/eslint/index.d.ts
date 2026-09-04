@@ -2,8 +2,7 @@
  * Typen zu `index.js`.
  *
  * Getrennt, weil der Runtime-Export ausführbares JavaScript sein muss: Eine
- * `eslint.config.js` lädt Node direkt, und ältere Fassungen führen kein
- * TypeScript aus.
+ * `eslint.config.js` lädt Node direkt, nicht ein Bündler.
  */
 
 /** Was verboten wird und wie die Meldung lautet. */
@@ -26,7 +25,8 @@ export type RulesRecord = Record<string, unknown>
 /**
  * Verbietet den direkten Griff auf globale Namen — in Skripten.
  *
- * @param restrictions Alle Sperren auf einmal; zwei Aufrufe überschrieben einander.
+ * @param restrictions Alle Sperren auf einmal — die Funktion belegt feste
+ *                     Regel-Kennungen und muss sie in einem Schritt zusammenführen.
  */
 export function noDirectGlobals(restrictions: readonly DirectGlobalOptions[]): RulesRecord
 

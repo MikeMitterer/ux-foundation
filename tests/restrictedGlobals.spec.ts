@@ -64,10 +64,21 @@ describe('Direkter Zugriff wird gefunden', () => {
     ['Klammernotation', "const a = window['localStorage']"],
     ['Destrukturierung', 'const { localStorage } = window'],
     ['globalThis', 'const a = globalThis.localStorage'],
-    ['Reflect.get am Wirtsobjekt', "Reflect.get(window, 'localStorage')"],
-    ['Reflect.deleteProperty', "Reflect.deleteProperty(window, 'localStorage')"],
-    ['Object.getOwnPropertyDescriptor', "Object.getOwnPropertyDescriptor(window, 'localStorage')"],
   ])('%s', (_label, code) => {
+    expect(lintScript(code)).toBeGreaterThan(0)
+  })
+
+  it.each([
+    ['Reflect.get', "Reflect.get(window, 'localStorage')"],
+    ['Reflect.set', "Reflect.set(window, 'localStorage', v)"],
+    ['Reflect.has', "Reflect.has(window, 'localStorage')"],
+    ['Reflect.deleteProperty', "Reflect.deleteProperty(window, 'localStorage')"],
+    ['Reflect.defineProperty', "Reflect.defineProperty(window, 'localStorage', d)"],
+    ['Reflect.getOwnPropertyDescriptor', "Reflect.getOwnPropertyDescriptor(window, 'localStorage')"],
+    ['Object.defineProperty', "Object.defineProperty(window, 'localStorage', d)"],
+    ['Object.getOwnPropertyDescriptor', "Object.getOwnPropertyDescriptor(window, 'localStorage')"],
+    ['Object.hasOwn', "Object.hasOwn(window, 'localStorage')"],
+  ])('%s — Argument 2 ist dort ein Eigenschaftsname', (_label, code) => {
     expect(lintScript(code)).toBeGreaterThan(0)
   })
 })
@@ -93,8 +104,18 @@ describe('Was kein Zugriff ist, bleibt unbehelligt', () => {
     ['Object an einem lokalen Wert', "Object.defineProperty(config, 'localStorage', {})"],
     ['ein anderer Eigenschaftsname', "Reflect.get(window, 'sessionStorage')"],
   ])('%s', (_label, code) => {
-    // Der Selektor prüft beide Argumentpositionen: Wirtsobjekt **und**
-    // Zeichenkette. Ohne die erste Bedingung schlüge jeder `Reflect`-Aufruf an.
+    // Der Selektor prüft das Wirtsobjekt an Position 1 und die Zeichenkette an
+    // Position 2. Ohne die erste Bedingung schlüge jeder Aufruf an.
+    expect(lintScript(code)).toBe(0)
+  })
+
+  it.each([
+    ['Reflect.apply — dort ist es der `this`-Wert', "Reflect.apply(window, 'localStorage', [])"],
+    ['Object.assign — dort ist es eine Quelle', "Object.assign(window, 'localStorage')"],
+    ['Object.is — dort ist es ein Vergleichswert', "Object.is(window, 'localStorage')"],
+  ])('%s', (_label, code) => {
+    // Ob Argument 2 ein Eigenschaftsname ist, entscheidet die **Methode**.
+    // Eine Fassung, die nur `Reflect` und `Object` prüfte, meldete diese drei.
     expect(lintScript(code)).toBe(0)
   })
 })
