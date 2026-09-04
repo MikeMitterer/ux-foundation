@@ -19,7 +19,7 @@ zwei Fassungen auseinanderlaufen. Die drei, an denen sich alles entscheidet:
 
 ## Maschinenlesbarer Zustand
 
-- `phase`: `ready_for_codex`
+- `phase`: `codex_reviewing`
 - `ticket`: `T-19-waechter-gehoert-ins-fundament.md`
 - `handoff_commit`: `222a6c9`
 - `review_round`: `3`
