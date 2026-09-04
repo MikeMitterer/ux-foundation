@@ -7,10 +7,17 @@
  *
  * Gefunden wird der Name an zwei Orten: als Bezeichner (`window.localStorage`,
  * `localStorage?.getItem`, `const { localStorage } = window`) und als
- * Zeichenkette **dort, wo sie einen Zugriff bildet** — `window['localStorage']`
- * und `const { ['localStorage']: s } = window`. Ein Text `'localStorage'`
- * anderswo bleibt Text. Dieselbe Zeichenkette, verschiedener Ort: Genau das
- * kann ein Muster über Text nicht entscheiden.
+ * Zeichenkette **dort, wo sie einen Zugriff bildet** — `window['localStorage']`,
+ * `const { ['localStorage']: s } = window`, `Reflect.get(window,
+ * 'localStorage')`. Ein Text `'localStorage'` anderswo bleibt Text. Dieselbe
+ * Zeichenkette, verschiedener Ort: Genau das kann ein Muster über Text nicht
+ * entscheiden.
+ *
+ * **Die Grenze steht als Test unten**, nicht als Satz: Ein zur Laufzeit
+ * zusammengesetzter Schlüssel (`window['local' + 'Storage']`) wird nicht
+ * gefunden. Dafür bräuchte es eine Datenflussanalyse, die hier unvollständig
+ * bliebe. Ein Wächter deckt die Umgehungen ab, an die jemand gedacht hat —
+ * darum ist diese Grenze festgehalten und nicht behauptet, es gäbe keine.
  *
  * Bei einer `.vue`-Datei reichen die Skriptblöcke nicht: **Ein Template ist
  * ausführbarer Code.** `@click="$event.view.localStorage.clear()"` steht in
@@ -97,7 +104,35 @@ function refersToStorage(node: ts.Node): boolean {
   if (parent === undefined) return false
 
   if (ts.isElementAccessExpression(parent)) return parent.argumentExpression === node
+  if (ts.isCallExpression(parent)) return isReflectAccess(parent) && parent.arguments[1] === node
   return ts.isComputedPropertyName(parent)
+}
+
+/** Die `Reflect`-Formen, die eine Eigenschaft lesen, schreiben oder prüfen. */
+const REFLECT_ACCESSORS = ['get', 'set', 'has']
+
+/**
+ * Ist das ein `Reflect.get(…)` und Verwandtes?
+ *
+ * `Reflect.get(window, 'localStorage')` ist ein vollständig sichtbarer
+ * Direktzugriff — Aufruf, Ziel und Eigenschaft stehen statisch da. Er braucht
+ * keine Datenflussanalyse und zählt deshalb mit; ein beliebiges anderes
+ * Funktionsargument `'localStorage'` bleibt dagegen Text.
+ *
+ * `set` und `has` stehen daneben, weil sie dieselbe Mechanik sind und nicht,
+ * weil sie hier vorkämen — die Familie einzeln nachzurüsten hieße, denselben
+ * Weg dreimal zu gehen.
+ *
+ * @param call Der Aufrufknoten.
+ */
+function isReflectAccess(call: ts.CallExpression): boolean {
+  const callee = call.expression
+  return (
+    ts.isPropertyAccessExpression(callee) &&
+    ts.isIdentifier(callee.expression) &&
+    callee.expression.text === 'Reflect' &&
+    REFLECT_ACCESSORS.includes(callee.name.text)
+  )
 }
 
 /**
@@ -274,6 +309,45 @@ describe('Der Wächter unterscheidet Code von Text', () => {
     const code = 'const stored = window[`localStorage`]'
 
     expect(accessesInScript(code)).toEqual([{ line: 1, text: code }])
+  })
+
+  it('erfasst `Reflect.get` als das, was es ist — ein Direktzugriff', () => {
+    // Aus Codex' Review von Runde 4. Aufruf, Ziel und Eigenschaft stehen
+    // statisch da; das ist keine Verschleierung, sondern eine Leseform.
+    const code = "const stored = Reflect.get(window, 'localStorage')?.getItem(KEY)"
+
+    expect(accessesInScript(code)).toEqual([{ line: 1, text: code }])
+  })
+
+  it('meldet ein beliebiges anderes Funktionsargument nicht', () => {
+    // Die Kehrseite: Nur die zweite Stelle eines `Reflect`-Zugriffs zählt.
+    const code = ["describe('localStorage', () => {})", "t('localStorage')"].join('\n')
+
+    expect(accessesInScript(code)).toEqual([])
+  })
+
+  it('erfasst `Reflect.get` auch in einer Template-Expression', () => {
+    const sfc = [
+      '<template>',
+      '  <button @click="Reflect.get(window, \'localStorage\').clear()">Mutant</button>',
+      '</template>',
+    ].join('\n')
+
+    expect(accessesInSfc(sfc)).toEqual([
+      { line: 2, text: "Reflect.get(window, 'localStorage').clear()" },
+    ])
+  })
+
+  it('findet einen dynamisch zusammengesetzten Schlüssel bewusst nicht', () => {
+    // **Die dokumentierte Grenze**, absichtlich als Test festgehalten statt als
+    // Satz in einer Datei: Wer den Namen zur Laufzeit zusammensetzt, verlangt
+    // eine Datenflussanalyse. Die wäre hier unvollständig, und gegen bewusste
+    // Verschleierung schützt ohnehin kein Wächter. Schlägt dieser Test eines
+    // Tages fehl, ist die Grenze verschoben worden — dann gehört sie neu
+    // beschrieben, nicht stillschweigend erweitert.
+    const code = ["const key = 'local' + 'Storage'", 'window[key]'].join('\n')
+
+    expect(accessesInScript(code)).toEqual([])
   })
 
   it('nennt in einer SFC die Zeile der Datei, nicht die des Skriptblocks', () => {

@@ -190,6 +190,75 @@ wirft" war für den Reviewer nicht ausführbar; seine Rückmeldung „KA was das
 sein soll" war berechtigt. Erst ein vollständiger Konsolenblock im
 Kurz-Testblock machte die Prüfung übergabefähig.
 
+## T-18 · bestätigtes Fehlerinventar für einen späteren Skill
+
+Ein Ticket mit einer Zehn-Minuten-Änderung und vier Review-Runden. Die Änderung
+selbst — `useTheme.ts` auf `safeStorage` umstellen — war unstrittig; **alle
+sieben Fehler steckten im Wächter-Test**, der die Regel dauerhaft sichern soll.
+Das macht das Inventar ungewöhnlich einheitlich und dadurch brauchbar: Es ist
+ein Datensatz darüber, wie ein statischer Prüfer schrittweise scheitert.
+
+### Der Wächter, in der Reihenfolge seines Scheiterns
+
+1. **Der Ausdruck schloss den Verstoß aus.** `(?<![\w.])localStorage` sollte
+   `safeStorage` ausschließen und verbot dabei den Punkt — womit
+   `window.localStorage` herausfiel. Selbstcheck.
+2. **Er suchte die falsche Zugriffsform.** Geprüft wurde `localStorage.` und
+   `localStorage[`; getroffen wurden weder `window.localStorage ?? null` noch
+   Optional Chaining. Selbstcheck.
+3. **Er nannte die falsche Zeile.** Das Entfernen der Kommentare schluckte
+   Zeilenumbrüche: gemeldet Zeile 17, tatsächlich 32. Selbstcheck.
+4. **Ein echter Zugriff zwischen zwei Strings blieb unentdeckt.** `const a =
+   '/*'` … `const b = '*/'` ließ den Regex alles dazwischen für einen Kommentar
+   halten. Review-Runde 1, Handoff `75485ae`.
+5. **Harmlose Prosa wurde gemeldet.** `const name = 'localStorage'` machte den
+   Wächter rot. Dieselbe Wurzel wie 4: Textsuche kann Kommentar- und
+   Stringgrenzen nur raten. Review-Runde 1.
+6. **Vue-Templates wurden komplett übersprungen.** Nur `script` und
+   `scriptSetup` gingen an den Parser; `@click="$event.view.localStorage.clear()"`
+   blieb unbemerkt, bei einem SFC ohne Skriptblock prüfte der Wächter gar
+   nichts. Review-Runde 2, Handoff `c51bda9`.
+7. **Die Klammernotation umging den Bezeichner-Treffer.**
+   `window['localStorage']` ist dieselbe Eigenschaft, der Name steht dort als
+   Zeichenkette. Review-Runde 3, Handoff `9e37c99`.
+8. **`Reflect.get(window, 'localStorage')` blieb offen — und ich hatte es selbst
+   genannt.** In der Review-Frage zu Runde 4 als Grenzfall aufgeführt und mit
+   „fällt beim Lesen auf" weggeredet. Genau diese Begründung ersetzt der
+   Wächter. Review-Runde 4, Handoff `4d9f1b4`.
+
+### Was das über statische Prüfer sagt
+
+9. **Vier Vollständigkeitsansprüche, vier Widerlegungen.** Nach dem Regex-Fix,
+   dem Parser-Wechsel, den Templates und der Klammernotation galt der Wächter
+   jeweils als fertig. Die Grenze eines Prüfers ist nicht seine Technik, sondern
+   die Vorstellungskraft dessen, der ihn schreibt.
+10. **Der Selbstcheck fand nur eine Fehlerklasse.** „An dieser Stelle *muss*
+    etwas gefunden werden" deckte 1–3 auf und war gegen 4–8 blind: Er prüft,
+    *dass* erkannt wird, nicht ob sich die Erkennung **täuschen** lässt. Dafür
+    braucht es einen Angreifer von außen.
+11. **Die brauchbare Grenze wurde am Ende als Test festgehalten.** Ein zur
+    Laufzeit zusammengesetzter Schlüssel wird bewusst nicht erkannt; der Test
+    hält das fest, statt es zu behaupten. Verschiebt sich die Grenze, wird der
+    Test rot.
+
+### Verfahren
+
+12. **`git checkout --` vor dem Commit nahm die eigene Arbeit mit.** Beim
+    Zurücknehmen eines Mutanten stellte git den Stand aus HEAD her — die noch
+    uncommittete Ablösung war weg. Reihenfolge: erst committen, dann mutieren.
+13. **Ein direkter Import war keine direkte Abhängigkeit.**
+    `@vue/compiler-sfc` wurde über `vue` hochgezogen; der Test hing damit am
+    Abhängigkeitsbaum eines fremden Pakets. Review-Runde 2.
+14. **Die Marken der Verify-Matrix überbeanspruchten die Evidenz.** `✅` stand
+    auf Zeilen, deren Fußnote nur Lesen und Testlauf nannte, sowie auf einer
+    Zeile mit ausdrücklicher Einschränkung. Review-Runde 1.
+15. **Kommentare wiederholten die Skill-Regel und fällten ein UX-Urteil im
+    Code.** „Eine Meldung wäre lauter als die Sache wert" ist eine Entscheidung
+    und gehört nicht in eine Funktionsbeschreibung. Review-Runde 1.
+16. **Die Mailbox-Umschreibung schnitt unabhängigen Kontext ab.** Der Abschnitt
+    „Zuletzt abgeschlossen" verschwand samt zweier offener Hinweise. Drainieren
+    gilt für verarbeitete Nachrichten, nicht für Kontext. Review-Runde 2.
+
 ## T-17 · bestätigtes Fehlerinventar für einen späteren Skill
 
 Dieses Inventar konserviert auch einmalige Vorfälle. Es ist absichtlich
