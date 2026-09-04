@@ -19,18 +19,18 @@ zwei Fassungen auseinanderlaufen. Die drei, an denen sich alles entscheidet:
 
 ## Maschinenlesbarer Zustand
 
-- `phase`: `idle`
-- `ticket`: `—`
+- `phase`: `claude_working`
+- `ticket`: `T-19-waechter-gehoert-ins-fundament.md`
 - `handoff_commit`: `—`
 - `review_round`: `0`
-- `owner`: `mike`
+- `owner`: `claude`
 - `updated_at`: `2026-09-04`
 - `last_reviewed_ticket`: `T-18-schaufenster-greift-am-fundament-vorbei.md`
 - `last_reviewed_commit`: `e678c54`
 - `last_reviewed_round`: `6`
-- `workstream`: `—`
-- `priority_chain`: `—`
-- `priority_ticket`: `—`
+- `workstream`: `waechter_ins_paket`
+- `priority_chain`: `T-19-waechter-gehoert-ins-fundament.md`
+- `priority_ticket`: `T-19-waechter-gehoert-ins-fundament.md`
 
 Erlaubte Phasen: `claude_working` → `ready_for_codex` → `codex_reviewing` →
 `changes_requested` **oder** `approved`; `blocked` nur bei einem echten
