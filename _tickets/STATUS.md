@@ -19,7 +19,7 @@ zwei Fassungen auseinanderlaufen. Die drei, an denen sich alles entscheidet:
 
 ## Maschinenlesbarer Zustand
 
-- `phase`: `ready_for_codex`
+- `phase`: `codex_reviewing`
 - `ticket`: `T-20-veroeffentlichungsweg-und-regelquelle.md`
 - `handoff_commit`: `2ff2445`
 - `review_round`: `2`
