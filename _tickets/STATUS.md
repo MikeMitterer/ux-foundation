@@ -19,18 +19,18 @@ zwei Fassungen auseinanderlaufen. Die drei, an denen sich alles entscheidet:
 
 ## Maschinenlesbarer Zustand
 
-- `phase`: `idle`
-- `ticket`: `—`
-- `handoff_commit`: `—`
-- `review_round`: `0`
-- `owner`: `mike`
+- `phase`: `ready_for_codex`
+- `ticket`: `T-20-veroeffentlichungsweg-und-regelquelle.md`
+- `handoff_commit`: `97e281c`
+- `review_round`: `1`
+- `owner`: `codex`
 - `updated_at`: `2026-09-04`
 - `last_reviewed_ticket`: `T-19-waechter-gehoert-ins-fundament.md`
 - `last_reviewed_commit`: `13ea3ad`
 - `last_reviewed_round`: `4`
-- `workstream`: `—`
-- `priority_chain`: `—`
-- `priority_ticket`: `—`
+- `workstream`: `Werkzeug und Regelquelle — kein Paketinhalt`
+- `priority_chain`: `T-20-veroeffentlichungsweg-und-regelquelle.md`
+- `priority_ticket`: `T-20-veroeffentlichungsweg-und-regelquelle.md`
 
 Erlaubte Phasen: `claude_working` → `ready_for_codex` → `codex_reviewing` →
 `changes_requested` **oder** `approved`; `blocked` nur bei einem echten
@@ -63,7 +63,47 @@ geschätzt.
 
 ## OUTBOX → Codex
 
-*(leer)*
+**T-20 · Veröffentlichungsweg und Regelquelle** — Runde 1.
+
+**Besonderheit dieser Übergabe, bitte zuerst lesen:** Beide Änderungen
+entstanden auf Mikes direkte Ansage **ohne Ticket** und liegen bereits auf
+`master`. Das Ticket ist also nachgereicht, und die Prüffläche ist keine
+einzelne Commit-Klammer, sondern **drei Commits in zwei Repos**:
+
+| Repo | Commit | Fläche |
+|---|---|---|
+| ux-foundation | `d114268` | `CLAUDE.md` → Importzeile, `AGENTS.md` erstmals versioniert |
+| ux-foundation | `5519f8e` | `Makefile`, Target `publish` |
+| ProjectTools | `ebcf059` | `npm-login.sh` → `npm-publish.sh` (`git mv` + Ausbau), `README.md` |
+
+`handoff_commit` trägt den ux-foundation-Stand `97e281c`; der ProjectTools-Teil
+liegt unter `${DEV_LOCAL}/DevBash/Production/ProjectTools` auf `master`,
+Kopf `40b1973`. **Nichts davon ist gepusht.**
+
+**Ziel:** `make publish` soll die drei bekannten Stolperstellen selbst abräumen
+statt sie als kryptische Registry-Meldung durchzureichen — nicht angemeldet,
+Version liegt schon oben, `409 Conflict — Failed to save packument`.
+
+**Scope:** Kein Paketinhalt. `src/` und `files` sind unberührt, einbindende
+Apps sehen nichts davon. Keine neue Abhängigkeit in beiden Repos.
+
+**Checks:** `make test` (710/24), `make typecheck`, `make lint` — je einzeln
+ausgewertet, alle grün. `bash -n` und `shellcheck -S warning` ohne Befund.
+
+**Live-Evidenz:** Verify-Zeilen #2–#5 und #13 sind echte Läufe, #6–#8 nur mit
+einer `npm`-Attrappe (`⚠️`, Fußnote ⁶). Zeile #11 ist ausdrücklich `➖`: **Der
+neue Weg hat noch nie etwas hochgeladen** — Mikes erfolgreiche
+Veröffentlichung von `0.7.1` lief noch über das alte Makefile.
+
+**Korrektur:** Meine erste Diagnose gegenüber Mike („die `401` ist ein
+Anmeldeproblem") ist vermutlich falsch; Begründung im Ticket. Nachprüfen lässt
+es sich nicht mehr, weil meine eigenen `npm`-Aufrufe beim Untersuchen das
+Debug-Log aus dem Zehnerfenster geschoben haben.
+
+**Fünf ausdrückliche Review-Fragen** stehen am Ende des Tickets. Die beiden,
+an denen mir am meisten liegt: die Erkennung der `409` per `grep` auf der
+Ausgabe (Fehlalarm möglich), und dass `isVersionPublished` „Registry nicht
+erreichbar" und „Version nicht vorhanden" nicht unterscheidet.
 
 ## Zuletzt abgeschlossen
 
@@ -84,8 +124,9 @@ er hält unabhängigen Kontext:
   Genau das musste T-17 rückgängig machen — der Schlüssel räumt den Zustand
   aller Kindansichten mit ab. Die Stelle ist korrigiert und um den Tabellenfall
   (springende Spaltenbreiten) ergänzt.
-- **Ein Nebenbefund steht weiter offen** und ist Mikes Entscheidung:
-  `AGENTS.md` ist eine byte-gleiche, ungetrackte Kopie von `CLAUDE.md`.
+- Der Nebenbefund zur ungetrackten `AGENTS.md` ist **erledigt** und liegt als
+  Teil von T-20 im Review: `AGENTS.md` ist jetzt die Quelle und versioniert,
+  `CLAUDE.md` importiert sie.
 - Ein Kandidat für ein eigenes kleines Ticket: Das Schaufenster zeigt keine
   einzige von Naive UI selbst gestellte Zeichenkette, weshalb sich deren
   Locale-Verdrahtung dort nicht ansehen lässt (T-17, Zeile #8).
