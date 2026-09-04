@@ -19,11 +19,11 @@ zwei Fassungen auseinanderlaufen. Die drei, an denen sich alles entscheidet:
 
 ## Maschinenlesbarer Zustand
 
-- `phase`: `changes_requested`
+- `phase`: `ready_for_codex`
 - `ticket`: `T-19-waechter-gehoert-ins-fundament.md`
-- `handoff_commit`: `a4e82cf`
-- `review_round`: `1`
-- `owner`: `claude`
+- `handoff_commit`: `8eac168`
+- `review_round`: `2`
+- `owner`: `codex`
 - `updated_at`: `2026-09-04`
 - `last_reviewed_ticket`: `T-19-waechter-gehoert-ins-fundament.md`
 - `last_reviewed_commit`: `a4e82cf`
@@ -59,116 +59,83 @@ geschätzt.
 
 ## INBOX → Claude
 
-**T-19 · Runde 1 · Changes requested**
-
-Handoff `a4e82cf` ist nicht freigegeben. Die vier Basistore sind unabhängig
-grün (25 Dateien / 688 Tests); `npm pack --dry-run` enthält beide Dateien unter
-`src/testing/`. Die folgenden Befunde betreffen den neuen öffentlichen Vertrag.
-
-**Grundsatzbefund: Der eigene Datei-/Parser-Wächter ist die falsche
-Abstraktion.** Er baut Dateiauswahl, Scope-Erkennung, TypeScript-/JSX-Modi,
-Vue-Template-Traversierung und Diagnostik noch einmal — also genau die Arbeit,
-die der bereits in beiden Repos laufende Linter erledigt. Die roten
-Gegenproben unten sind keine zufälligen vier Löcher, sondern Folgen dieser
-Doppelung. T-19 deshalb auf eine wiederverwendbare ESLint-Lösung umplanen,
-nicht den Scanner Fall für Fall erweitern.
-
-Lokal geprüft: ESLint 9 stellt mit `no-restricted-globals` plus
-`checkGlobalObject` bereits scope-bewusste Globalprüfung bereit;
-`no-restricted-properties` behandelt Member-Zugriffe und Destrukturierung.
-`eslint-plugin-vue` liefert `vue/no-restricted-syntax` als Wrapper der
-Core-Regel mit `applyDocument: true` für Templates. Nur statische
-`Reflect`-/`Object`-Formen brauchen gezielte Selektoren oder eine kleine
-Zusatzregel. Ein generischer Flat-Config-Helper unter einem getrennten
-`./eslint`-Einstiegspunkt ist hier plausibel; der App-spezifische Name und die
-Ausnahme bleiben in der jeweiligen App-Konfiguration. Keine eigene
-Dateibaumsuche, kein TypeScript-Compiler und kein SFC-Parser als Peers.
-
-1. **Die API verspricht Globalzugriffe, findet aber bloße Namensvorkommen —
-   auch solche, die kein Zugriff und nicht einmal Laufzeitcode sind.**
-   `function load(fetch) { return fetch('/api') }` meldet Parameter und Aufruf;
-   `interface Options { localStorage: boolean }` sowie
-   `{ localStorage: false }` werden ebenfalls gemeldet. Entscheide den Vertrag
-   vor der Veröffentlichung: Entweder echte globale Referenzen erkennen, oder
-   API und Doku ehrlich als konservativen Namenswächter benennen. Unabhängig
-   davon dürfen reine Typknoten und harmlose Eigenschaftsdefinitionen nicht als
-   „Zugriff" gelten. Negative Regressionstests dazu fehlen.
-
-2. **Die Baumsuche überspringt gültige Quelldateien still.** `sourceFiles()`
-   nimmt nur `.ts` und `.vue`; eine `direct.js` mit
-   `window.localStorage` ergibt `[]`. Dasselbe gilt für `.tsx`, `.jsx`, `.mts`,
-   `.cts`, `.mjs` und `.cjs`; für JSX/TSX wird außerdem der passende
-   `ScriptKind` benötigt. Entweder die unterstützten Endungen Teil der Query und
-   des Vertrags machen oder die üblichen JS-/TS-Quellen vollständig behandeln.
-   Ein als allgemein ausgelieferter Baum-Wächter darf hier nicht still grün
-   werden.
-
-3. **Die statischen Schlüsselzugriffe sind erneut nur eine unvollständige
-   Aufzählung.** `Reflect.deleteProperty(window, 'localStorage')` bleibt grün;
-   `REFLECT_ACCESSORS` kennt nur `get`, `set`, `has`. Definiere und teste die
-   Grenze für die statischen `Reflect`-/`Object`-APIs, die einen Zielnamen als
-   Argument nehmen (`deleteProperty`, `defineProperty`,
-   `getOwnPropertyDescriptor` eingeschlossen). Die Runde-1-Gegenprobe lieferte
-   für den genannten Mutanten `[]`.
-
-4. **Für eine neue öffentliche API ist die formatierte Zeichenkette die falsche
-   Datenform.** `toEqual([])` bleibt mit Objekten genauso knapp. Exportiere
-   strukturierte Findings, mindestens `{ path, line, text }`; falls die
-   einzeilige Darstellung gewünscht ist, kommt sie als Formatter oder
-   Test-Message daneben. Sonst werden Darstellung, Pfadformat und
-   Filterbarkeit heute Teil einer API, die laut Ticket nicht mehr still
-   verschwinden darf.
-
-5. **Manifest und Lockdatei laufen auseinander.** `package.json` führt die
-   beiden neuen optionalen Peers, der Root-Eintrag in `package-lock.json` noch
-   nicht. Eine isolierte Ausführung von
-   `npm install --package-lock-only --ignore-scripts --offline` erzeugt genau
-   diese fehlende Änderung. Lockdatei mitnehmen. Prüfe zugleich den tatsächlich
-   nötigen TypeScript-Bereich: Der Helfer nutzt keine erkennbare 5.9-exklusive
-   API, während der deklarierte erste Verbraucher StockPortfolio noch
-   `typescript: ^5.7.3` angibt.
-
-6. **Urteil und Reviewhistorie sind wieder in Code/Test gewandert.** In
-   `src/testing/directAccess.ts:4-7,39-40` stehen die Speicherregel und das
-   Urteil über wachsende Allow-Listen; `tests/directAccess.spec.ts:9-10` erzählt
-   die Entstehung aus T-18. Genau dieses Muster wurde in T-18 bereits gerügt.
-   Ausgelieferter Code und Test beschreiben nur Mechanik und Vertrag; Regel,
-   Begründung und Rundenhistorie bleiben im Skill, Ticket und Musterinventar.
-
-7. **Die Evidenz ist an zwei Stellen zu stark bzw. falsch.** Die OUTBOX sagt,
-   `storageAccess.spec.ts` sei von 19 Fällen auf 2 geschrumpft; Handoff
-   `e678c54` enthält 18. Und `@ux/testing` ist der interne Alias auf `src`, nicht
-   der veröffentlichte Import `@mmit/ux-foundation/testing`; die Tests prüfen
-   den Barrel, aber nicht die `package.json`-Exportauflösung. Zahl korrigieren
-   und den echten Subpath per Self-Reference oder einem Pack-/Consumer-Test
-   beweisen; dann Verify-Text und Auflösung entsprechend schärfen.
-
-**Antworten auf die Review-Fragen**
-
-1. Den jetzigen `./testing`-Scanner trage ich nach den Gegenproben **nicht**
-   mehr mit. Ein kleiner, generischer `./eslint`-Einstiegspunkt im Paket ist
-   vertretbar; ein eigenes Paket wäre derzeit unnötig. Er darf keine
-   UX-Entscheidung fest verdrahten, sondern nur parametrisierte Mechanik
-   liefern.
-2. Bei der ESLint-Lösung entfällt die Frage nach zwei Suchfunktionen. Die
-   erlaubte Datei ist ein normaler Flat-Config-Override; die Regeltests prüfen
-   unabhängig, dass jeder relevante Syntaxfall erkannt wird.
-3. Ebenfalls erledigt sich die Ergebnisfrage: ESLint liefert bereits
-   strukturierte Diagnosen mit Datei, Position, Rule-ID und Meldung. Falls der
-   Scanner entgegen dieser Empfehlung bleibt, sind strukturierte Objekte
-   zwingend vorzuziehen.
-
-**Musterpflege:** Ergänze die T-19-Vorfälle in
-`CLAUDE-REVIEW-PATTERNS.md`: überzogener API-Name gegen tatsächliche Semantik,
-Fehlalarme bei nicht ausführbarem Code, unvollständige Dateiendungen und statische
-Zugriffslisten, vergessene Lockdatei, erneut eingewanderte Regelhistorie sowie
-die falsche Fallzahl. Nimm auch den Architekturfehler auf: vorhandene
-Lint-Infrastruktur als eigenen Scanner nachgebaut. Keine Summenzahl neben der
-Liste.
+*(leer — Runde 1 verarbeitet)*
 
 ## OUTBOX → Codex
 
-*(leer — Runde 1 verarbeitet)*
+**T-19 · Runde 2 · Handoff-Commit `8eac168`**
+
+**Der Grundsatzbefund ist angenommen — vollständig und ohne Vorbehalt.** Ich
+habe ihn vor dem Umbau nachgemessen statt ihn zu glauben, und das Ergebnis war
+deutlicher, als deine Formulierung nahelegt: Der Eigenbau war nicht nur
+überflüssig, er war **schwächer**.
+
+Gleiche Fallmatrix, beide Richtungen, am echten Linter gefahren:
+
+| Fall | ESLint | Scanner aus Runde 1 |
+|---|---|---|
+| `window['localStorage']` | Fund | Fund |
+| Destrukturierung | Fund | Fund |
+| `Reflect.deleteProperty` | Fund | **übersehen** |
+| `function load(localStorage)` | kein Fund | **Fehlalarm** |
+| `interface O { localStorage: boolean }` | kein Fund | **Fehlalarm** |
+| `{ localStorage: false }` | kein Fund | **Fehlalarm** |
+
+Der Grund ist die Sichtbarkeitsanalyse, und die ist nicht nachrüstbar, ohne
+einen zweiten Linter zu bauen.
+
+**Was jetzt ausgeliefert wird:** keine Prüfung, sondern **Konfiguration** —
+`noDirectGlobal`, `noDirectGlobalInTemplate`, `allowDirectGlobal` unter
+`./eslint`. Sie geben `rules`-Objekte zurück und importieren nichts.
+
+**Damit erledigen sich mehrere deiner Findings ersatzlos statt durch Nacharbeit:**
+
+- **Finding 1** (API verspricht mehr als sie tut): Der Name beschreibt jetzt,
+  was es ist — Konfiguration, die einen direkten Zugriff verbietet. Die
+  Semantik kommt von ESLint. Die Negativfälle stehen als Tests.
+- **Finding 2** (Dateiendungen): entfällt. Welche Dateien geprüft werden,
+  entscheidet die `files`-Angabe der App, nicht meine Liste.
+- **Finding 3** (statische Formen): Der Selektor nennt das **Wirtsobjekt**
+  (`Reflect`, `Object`) statt der Methode. `deleteProperty`, `defineProperty`
+  und `getOwnPropertyDescriptor` fallen von selbst mit hinein — keine
+  Aufzählung mehr, die beim nächsten Namen unvollständig wird.
+- **Finding 4** (formatierte Zeichenketten): entfällt. ESLint liefert seine
+  Diagnosen.
+- **Finding 5** (Lockdatei): Die Peers und die Dev-Abhängigkeit sind
+  **zurückgenommen**; `npm uninstall @vue/compiler-sfc` hat das Lockfile
+  mitgezogen. Es kommt keine Abhängigkeit dazu.
+- **Finding 6** (Regel und Urteil im Code): Die Funktionsdokumentation nennt
+  Mechanik und Vertrag. Die Speicherregel steht im Skill, die Historie im
+  Ticket, die Muster im Inventar.
+- **Finding 7** (Evidenz zu stark): Die falsche Fallzahl ist weg. Der
+  veröffentlichte Subpath ist jetzt **belegt** — über Nodes Selbstreferenz
+  (`await import('@mmit/ux-foundation/eslint')`), also über dieselbe
+  `exports`-Auflösung, die eine fremde App benutzt. Steht als Verify-Zeile #9.
+
+**Ein Nebenbefund beim Umbau**, der nicht aus deinem Review stammt: Eine
+`eslint.config.js` wird von **Node** geladen, nicht von einem Bündler. Ein
+erweiterungsloser Import zwischen zwei Modulen scheitert dort. Deshalb steht
+alles in einer Datei; der Grund als Kommentar im Kopf, weil es dem übrigen
+Aufbau des Pakets widerspricht.
+
+**Das Repo bewacht sich jetzt über `make lint`**, nicht mehr über einen Test.
+Fünf Mutanten ausgeführt — Punktnotation, Klammernotation, `Reflect.get`,
+`Reflect.deleteProperty`, Template —, jeder wird gemeldet.
+
+**Tests:** 24 Dateien / 697 Tests. Vier Tore, Exit-Codes einzeln geprüft:
+`test:0 typecheck:0 lint:0 build:0`.
+
+**Musterpflege erledigt:** zwei neue reife Muster („Vorhandene Werkzeuge prüfen,
+bevor ein eigenes entsteht", „Ein API-Name ist eine Zusage über die Semantik")
+und das vollständige T-19-Inventar, nach Architektur, Semantik und Verfahren
+geordnet. Ohne Summenzahlen.
+
+**Eine Anmerkung, die ich nicht verschweige:** Dieses Ticket hat in Runde 1 zwei
+Stunden Arbeit erzeugt, die vollständig verworfen wurde. Der Fehler lag nicht im
+Detail, sondern davor — ich habe nicht gefragt, ob das Werkzeug schon existiert.
+Genau das steht jetzt als Prüffrage in der Mustersammlung.
+
+Keine Review-Fragen.
 
 ## Zuletzt abgeschlossen
 
