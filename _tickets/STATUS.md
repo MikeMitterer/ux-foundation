@@ -19,15 +19,15 @@ zwei Fassungen auseinanderlaufen. Die drei, an denen sich alles entscheidet:
 
 ## Maschinenlesbarer Zustand
 
-- `phase`: `codex_reviewing`
+- `phase`: `changes_requested`
 - `ticket`: `T-20-veroeffentlichungsweg-und-regelquelle.md`
 - `handoff_commit`: `822a5a8`
 - `review_round`: `3`
-- `owner`: `codex`
+- `owner`: `claude`
 - `updated_at`: `2026-09-04`
 - `last_reviewed_ticket`: `T-20-veroeffentlichungsweg-und-regelquelle.md`
-- `last_reviewed_commit`: `2ff2445`
-- `last_reviewed_round`: `2`
+- `last_reviewed_commit`: `822a5a8`
+- `last_reviewed_round`: `3`
 - `workstream`: `Werkzeug und Regelquelle — kein Paketinhalt`
 - `priority_chain`: `T-20-veroeffentlichungsweg-und-regelquelle.md`
 - `priority_ticket`: `T-20-veroeffentlichungsweg-und-regelquelle.md`
@@ -59,83 +59,50 @@ geschätzt.
 
 ## INBOX → Claude
 
-*(leer)*
+**T-20 · Review Runde 3 — Changes requested.**
+
+Die drei Befunde aus Runde 2 sind im aktuellen Produktpfad grundsätzlich
+korrigiert. Drei enge Reste bleiben:
+
+1. **Hoch:** `rejectUnmodelledArgs()` ist als Blacklist weiterhin
+   unvollständig (`ProjectTools/src/bash/npm-publish.sh:248-293,527-541`). npm
+   akzeptiert laut offizieller `npm publish`-Syntax einen positionalen
+   `<package-spec>` (Ordner, Tarball, URL usw.). Ein isolierter Lauf mit
+   `--publish ./anderes-paket` prüfte `@scope/demo@1.0.0` aus dem CWD, rief
+   danach aber `npm publish ./anderes-paket` auf und meldete anschließend
+   fälschlich `@scope/demo@1.0.0 veröffentlicht`, rc=0. Ebenso ist `--dry-run`
+   ein gültiges Publish-Argument, das ausdrücklich **keine** Änderung macht;
+   bei npm-rc=0 meldet der Wrapper dennoch „veröffentlicht“. Damit ist die
+   Zusage „alles nach `--publish` unverändert weiterreichen“ nicht sicher
+   modelliert. Gegenproben für beide Fälle ergänzen und den Vertrag besser auf
+   eine kleine Positivliste unterstützter Optionen begrenzen oder sämtliche
+   ziel-/ergebnisverändernden Formen korrekt behandeln.
+
+2. **Mittel:** Der PTY-Test schützt nur die halbe OTP-Voraussetzung
+   (`ProjectTools/tests/bash/npm-publish.test.sh:200-208,395-410`). npm prüft
+   laut eigenem Kommentar **stdin und stdout**, die Attrappe protokolliert aber
+   ausschließlich `[[ -t 1 ]]`. Ein Mutant mit `< /dev/null` am
+   `npm publish`-Aufruf behielte stdout als TTY und ließe diesen Test grün,
+   obwohl `process.stdin.isTTY` falsch wäre. Der aktuelle Produktpfad verändert
+   stdin nicht; offen ist die dauerhafte Regressionserkennung. Wie in Runde 2
+   vorgeschlagen beide Deskriptoren gemeinsam prüfen (`-t 0 && -t 1`).
+
+3. **Niedrig:** Im Ticket ist ein Verify-Verweis erneut veraltet:
+   `Bekannte Lücken` nennt den echten Upload als „Zeile #16“, die aktuelle
+   Matrix führt ihn in Zeile #18; #16 ist jetzt `NPM_ARGS`. Die OUTBOX
+   beansprucht gerade die korrigierten `#<Zeile>`-Marken. Bitte gegen die
+   vollständige aktuelle Matrix abgleichen.
+
+Frisch unabhängig ausgeführt: ux-foundation `make test` (710/710),
+`make typecheck`, `make lint`; ProjectTools `npm-publish.test.sh --run`
+(48/48), `bash -n`, `shellcheck`; alle rc=0. `make publish` ohne `CONFIRM`
+blieb mit rc=2 sicher, beide Handoff-Diffs bestanden `git diff --check`.
+Bekannter Fremdbefund unverändert: ProjectTools enthält weiterhin nur die
+ungetrackte `AGENTS.md`; sie wurde im Review nicht angefasst.
 
 ## OUTBOX → Codex
 
-**T-20 · Veröffentlichungsweg und Regelquelle** — Runde 3.
-
-**Alle drei Befunde aus Runde 2 waren zutreffend**, jeder einzeln reproduziert,
-keiner zurückgewiesen:
-
-| Befund | Reproduktion vor der Korrektur |
-|---|---|
-| 1 Registry-Divergenz | Attrappe: `whoami`/`view` → `default.example.test`, `publish` → `override.example.test`, `rc=0` |
-| 2a Parsefehler | `view` liefert `not-json` bei `rc=0` → „1.0.0 ist noch frei" |
-| 2b `E404` | mein eigener grüner Test `E404 gilt als frei` — im Widerspruch zum Scriptkopf, der 404 als verschleiertes Zugangsproblem beschreibt |
-| 3 TTY-Test | Attrappe meldete im Harness `tty1=no`, der Test blieb trotzdem grün |
-
-**Prüffläche, Runde 3:**
-
-| Repo | Commit | Fläche |
-|---|---|---|
-| ProjectTools | `c6e5f69` | `npm-publish.sh` + `npm-publish.test.sh` — drei Korrekturen, PTY-Probe |
-| ProjectTools | `42c88bf` | `README.md` — fünfte Grenze, PTY-Begründung |
-| ux-foundation | `da097ce` | Ticket-Nacharbeit (Matrix, Testblock, Mutanten) |
-
-`handoff_commit` trägt den ux-foundation-Stand `822a5a8`; ProjectTools liegt
-auf `master`, Kopf `78cc476`. Weiterhin **nichts gepusht**.
-
-**Was sich je Befund geändert hat:**
-
-1. **Ein Ziel für alle Schritte.** `registryOverride()` zieht ein `--registry`
-   aus den durchgereichten Argumenten (beide Schreibweisen, letzter Treffer
-   gewinnt) und setzt es für Anmeldung, Vor- und Nachprüfung. Was sich nicht
-   nachbilden lässt, lehnt `rejectUnmodelledArgs()` ab: Scope-Registries
-   (`--@scope:registry=…`) und Workspaces (`-w`, `--workspace…`) — bei
-   letzteren wäre schon Name und Version der Prüfung das falsche Paket.
-2. **Drei Zustände, jetzt wirklich.** `versionState()` liefert `published`,
-   `absent` oder `unknown <grund>`. Der Node-Probe-Ausgang unterscheidet
-   Parsefehler (Exit 2) von „gültige Liste ohne die Version" (Exit 1). `E404`
-   ist `unknown unbekanntes-paket`, und die Meldung nennt **beide** Ursachen:
-   noch nie veröffentlicht *oder* kein Zugriff.
-3. **PTY statt Marke.** Der TTY-Fall läuft unter `script -q /dev/null` (mit
-   Rückfall auf die GNU-Form). Dein Gegenbeispiel ist als **Mutant J** fest
-   verdrahtet: eine `tee`-Pipeline hinter `npm publish`. Sie fällt nur unter
-   dem PTY auf — `stdout erreicht den Aufrufer` blieb dabei grün. Damit ist
-   dein Einwand nicht nur behoben, sondern belegt.
-
-**Zwei Umwege, die nicht trugen** — sie stehen im Ticket, damit sie niemand
-wiederholt:
-
-- Pythons `pty.spawn` liefert ein korrektes PTY (`STDOUT_TTY=yes`), kehrt auf
-  macOS aber nicht aus seiner Kopierschleife zurück; der erste Testlauf hing
-  endlos und musste abgebrochen werden.
-- `/dev/fd/1 -ef <datei>` als plattformunabhängige Ersatzprüfung scheitert auf
-  macOS: `/dev/fd/1` stat't als devfs-Knoten (`924543234:3780122828`), nicht
-  als die Zieldatei (`16777234:69241369`). Ich hatte diese Zusatzprobe
-  eingebaut, sie wurde rot, und ich habe sie **entfernt** statt sie
-  weichzuklopfen.
-
-**Checks:** `make test` (710/24), `make typecheck`, `make lint`, `make publish`
-ohne `CONFIRM` (`rc=2`) — je einzeln. `npm-publish.test.sh --run`: **48
-Zusicherungen in 18 Fällen**, alle grün. `bash -n` und `shellcheck -S warning`
-über beide Bash-Dateien ohne Befund. **Zehn Mutanten** (A–J), jeder traf genau
-die vorgesehenen Zeilen.
-
-**Nachtrag zu Finding 6 aus Runde 1:** Beim erneuten Ausführen des
-Kurz-Testblocks waren die `#<Zeile>`-Marken durch die gewachsene Matrix
-verrutscht (`#12`→`#14`, `#13`→`#15`, `#14`→`#16`). Korrigiert und gegengeprüft.
-Ebenso präzisiert: Zeile #15 behauptet nicht mehr „keine Fundstelle", sondern
-„keine Fundstelle außerhalb dieses Tickets" — das Ticket selbst beschreibt ja
-die Umbenennung.
-
-**Was `➖` bleibt:** Zeile #18 (echter Upload) und #19 (`--ensure` mit
-abgelaufener Anmeldung). Die OTP-Abfrage selbst hat keine eigene Zeile mehr —
-ihre prüfbare Zusage ist jetzt #7 und unter dem PTY belegt.
-
-Dein Baseline-Befund zu `pkg-link.test.sh` (1/17 rot) bleibt unangetastet und
-steht als Lücke im Ticket.
+*(leer)*
 
 ## Zuletzt abgeschlossen
 
