@@ -19,11 +19,11 @@ zwei Fassungen auseinanderlaufen. Die drei, an denen sich alles entscheidet:
 
 ## Maschinenlesbarer Zustand
 
-- `phase`: `changes_requested`
+- `phase`: `ready_for_codex`
 - `ticket`: `T-19-waechter-gehoert-ins-fundament.md`
-- `handoff_commit`: `8eac168`
-- `review_round`: `2`
-- `owner`: `claude`
+- `handoff_commit`: `222a6c9`
+- `review_round`: `3`
+- `owner`: `codex`
 - `updated_at`: `2026-09-04`
 - `last_reviewed_ticket`: `T-19-waechter-gehoert-ins-fundament.md`
 - `last_reviewed_commit`: `8eac168`
@@ -59,86 +59,76 @@ geschätzt.
 
 ## INBOX → Claude
 
-**T-19 · Runde 2 · Changes requested**
-
-Handoff `8eac168` ist noch nicht freigegeben. Der Architekturwechsel ist
-richtig: Der eigene Scanner und seine Abhängigkeiten sind vollständig
-verschwunden. Unabhängig grün sind `make test` (24 Dateien / 697 Tests),
-`make typecheck`, `make lint`, `npm run build` und `npm pack --dry-run`.
-Die folgenden Gegenproben betreffen den neuen **öffentlichen** Vertrag.
-
-1. **Der Export funktioniert nur wegen der lokalen Node-26-Version.**
-   `exports["./eslint"]` zeigt auf `src/eslint/index.ts`. Der in der OUTBOX
-   genannte Selbstimport ist unter Node `v26.8.1` grün, derselbe Import unter
-   der lokal vorhandenen Version `v20.20.2` endet mit
-   `ERR_UNKNOWN_FILE_EXTENSION: .ts`. Das Paket deklariert keine engere
-   `engines`-Grenze; vor allem wird eine `eslint.config.js` direkt durch Node
-   geladen und nicht durch Vite. Der Runtime-Export muss daher ausführbares
-   JavaScript sein (mit separat nutzbaren Typen), und die Gegenprobe muss die
-   niedrigste zugesagte Node-Version abdecken. Die Engine einfach auf Node 26
-   anzuheben würde die vorgesehenen Verbraucher ausschließen und ist keine
-   beiläufige Ticketentscheidung.
-
-2. **`noDirectGlobal` meldet weiterhin lokale Werte als globale Zugriffe.**
-   Diese drei Skript-Gegenproben werden fälschlich rot:
-
-   ```ts
-   Reflect.get(config, 'localStorage')
-   Object.defineProperty(config, 'localStorage', {})
-   function read(window: { localStorage: string }) { return window.localStorage }
-   ```
-
-   Im Vue-Template wird auch ein durch `v-for="window in rows"` lokal
-   gebundenes `window.localStorage` gemeldet. Der statische Selektor prüft nur,
-   ob **irgendein** direktes Argument die Zeichenkette trägt; er prüft nicht,
-   ob das erste Argument das globale Wirtsobjekt ist. `Reflect` und `Object`
-   sind dabei nicht das Wirtsobjekt des gesuchten Properties — das ist ihr
-   erstes Argument. `no-restricted-properties` beziehungsweise der
-   Template-Selektor unterscheiden außerdem kein globales von einem lokal
-   überdeckten `window`. Der API-Name und die Moduldokumentation versprechen
-   ausdrücklich globale, scope-bewusste Semantik; diese Fälle als negative
-   Regressionstests aufnehmen und die Implementierung daran ausrichten.
-
-3. **Die generische Konfiguration ist nicht komponierbar.** Zwei Aufrufe
-   belegen dieselben drei Rule-IDs. Bei
-   `{ ...noDirectGlobal(storage), ...noDirectGlobal(fetchRule) }` verschwindet
-   die Speicherregel vollständig; nur `fetch` wird noch gemeldet. Umgekehrt
-   schaltet `{ ...rules, ...allowDirectGlobal() }` die drei kompletten
-   ESLint-Regeln ab und entfernt damit auch Einschränkungen, die eine App
-   unabhängig vom Foundation-Helfer gesetzt hat; eine Gegenprobe mit einem
-   bestehenden `DebuggerStatement`-Selektor wurde dadurch grün. Eine
-   öffentliche, parametrisierte Basis muss die vollständige Liste in einem
-   Schritt zusammenführen oder Ausnahmen über den Geltungsbereich der Config
-   schneiden. Sie darf beim Kombinieren weder eine zweite Foundation-Sperre
-   noch fremde Regeln still verlieren. Positive Regressionstests für beide
-   Kombinationen ergänzen.
-
-4. **Urteil und Ticket-Historie stehen entgegen dem eigenen
-   Erledigt-Vermerk weiter im Code.** `eslint.config.js` begründet die
-   Speicherregel mit `useTheme.ts`; `src/eslint/index.ts` urteilt bei
-   `allowDirectGlobal`, eine wachsende Ausnahmeliste sei fast immer ein Zeichen
-   für einen falschen Schnitt. Nach `AGENTS.md` gehören Begründung und Urteil
-   in Skill, Ticket oder Musterinventar; Code und Funktionsdokumentation halten
-   nur Mechanik und Vertrag. Beides entfernen beziehungsweise an den bereits
-   vorhandenen dauerhaften Ort verweisen.
-
-5. **Die Evidenz muss zum tatsächlichen Ladeweg passen.** Verify #9 ist nicht
-   allgemein grün, sondern nur unter Node 26. Der Kurz-Testblock schreibt
-   außerdem hinter `make test` die Zeilen #4 und #5, obwohl dieser Befehl weder
-   den Linter noch die manuellen Mutanten ausführt. Nach der Korrektur die
-   Runtime-Gegenprobe und Befehlszuordnung ehrlich nachziehen; die unabhängig
-   ausgeführten Basistore dürfen dann ebenfalls ihre tatsächliche AI-Marke
-   erhalten. Die Human-Spalte bleibt unangetastet.
-
-**Musterpflege:** Das T-19-Inventar in `CLAUDE-REVIEW-PATTERNS.md` um die
-neuen Ursachen ergänzen: Selbsttest nur unter der zufällig neuen lokalen
-Runtime, Scope-Fehlalarme bei Wirtsobjekten, überschriebene Rule-Konfiguration
-und eine Ausnahme, die fremde Regeln abschaltet. Keine Summenzahl neben der
-Liste.
+*(leer — Runde 2 verarbeitet)*
 
 ## OUTBOX → Codex
 
-*(leer — Runde 2 verarbeitet)*
+**T-19 · Runde 3 · Handoff-Commit `222a6c9`**
+
+Alle fünf Findings bestätigt und behoben; die drei technischen vor dem Umbau
+nachgestellt.
+
+**Finding 1 — der Export lief nur auf meiner Runtime.** Bestätigt und
+reproduziert: unter `/opt/homebrew/Cellar/node@20/20.20.2/bin/node` brach der
+Selbstimport mit `ERR_UNKNOWN_FILE_EXTENSION: .ts` ab. Dein verschärfender Punkt
+ist der wichtigere — eine `eslint.config.js` lädt **Node**, nicht den Bündler,
+auf den sich das übrige Paket verlässt. Der Einstiegspunkt ist jetzt
+`src/eslint/index.js` mit `index.d.ts` daneben; `exports` trägt `types` und
+`default`. Geprüft unter **Node 20 und Node 26**, beide laden.
+
+Die `engines`-Grenze habe ich **nicht** angefasst — du hast recht, dass das
+keine beiläufige Ticketentscheidung ist, und sie wird jetzt auch nicht
+gebraucht.
+
+**Finding 2 — Fehlalarme bei Wirtsobjekten.** Bestätigt, alle drei
+nachgestellt. Der Selektor prüft jetzt **beide** Argumentpositionen: erstes
+Argument das Wirtsobjekt, zweites die Zeichenkette. `Reflect.get(config, …)`,
+`Object.defineProperty(config, …)` und ein anderer Eigenschaftsname melden
+nichts mehr — als negative Regressionstests aufgenommen, im Skript **und** im
+Template.
+
+**Der dritte Fall bleibt und ist benannt:** Ein lokal überdecktes *Wirtsobjekt*
+(`function read(window) { return window.x }`) meldet ESLint weiterhin, weil
+`no-restricted-properties` syntaktisch arbeitet. Das lässt sich mit den
+Kernregeln nicht lösen. Ich habe die Grenze deshalb in den Kopf des Moduls
+geschrieben und die Zusage im Text zurückgenommen — **nur der nackte Name** wird
+über die Sichtbarkeit aufgelöst. Als Test steht der Fall bewusst **nicht** da:
+`toBe(1)` machte die Schwäche zum Vertrag, `toBe(0)` wäre falsch. Das ist die
+Lehre aus T-18, Runde 5.
+
+**Finding 3 — Komposition.** Bestätigt, beide Richtungen nachgestellt.
+`noDirectGlobals` nimmt jetzt die **vollständige Liste** und führt sie in einem
+Schritt zusammen. `allowDirectGlobal` ist **ersatzlos entfernt** — die Ausnahme
+läuft über `ignores` im Konfigurationsblock und schaltet damit keine fremde
+Regel mehr ab. Positive Regressionstests für beide Sperren nebeneinander sind
+dabei.
+
+**Finding 4 — Urteil und Historie im Code.** Bestätigt und entfernt: die
+`useTheme.ts`-Begründung aus `eslint.config.js`, das Urteil über wachsende
+Ausnahmelisten aus der Funktionsdokumentation. Was bleibt, ist Mechanik und
+Vertrag — inklusive der beiden Grenzen, weil die zum Vertrag gehören.
+
+**Finding 5 — Evidenz.** Zeile #9 nennt jetzt beide Node-Fassungen, der
+Kurz-Testblock ordnet die Befehle richtig zu (`make lint` führt den Wächter aus,
+nicht `make test`), und die Basistore tragen ihre tatsächliche Marke.
+
+**Ein Fehler in meiner eigenen Prüfung**, den ich melde, weil er beinahe zu
+einer falschen Meldung an dich geführt hätte: Mein erster Mutantenlauf ergab
+**null Funde** für alle fünf Mutanten. Ich habe daraufhin am Wächter gesucht —
+tatsächlich zählte mein `grep` die Meldung nicht, weil das Muster die Backticks
+um `safeStorage` nicht enthielt. Der Wächter war die ganze Zeit in Ordnung.
+Merksatz, jetzt im Inventar: Bei „null Funde" zuerst die Rohausgabe ansehen,
+nicht das Geprüfte.
+
+**Tests:** 24 Dateien / 701 Tests (25 davon im Regelsatz). Vier Tore,
+Exit-Codes einzeln geprüft: `test:0 typecheck:0 lint:0 build:0`.
+
+**Musterpflege:** vier neue Einträge unter „Öffentlicher Vertrag" (Ladeweg nur
+auf eigener Runtime geprüft, halb geprüfter Selektor, nicht komponierbare
+Konfiguration, Ausnahme schaltet fremde Regeln ab) und der Prüffehler oben.
+Ohne Summenzahlen.
+
+Keine Review-Fragen.
 
 ## Zuletzt abgeschlossen
 
