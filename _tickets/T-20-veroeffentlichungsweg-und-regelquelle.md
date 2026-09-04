@@ -40,38 +40,38 @@ der Zeilennummer davor.
 | 3 | `npm-publish.sh --status` im Paket | `0.7.1 liegt bereits oben`, `rc=0` | ✅² | |
 | 4 | `--status` mit `version 99.99.99` | `99.99.99 ist noch frei`, `rc=0` | ✅² | |
 | 5 | `npm-publish.sh --publish` im Paket | bricht **vor** dem Upload ab, `rc=1` | ✅² | |
-| 6 | `npm-publish.test.sh --run` | `48 Tests, alle gruen`, `rc=0` | ✅ | |
-| 7 | Lauf unter echtem PTY (`script -q /dev/null`) | Attrappe meldet `PUBLISH_STDOUT_TTY=yes` | ✅ | |
+| 6 | `npm-publish.test.sh --run` | `59 Tests, alle gruen`, `rc=0` | ✅ | |
+| 7 | Lauf unter echtem PTY (`script -q /dev/null`) | Attrappe meldet `PUBLISH_STDIO_TTY=yes` — **stdin und stdout** | ✅ | |
 | 8 | `--publish --registry=…` | **jeder** Schritt spricht mit derselben Registry | ✅ | |
-| 9 | `--publish --@scope:registry=…` bzw. `--workspace=…` | Abbruch mit Begründung, `rc=1`, kein Upload | ✅ | |
-| 10 | `--status` bei `E404` | **nicht** grün; nennt „noch nie veröffentlicht **oder** kein Zugriff" | ✅ | |
-| 11 | `--status` bei unlesbarer Antwort | **nicht** grün; nennt „nicht lesbar" | ✅ | |
-| 12 | Mutanten A–E (Runde 1) | je genau die vorgesehenen Zeilen werden rot | ✅³ | |
-| 13 | Mutanten F–J (Runde 2), darunter **`tee`** | je genau die vorgesehenen Zeilen werden rot | ✅⁴ | |
+| 9 | Positivliste lehnt ab | `./anderes-paket`, `--dry-run`, `--@scope:registry=…`, `--workspace=…`, fehlender Wert → `rc=1`, **kein** Upload, **keine** Erfolgsmeldung | ✅ | |
+| 10 | Positivliste lässt durch | `--otp 123456 --tag=next --access public --provenance` kommt unverändert bei `npm` an | ✅ | |
+| 11 | `--status` bei `E404` | **nicht** grün; nennt „noch nie veröffentlicht **oder** kein Zugriff" | ✅ | |
+| 12 | `--status` bei unlesbarer Antwort | **nicht** grün; nennt „nicht lesbar" | ✅ | |
+| 13 | Mutanten A–L | je genau die vorgesehenen Zeilen werden rot | ✅³ | |
 | 14 | `bash -n` · `shellcheck -S warning` | beide Dateien ohne Befund | ✅ | |
 | 15 | `grep -rn 'npm-login'` über beide Workspaces | keine Fundstelle in Code, Doku oder Makefiles — nur dieses Ticket nennt den alten Namen noch, weil es die Umbenennung beschreibt | ✅ | |
-| 16 | `make publish … NPM_ARGS=…` | `NPM_ARGS` erreicht `npm publish` | ✅⁵ | |
-| 17 | frische Sitzung im Repo | `@AGENTS.md` lädt den Regeltext in den Startkontext | ✅⁶ | |
-| 18 | echter Upload über den neuen Weg | eine Version geht tatsächlich hoch | ➖⁷ | |
-| 19 | `--ensure` mit abgelaufener Anmeldung | Browser-Anmeldung startet und wird nachkontrolliert | ➖⁸ | |
+| 16 | `make publish … NPM_ARGS=…` | `NPM_ARGS` erreicht `npm publish` | ✅⁴ | |
+| 17 | frische Sitzung im Repo | `@AGENTS.md` lädt den Regeltext in den Startkontext | ✅⁵ | |
+| 18 | echter Upload über den neuen Weg | eine Version geht tatsächlich hoch | ➖⁶ | |
+| 19 | `--ensure` mit abgelaufener Anmeldung | Browser-Anmeldung startet und wird nachkontrolliert | ➖⁷ | |
 
 ¹ `make test` → 24/24 Dateien, 710/710 Tests.
 ² Echter Lauf gegen `registry.npmjs.org`, angemeldet als `mmit`. Zeile #5
   endete **vor** `npm publish`; hochgeladen wurde nichts.
 ³ Mutationstest: Die Korrektur wird zurückgedreht, die Suite muss rot werden,
   danach `git checkout --` und Kontrolllauf. Jeder Mutant traf genau die
-  vorgesehenen Zeilen, kein Kollateralschaden.
-⁴ Mutant **J** ist Codex' eigenes Gegenbeispiel: eine `tee`-Pipeline hinter
-  `npm publish`. Sie fällt **nur** unter dem PTY auf — `stdout erreicht den
-  Aufrufer` blieb dabei grün. Damit ist zugleich belegt, dass der alte Test
-  zu schwach war und der neue die Zusage wirklich trägt.
-⁵ Über die Attrappe geprüft (`--publish --otp=123456 --tag next` kommt
-  unverändert bei `npm` an); der Makefile-Durchstich selbst ist Textvergleich.
-⁶ Zwei kopflose Sitzungen mit abgeschalteten Datei-Werkzeugen: im Repo
+  vorgesehenen Zeilen, kein Kollateralschaden. Zwei sind Codex' eigene
+  Gegenbeispiele: **J** (`tee`-Pipeline — fällt nur unter dem PTY auf,
+  `stdout erreicht den Aufrufer` bleibt dabei grün) und **L** (`< /dev/null`
+  am Upload — stdout bleibt TTY, stdin nicht; genau deshalb prüft die
+  Attrappe beide Deskriptoren).
+⁴ Über die Attrappe geprüft (Zeile #10); der Makefile-Durchstich selbst ist
+  Textvergleich.
+⁵ Zwei kopflose Sitzungen mit abgeschalteten Datei-Werkzeugen: im Repo
   „Port 5177", außerhalb „UNBEKANNT". Die Gegenprobe schließt aus, dass die
   Antwort aus dem Modellwissen statt aus dem Startkontext kam.
-⁷ **Offene Lücke, siehe unten.** Der neue Weg hat noch nie etwas hochgeladen.
-⁸ Die Anmeldung war durchgehend gültig; der Zweig ist unverändert aus
+⁶ **Offene Lücke, siehe unten.** Der neue Weg hat noch nie etwas hochgeladen.
+⁷ Die Anmeldung war durchgehend gültig; der Zweig ist unverändert aus
   `npm-login.sh` übernommen, lief hier aber nie an.
 
 ### Kurz-Testblock
@@ -97,10 +97,11 @@ printf '{"name":"@mmit/ux-foundation","version":"99.99.99"}\n' > "${D}/package.j
 ( cd "${D}" && bash "${PUB}" --status ); echo "rc=$?"   # erwartet "ist noch frei", rc=0
 rm -rf "${D}"
 
-# #6  die dauerhafte Suite — sie traegt zugleich #7 bis #11 als einzelne
-#     Zusicherungen (PTY, Registry-Ziel, Ablehnungen, E404, unlesbare Antwort)
+# #6  die dauerhafte Suite — sie traegt zugleich #7 bis #12 als einzelne
+#     Zusicherungen (PTY, Registry-Ziel, Positivliste in beide Richtungen,
+#     E404, unlesbare Antwort)
 cd "${PT}"
-./tests/bash/npm-publish.test.sh --run; echo "rc=$?"    # #6 erwartet "48 Tests, alle gruen", rc=0
+./tests/bash/npm-publish.test.sh --run; echo "rc=$?"    # #6 erwartet "59 Tests, alle gruen", rc=0
 
 # #14
 bash -n src/bash/npm-publish.sh && bash -n tests/bash/npm-publish.test.sh && echo "Syntax ok"
@@ -115,7 +116,7 @@ grep -rn 'npm-login' "${DEV_LOCAL}/DevBash" "${DEV_LOCAL}/DevWeb" \
 grep -n 'NPM_ARGS' "${UXF}/Makefile"
 ```
 
-Die zehn Mutanten (#12, #13). Jeder Block: mutieren, Suite laufen lassen — sie
+Die Mutanten A–L (#13). Jeder Block: mutieren, Suite laufen lassen — sie
 **muss** rot werden —, zurückdrehen.
 
 ```bash
@@ -145,6 +146,13 @@ perl -0pi -e 's/            \*\) state="unknown unlesbar" ;;/            *) stat
 perl -0pi -e 's/        state="unknown unbekanntes-paket"/        state="absent"/' "$S"; mutate
 # J  tee-Pipeline — faellt NUR unter dem PTY auf
 perl -0pi -e 's|        npm publish "\$\@" 2>"\$\{ERR_FILE\}" \|\| rc=\$\?|        npm publish "\$\@" 2>"\$\{ERR_FILE\}" \| tee /dev/null || rc=\$?|' "$S"; mutate
+
+
+# ── Runde 3 ──────────────────────────────────────────────────────────────
+# K  Positivliste abschalten
+perl -0pi -e 's/    if ! rejectUnsupportedArgs "\$\@"; then/    if false; then/' "$S"; mutate
+# L  stdin abklemmen, stdout heil lassen — faellt NUR mit der Zwei-Deskriptor-Probe auf
+perl -0pi -e 's{        npm publish "\$\@" 2>"\$\{ERR_FILE\}" \|\| rc=\$\?}{        npm publish "\$\@" < /dev/null 2>"\$\{ERR_FILE\}" || rc=\$?}' "$S"; mutate
 
 git diff --quiet "$S" && echo "Original unveraendert"
 ```
@@ -181,7 +189,7 @@ Alles nach `--publish` geht unverändert an `npm publish` weiter (`--otp=…`,
 
 ### ProjectTools — `tests/bash/npm-publish.test.sh` (neu)
 
-48 Zusicherungen in 18 Fällen. Das Script läuft als **Prozess** über seinen
+59 Zusicherungen in 22 Fällen. Das Script läuft als **Prozess** über seinen
 öffentlichen Aufruf gegen eine `npm`-Attrappe auf dem `PATH` — keine
 gesourcten Funktionen, sonst prüft der Test eine Verdrahtung, die es beim
 echten Aufruf nicht gibt.
@@ -190,7 +198,7 @@ echten Aufruf nicht gibt.
 Rückfall auf die GNU-Form). In Runde 1 hatte ich ihn über die beobachtbare
 Folge geprüft — „npms Marke erreicht den Aufrufer" —, und Codex hat zu Recht
 gezeigt, dass das zu schwach ist: Eine `tee`-Pipeline besteht diese Prüfung
-und nimmt npm trotzdem das TTY. Der Mutantenlauf bestätigt es (#13, Mutant J):
+und nimmt npm trotzdem das TTY. Der Mutantenlauf bestätigt es (Zeile #13, Mutant J):
 Unter dem PTY fällt `tee` auf, die alte Marke bleibt dabei grün.
 
 Zwei Umwege, die nicht trugen und deshalb hier stehen, damit sie niemand
@@ -240,11 +248,12 @@ dem Zehnerfenster geschoben.
 
 ## Bekannte Lücken
 
-1. **Der neue Weg hat noch nie etwas hochgeladen** (Zeile #16). Mikes
+1. **Der neue Weg hat noch nie etwas hochgeladen** (Zeile #18). Mikes
    erfolgreiche Veröffentlichung von `0.7.1` lief noch über das **alte**
    Makefile. Der nächste echte `make publish CONFIRM=yes` ist der erste
-   Volllauf — und zugleich die erste echte Probe auf die OTP-Abfrage
-   (Zeile #18), deren **Voraussetzung** jetzt getestet ist, nicht deren Dialog.
+   Volllauf — und zugleich die erste echte Probe auf die OTP-Abfrage selbst.
+   Getestet ist bisher nur ihre **Voraussetzung** (Zeile #7: stdin und stdout
+   bleiben unter einem PTY ein TTY), nicht der Dialog.
 2. **`0.7.0` ist verbrannt.** Die Registry geht von `0.6.0` direkt auf
    `0.7.1`; die Nummer lässt sich nicht mehr vergeben.
 3. Die Wartezeiten der Wiederholung (5 s, 15 s) sind nicht gemessen — die
