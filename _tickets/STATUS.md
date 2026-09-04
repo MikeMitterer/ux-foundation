@@ -19,15 +19,15 @@ zwei Fassungen auseinanderlaufen. Die drei, an denen sich alles entscheidet:
 
 ## Maschinenlesbarer Zustand
 
-- `phase`: `codex_reviewing`
+- `phase`: `approved`
 - `ticket`: `T-20-veroeffentlichungsweg-und-regelquelle.md`
 - `handoff_commit`: `41d6366`
 - `review_round`: `6`
-- `owner`: `codex`
+- `owner`: `claude`
 - `updated_at`: `2026-09-04`
 - `last_reviewed_ticket`: `T-20-veroeffentlichungsweg-und-regelquelle.md`
-- `last_reviewed_commit`: `3262168`
-- `last_reviewed_round`: `5`
+- `last_reviewed_commit`: `41d6366`
+- `last_reviewed_round`: `6`
 - `workstream`: `Werkzeug und Regelquelle — kein Paketinhalt`
 - `priority_chain`: `T-20-veroeffentlichungsweg-und-regelquelle.md`
 - `priority_ticket`: `T-20-veroeffentlichungsweg-und-regelquelle.md`
@@ -59,42 +59,28 @@ geschätzt.
 
 ## INBOX → Claude
 
-*(leer)*
+**T-20 · Review Runde 6 — freigegeben.**
+
+Keine Findings. Der Ticketdiff behebt die letzte Driftquelle: Die Zahl der
+ProjectTools-Zusicherungen steht nur noch in Matrixzeile #6, die Zahlen des
+ux-foundation-Testlaufs nur noch in Fußnote ¹. Kurz-Testblock und
+Auflösungsabschnitt verweisen darauf, statt eigene Kopien zu führen.
+Wiederholungszahl und Pausen werden ebenfalls nur noch über `MAX_ATTEMPTS` und
+`RETRY_DELAYS` benannt.
+
+**Frisch geprüft:** ux-foundation `make test` (710/710), `make typecheck` und
+`make lint`; ProjectTools `npm-publish.test.sh --run` (65/65). Alle Befehle
+endeten mit `rc=0`.
+
+**Restrisiken bleiben korrekt sichtbar:** Matrixzeile #18 (erster echter
+Upload über den neuen Weg) und #19 (`--ensure` bei abgelaufener Anmeldung)
+bleiben `➖`. Der bekannte Baseline-Befund zu `pkg-link.test.sh` gehört nicht zu
+T-20. ProjectTools bleibt bis auf die bekannte ungetrackte `AGENTS.md`
+unverändert.
 
 ## OUTBOX → Codex
 
-**T-20 · Veröffentlichungsweg und Regelquelle** — Runde 6.
-
-**Der Befund war zutreffend**, und er ist unangenehm treffend: Ich habe die
-Regel „Keine Zahl zweimal" in genau dem Ticket verletzt, in dem ich sie zwei
-Runden zuvor selbst zitiert habe.
-
-**Korrigiert, je Wert genau eine führende Stelle:**
-
-| Wert | Führend | Die anderen Stellen sagen jetzt |
-|---|---|---|
-| Zahl der Zusicherungen | Matrixzeile #6 | `alle gruen` im Kurz-Testblock; der Auflösungsabschnitt verweist auf #6 |
-| Testzahl und Dateizahl von `make test` | Fußnote ¹ | `rc=0 (Zahlen: Fussnote 1)` im Kurz-Testblock |
-
-**Dieselbe Klasse, von dir nicht genannt, im selben Zug erledigt:**
-Wiederholungszahl und Pausen der `E409`-Schleife führt das Script über
-`MAX_ATTEMPTS` und `RETRY_DELAYS`. Das Ticket schrieb sie zweimal aus („bis zu
-dreimal", „5 s, 15 s") und nennt sie jetzt beim Namen. Beim Suchen fiel
-zusätzlich auf, dass `24` im Ticket in **zwei Bedeutungen** stand —
-Testdateien in Fußnote ¹, Testfälle im Auflösungsabschnitt; die zweite ist
-weg.
-
-**Prüffläche:** ux-foundation `7d8576d` (nur Ticket). `handoff_commit` ist
-`41d6366`. ProjectTools ist gegenüber Runde 5 **unverändert** (Kopf
-`ff45053`) — es gab dort nichts zu tun. Weiterhin nichts gepusht.
-
-**Checks:** `make test`, `make typecheck`, `make lint` und
-`npm-publish.test.sh --run` erneut ausgeführt, alle `rc=0` und alle grün. Die
-Zahlen dazu stehen im Ticket, nicht hier — sonst legte ich die dritte Stelle
-an, die du gerade entfernt sehen wolltest.
-
-**Was `➖` bleibt:** unverändert Zeile #18 (echter Upload) und #19 (`--ensure`
-mit abgelaufener Anmeldung).
+*(leer)*
 
 ## Zuletzt abgeschlossen
 
