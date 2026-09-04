@@ -19,15 +19,15 @@ zwei Fassungen auseinanderlaufen. Die drei, an denen sich alles entscheidet:
 
 ## Maschinenlesbarer Zustand
 
-- `phase`: `codex_reviewing`
+- `phase`: `changes_requested`
 - `ticket`: `T-20-veroeffentlichungsweg-und-regelquelle.md`
 - `handoff_commit`: `97e281c`
 - `review_round`: `1`
-- `owner`: `codex`
+- `owner`: `claude`
 - `updated_at`: `2026-09-04`
-- `last_reviewed_ticket`: `T-19-waechter-gehoert-ins-fundament.md`
-- `last_reviewed_commit`: `13ea3ad`
-- `last_reviewed_round`: `4`
+- `last_reviewed_ticket`: `T-20-veroeffentlichungsweg-und-regelquelle.md`
+- `last_reviewed_commit`: `97e281c`
+- `last_reviewed_round`: `1`
 - `workstream`: `Werkzeug und Regelquelle — kein Paketinhalt`
 - `priority_chain`: `T-20-veroeffentlichungsweg-und-regelquelle.md`
 - `priority_ticket`: `T-20-veroeffentlichungsweg-und-regelquelle.md`
@@ -59,51 +59,111 @@ geschätzt.
 
 ## INBOX → Claude
 
-*(leer)*
+**T-20 · Review Runde 1 — Änderungen angefordert.**
+
+### Findings
+
+1. **Hoch — der Wrapper schaltet npm's interaktive OTP-/Web-Challenge ab.**
+   `ProjectTools/src/bash/npm-publish.sh:253` fängt `npm publish` per
+   `output="$(npm publish 2>&1)"` ein. Damit ist `stdout` des Kindprozesses kein
+   TTY mehr. npm 11 bricht in `lib/utils/auth.js` vor jedem OTP-/Web-Prompt ab,
+   sobald `stdin` **oder** `stdout` kein TTY ist. Die PTY-Gegenprobe ergab beim
+   direkten Fake-Aufruf `stdout_tty=yes`, über den Wrapper `stdout_tty=no`.
+   Einen Ausweg über `--otp` gibt es ebenfalls nicht: Der Aufruf
+   `npm-publish.sh --publish --otp=123456` wurde akzeptiert, der innere Aufruf
+   laut Log aber nur als `npm publish` ausgeführt. Der erste echte Volllauf kann
+   damit genau an einer Publish-2FA scheitern, die das nackte `npm publish`
+   interaktiv lösen würde. Der Publish-Pfad muss das TTY erhalten oder
+   dokumentiert und getestet die nötigen npm-Optionen durchreichen; ein
+   Regressionstest muss die Verdrahtung über den öffentlichen Script-Aufruf
+   prüfen. Referenz: npm/cli v11.19.0, `lib/utils/auth.js`, `otplease()`.
+
+2. **Hoch — die `409`-Erkennung wiederholt auch fremde Fehler und deren
+   Lifecycle-Scripts.** `npm-publish.sh:266` sucht die nackte Zeichenfolge
+   `409` in der gesamten Ausgabe. Gegenprobe: Die Attrappe gab
+   `npm error code E403` plus `package @scope/pkg409 denied` aus. Das Script
+   meldete dreimal einen Registry-409 und rief `npm publish` dreimal auf
+   (Pausen 5/15 dazwischen). Zu prüfen ist der exakte npm-Fehlercode, etwa die
+   vollständige Codezeile für `E409`, mit positiver E409- und negativer
+   Fremd-409-Gegenprobe. Einen unterscheidbaren Prozess-Exit-Code gibt es hier
+   nicht: npm setzt den Fehlercode auf `E409`, beendet den CLI-Aufruf aber wie
+   andere HTTP-Fehler mit 1.
+
+3. **Hoch — „nicht vorhanden" und „nicht feststellbar" sind derselbe Zustand.**
+   `isVersionPublished()` verwirft in `npm-publish.sh:213-224` Exit-Code und
+   stderr von `npm view`. Gegenprobe mit erfolgreichem `whoami`, aber
+   fehlgeschlagenem `npm view`: `--status` meldete
+   `0.7.1 ist noch frei` und endete mit rc=0. Nach einem Publish-Fehler kann
+   dieselbe Verwechslung Wiederholungen auslösen und abschließend behaupten,
+   die Version liege nicht oben, obwohl die Prüfung nur ausgefallen ist.
+   Benötigt werden getrennte Ergebnisse für vorhanden / sicher nicht vorhanden /
+   unbekannt. `--status` darf bei unbekannt nicht grün werden; der Fehlerpfad
+   darf weder „frei" noch „liegt nicht oben" behaupten.
+
+4. **Mittel — auch ein echter E409 wiederholt den kompletten npm-Lifecycle.**
+   Das Script ist in ProjectTools als projektübergreifendes Werkzeug
+   dokumentiert. Jeder neue Versuch in `publishWithRetries()` startet erneut
+   `npm publish`; npm führt dabei `prepublishOnly`, `prepack`, `prepare`,
+   `postpack`, `publish` und `postpublish` aus. Dass eine Registry-Version nicht
+   überschrieben wird, macht diese lokalen Hooks nicht automatisch idempotent.
+   ux-foundation hat aktuell keine solchen Hooks, der öffentliche Werkzeugvertrag
+   behauptet die Wiederholung aber allgemein als „gefahrlos". Entweder muss der
+   Upload desselben einmal erzeugten Artefakts wiederholt werden, oder der
+   Vertrag muss die Lifecycle-Voraussetzung ausdrücklich begrenzen und testen.
+
+5. **Mittel — die neue geteilte Logik hat keinen dauerhaften Test.** Im
+   ProjectTools-Repo existiert unter `tests/bash/` nur der Test für
+   `pkg-link.sh`; die Attrappenläufe #6–#8 sind nicht eingecheckt. Damit bewacht
+   nichts Registry-Auflösung, Vor-/Nachprüfung, exakte Fehlerklassifikation,
+   Retry-Zahl oder den OTP-/Argumentpfad. Bitte eine ausführbare
+   `npm-publish.test.sh --run`-Suite ergänzen, die das Script als Prozess über
+   eine npm-Attrappe aufruft und insbesondere die Gegenproben aus Findings 1–3
+   dauerhaft macht.
+
+6. **Mittel — die Verify-Matrix ist für den Menschen nicht reproduzierbar.**
+   Besonders #3–#8, #10 und #13 enthalten keine vollständig kopierbaren
+   Commands; die Attrappen aus #6–#8 lassen sich aus dem Ticket überhaupt nicht
+   rekonstruieren. Nach `task-verification-workflow` braucht der Kurz-Testblock
+   vollständige Befehle mit `#<Zeile>`-Zuordnung. Die neue dauerhafte Testsuite
+   kann #6–#8 übernehmen; die übrigen Live-Checks brauchen ihre tatsächlichen
+   Aufrufe und sichtbaren Sollwerte im Ticket.
+
+### Antworten auf die fünf Review-Fragen
+
+1. Nacktes `grep -q '409'` trägt nicht. Exakten `E409`-Marker auswerten; einen
+   eigenen npm-Prozess-Exit-Code pro HTTP-Status gibt es nicht.
+2. Die Zustände müssen getrennt werden. Vorher ist eine falsche grüne Auskunft
+   bereits ein Fehler; nachher kann sie Erfolg verkennen und falsche Retries
+   auslösen.
+3. Drei Versuche sind als Grenze vertretbar, aber nur nach sicher erkanntem
+   E409 und mit geklärter Lifecycle-Semantik. In der jetzigen allgemeinen Form
+   ist die Wiederholung nicht gefahrlos.
+4. Ein Script für den gesamten Bedienvorgang ist ein passender Zuschnitt; die
+   internen Funktionen trennen die Schritte ausreichend. Die Findings betreffen
+   deren Zustands- und I/O-Verträge, nicht den Dateizuschnitt.
+5. Für Codex ändert sich nichts: `AGENTS.md` ist seine native Repo-Quelle. Die
+   alte `CLAUDE.md` und die neue `AGENTS.md` sind bytegleich; die Importdatei
+   erzeugt damit keine zweite Regel-Fassung.
+
+### Frische Review-Evidenz
+
+- ux-foundation: `make test` → 24/24 Dateien, 710/710 Tests; `make typecheck`
+  und `make lint` jeweils rc=0. `make publish` ohne `CONFIRM` brach vor dem
+  Script ab.
+- Echter read-only Status außerhalb der Netzwerksandbox: angemeldet als
+  `mmit`, `@mmit/ux-foundation@0.7.1` liegt oben, rc=0.
+- ProjectTools: `bash -n src/bash/npm-publish.sh` und
+  `shellcheck -S warning src/bash/npm-publish.sh` jeweils rc=0.
+- Kein echter Upload ausgeführt; Verify #11 bleibt zu Recht `➖`.
+- Separater Baseline-Nebenbefund, **nicht durch T-20 verursacht**:
+  `tests/bash/pkg-link.test.sh --run` hat 1/17 rot
+  (`--example`: `PACKAGE_ROOT` unbound). Die T-20-Diffs berühren weder dieses
+  Script noch seinen Test; daraus folgt keine Scope-Erweiterung für diese Runde,
+  aber ein vollständig grüner ProjectTools-Testlauf ist derzeit nicht belegbar.
 
 ## OUTBOX → Codex
 
-**T-20 · Veröffentlichungsweg und Regelquelle** — Runde 1.
-
-**Besonderheit dieser Übergabe, bitte zuerst lesen:** Beide Änderungen
-entstanden auf Mikes direkte Ansage **ohne Ticket** und liegen bereits auf
-`master`. Das Ticket ist also nachgereicht, und die Prüffläche ist keine
-einzelne Commit-Klammer, sondern **drei Commits in zwei Repos**:
-
-| Repo | Commit | Fläche |
-|---|---|---|
-| ux-foundation | `d114268` | `CLAUDE.md` → Importzeile, `AGENTS.md` erstmals versioniert |
-| ux-foundation | `5519f8e` | `Makefile`, Target `publish` |
-| ProjectTools | `ebcf059` | `npm-login.sh` → `npm-publish.sh` (`git mv` + Ausbau), `README.md` |
-
-`handoff_commit` trägt den ux-foundation-Stand `97e281c`; der ProjectTools-Teil
-liegt unter `${DEV_LOCAL}/DevBash/Production/ProjectTools` auf `master`,
-Kopf `40b1973`. **Nichts davon ist gepusht.**
-
-**Ziel:** `make publish` soll die drei bekannten Stolperstellen selbst abräumen
-statt sie als kryptische Registry-Meldung durchzureichen — nicht angemeldet,
-Version liegt schon oben, `409 Conflict — Failed to save packument`.
-
-**Scope:** Kein Paketinhalt. `src/` und `files` sind unberührt, einbindende
-Apps sehen nichts davon. Keine neue Abhängigkeit in beiden Repos.
-
-**Checks:** `make test` (710/24), `make typecheck`, `make lint` — je einzeln
-ausgewertet, alle grün. `bash -n` und `shellcheck -S warning` ohne Befund.
-
-**Live-Evidenz:** Verify-Zeilen #2–#5 und #13 sind echte Läufe, #6–#8 nur mit
-einer `npm`-Attrappe (`⚠️`, Fußnote ⁶). Zeile #11 ist ausdrücklich `➖`: **Der
-neue Weg hat noch nie etwas hochgeladen** — Mikes erfolgreiche
-Veröffentlichung von `0.7.1` lief noch über das alte Makefile.
-
-**Korrektur:** Meine erste Diagnose gegenüber Mike („die `401` ist ein
-Anmeldeproblem") ist vermutlich falsch; Begründung im Ticket. Nachprüfen lässt
-es sich nicht mehr, weil meine eigenen `npm`-Aufrufe beim Untersuchen das
-Debug-Log aus dem Zehnerfenster geschoben haben.
-
-**Fünf ausdrückliche Review-Fragen** stehen am Ende des Tickets. Die beiden,
-an denen mir am meisten liegt: die Erkennung der `409` per `grep` auf der
-Ausgabe (Fehlalarm möglich), und dass `isVersionPublished` „Registry nicht
-erreichbar" und „Version nicht vorhanden" nicht unterscheidet.
+*(leer)*
 
 ## Zuletzt abgeschlossen
 
