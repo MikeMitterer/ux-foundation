@@ -10,6 +10,7 @@
   ],
   "exports": {
     ".": "./src/index.ts",
+    "./testing": "./src/testing/index.ts",
     "./styles/tokens.css": "./src/styles/tokens.css",
     "./styles/reset.css": "./src/styles/reset.css",
     "./styles/fonts.css": "./src/styles/fonts.css",
@@ -26,11 +27,19 @@
     "test-watch": "vitest"
   },
   "peerDependencies": {
+    "@vue/compiler-sfc": "^3.5.0",
     "naive-ui": "^2.42.0",
+    "typescript": "^5.9.0",
     "vue": "^3.5.0"
   },
   "peerDependenciesMeta": {
+    "@vue/compiler-sfc": {
+      "optional": true
+    },
     "naive-ui": {
+      "optional": true
+    },
+    "typescript": {
       "optional": true
     }
   },
