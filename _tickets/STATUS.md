@@ -23,7 +23,7 @@ zwei Fassungen auseinanderlaufen. Die drei, an denen sich alles entscheidet:
 - `ticket`: `T-20-veroeffentlichungsweg-und-regelquelle.md`
 - `handoff_commit`: `41d6366`
 - `review_round`: `6`
-- `owner`: `claude`
+- `owner`: `mike`
 - `updated_at`: `2026-09-04`
 - `last_reviewed_ticket`: `T-20-veroeffentlichungsweg-und-regelquelle.md`
 - `last_reviewed_commit`: `41d6366`
@@ -59,24 +59,7 @@ geschätzt.
 
 ## INBOX → Claude
 
-**T-20 · Review Runde 6 — freigegeben.**
-
-Keine Findings. Der Ticketdiff behebt die letzte Driftquelle: Die Zahl der
-ProjectTools-Zusicherungen steht nur noch in Matrixzeile #6, die Zahlen des
-ux-foundation-Testlaufs nur noch in Fußnote ¹. Kurz-Testblock und
-Auflösungsabschnitt verweisen darauf, statt eigene Kopien zu führen.
-Wiederholungszahl und Pausen werden ebenfalls nur noch über `MAX_ATTEMPTS` und
-`RETRY_DELAYS` benannt.
-
-**Frisch geprüft:** ux-foundation `make test` (710/710), `make typecheck` und
-`make lint`; ProjectTools `npm-publish.test.sh --run` (65/65). Alle Befehle
-endeten mit `rc=0`.
-
-**Restrisiken bleiben korrekt sichtbar:** Matrixzeile #18 (erster echter
-Upload über den neuen Weg) und #19 (`--ensure` bei abgelaufener Anmeldung)
-bleiben `➖`. Der bekannte Baseline-Befund zu `pkg-link.test.sh` gehört nicht zu
-T-20. ProjectTools bleibt bis auf die bekannte ungetrackte `AGENTS.md`
-unverändert.
+*(leer)*
 
 ## OUTBOX → Codex
 
@@ -84,26 +67,39 @@ unverändert.
 
 ## Zuletzt abgeschlossen
 
-**T-19 · Der Wächter gehört ins Fundament** — von Codex in Runde 4
-freigegeben und mit Mikes ausdrücklicher Delegation nach `solved/` verschoben.
-Der öffentliche Subpath `@mmit/ux-foundation/eslint` liefert parametrisierte
-ESLint-Konfiguration als Node-20-kompatibles JavaScript mit Typdatei, ohne neue
-Abhängigkeit. Positive und negative Mutanten, beide Node-Fassungen und alle vier
-Qualitätstore sind unabhängig grün.
+**T-20 · Veröffentlichungsweg und Regelquelle** — von Codex in Runde 6 ohne
+Findings freigegeben. **Wartet auf Mike:** `Human`-Spalte, Umzug nach `solved/`
+und der Push beider Repos stehen aus; nichts davon habe ich angefasst.
 
-Das wachsende Fehlerinventar der Tickets steht dauerhaft in
-`CLAUDE-REVIEW-PATTERNS.md`; die Mailbox bleibt deshalb leer.
+`make publish` läuft über `npm-publish.sh` in ProjectTools statt über ein
+nacktes `npm publish`. Der Anlass war ein `409 Conflict`, dessen mitgelieferte
+Erklärung nicht zutraf und dessen eigentliche Frage — *ist es trotzdem
+hochgekommen?* — von Hand beantwortet werden musste. `AGENTS.md` ist seither
+die versionierte Quelle der Repo-Regeln, `CLAUDE.md` importiert sie.
+
+Sechs Runden, in jeder echte Befunde, keiner davon falsch. Die Vertragsgrenzen
+stehen im Kopf des Scripts und in der README von ProjectTools; die Belege
+dafür — dreizehn Mutanten — im Ticket.
 
 Was daraus offen bleibt — **dieser Abschnitt drainiert nicht mit der INBOX**,
 er hält unabhängigen Kontext:
 
+- **Der erste echte Upload steht noch aus** (Ticket, Zeile #18). Der neue Weg
+  hat noch nie etwas hochgeladen; die Veröffentlichung von `0.7.1` lief über
+  das alte Makefile. Der nächste `make publish CONFIRM=yes` ist der erste
+  Volllauf — und die erste Probe auf die OTP-Abfrage, deren Voraussetzung
+  getestet ist, nicht deren Dialog.
+- **`0.7.0` ist verbrannt.** Die Registry geht von `0.6.0` direkt auf `0.7.1`.
+- **Beide Repos sind nicht gepusht** — ux-foundation und ProjectTools.
+- **Kandidat für ein eigenes Ticket in ProjectTools:**
+  `pkg-link.test.sh --run` hat 1/17 rot (`--example`: `PACKAGE_ROOT` unbound).
+  Von Codex als Baseline-Befund gefunden, gehört nicht zu T-20.
+- **In ProjectTools liegt eine ungetrackte `AGENTS.md`** — dieselbe Situation,
+  die T-20 hier aufgelöst hat.
 - Der Skill `ux-standards` empfahl für den Sprachwechsel `:key` an den Reitern.
   Genau das musste T-17 rückgängig machen — der Schlüssel räumt den Zustand
   aller Kindansichten mit ab. Die Stelle ist korrigiert und um den Tabellenfall
   (springende Spaltenbreiten) ergänzt.
-- Der Nebenbefund zur ungetrackten `AGENTS.md` ist **erledigt** und liegt als
-  Teil von T-20 im Review: `AGENTS.md` ist jetzt die Quelle und versioniert,
-  `CLAUDE.md` importiert sie.
 - Ein Kandidat für ein eigenes kleines Ticket: Das Schaufenster zeigt keine
   einzige von Naive UI selbst gestellte Zeichenkette, weshalb sich deren
   Locale-Verdrahtung dort nicht ansehen lässt (T-17, Zeile #8).
