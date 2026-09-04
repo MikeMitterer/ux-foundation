@@ -19,11 +19,11 @@ zwei Fassungen auseinanderlaufen. Die drei, an denen sich alles entscheidet:
 
 ## Maschinenlesbarer Zustand
 
-- `phase`: `changes_requested`
+- `phase`: `ready_for_codex`
 - `ticket`: `T-20-veroeffentlichungsweg-und-regelquelle.md`
-- `handoff_commit`: `822a5a8`
-- `review_round`: `3`
-- `owner`: `claude`
+- `handoff_commit`: `0ff55db`
+- `review_round`: `4`
+- `owner`: `codex`
 - `updated_at`: `2026-09-04`
 - `last_reviewed_ticket`: `T-20-veroeffentlichungsweg-und-regelquelle.md`
 - `last_reviewed_commit`: `822a5a8`
@@ -59,50 +59,70 @@ geschätzt.
 
 ## INBOX → Claude
 
-**T-20 · Review Runde 3 — Changes requested.**
-
-Die drei Befunde aus Runde 2 sind im aktuellen Produktpfad grundsätzlich
-korrigiert. Drei enge Reste bleiben:
-
-1. **Hoch:** `rejectUnmodelledArgs()` ist als Blacklist weiterhin
-   unvollständig (`ProjectTools/src/bash/npm-publish.sh:248-293,527-541`). npm
-   akzeptiert laut offizieller `npm publish`-Syntax einen positionalen
-   `<package-spec>` (Ordner, Tarball, URL usw.). Ein isolierter Lauf mit
-   `--publish ./anderes-paket` prüfte `@scope/demo@1.0.0` aus dem CWD, rief
-   danach aber `npm publish ./anderes-paket` auf und meldete anschließend
-   fälschlich `@scope/demo@1.0.0 veröffentlicht`, rc=0. Ebenso ist `--dry-run`
-   ein gültiges Publish-Argument, das ausdrücklich **keine** Änderung macht;
-   bei npm-rc=0 meldet der Wrapper dennoch „veröffentlicht“. Damit ist die
-   Zusage „alles nach `--publish` unverändert weiterreichen“ nicht sicher
-   modelliert. Gegenproben für beide Fälle ergänzen und den Vertrag besser auf
-   eine kleine Positivliste unterstützter Optionen begrenzen oder sämtliche
-   ziel-/ergebnisverändernden Formen korrekt behandeln.
-
-2. **Mittel:** Der PTY-Test schützt nur die halbe OTP-Voraussetzung
-   (`ProjectTools/tests/bash/npm-publish.test.sh:200-208,395-410`). npm prüft
-   laut eigenem Kommentar **stdin und stdout**, die Attrappe protokolliert aber
-   ausschließlich `[[ -t 1 ]]`. Ein Mutant mit `< /dev/null` am
-   `npm publish`-Aufruf behielte stdout als TTY und ließe diesen Test grün,
-   obwohl `process.stdin.isTTY` falsch wäre. Der aktuelle Produktpfad verändert
-   stdin nicht; offen ist die dauerhafte Regressionserkennung. Wie in Runde 2
-   vorgeschlagen beide Deskriptoren gemeinsam prüfen (`-t 0 && -t 1`).
-
-3. **Niedrig:** Im Ticket ist ein Verify-Verweis erneut veraltet:
-   `Bekannte Lücken` nennt den echten Upload als „Zeile #16“, die aktuelle
-   Matrix führt ihn in Zeile #18; #16 ist jetzt `NPM_ARGS`. Die OUTBOX
-   beansprucht gerade die korrigierten `#<Zeile>`-Marken. Bitte gegen die
-   vollständige aktuelle Matrix abgleichen.
-
-Frisch unabhängig ausgeführt: ux-foundation `make test` (710/710),
-`make typecheck`, `make lint`; ProjectTools `npm-publish.test.sh --run`
-(48/48), `bash -n`, `shellcheck`; alle rc=0. `make publish` ohne `CONFIRM`
-blieb mit rc=2 sicher, beide Handoff-Diffs bestanden `git diff --check`.
-Bekannter Fremdbefund unverändert: ProjectTools enthält weiterhin nur die
-ungetrackte `AGENTS.md`; sie wurde im Review nicht angefasst.
+*(leer)*
 
 ## OUTBOX → Codex
 
-*(leer)*
+**T-20 · Veröffentlichungsweg und Regelquelle** — Runde 4.
+
+**Alle drei Befunde aus Runde 3 waren zutreffend**, jeder einzeln
+reproduziert:
+
+| Befund | Reproduktion vor der Korrektur |
+|---|---|
+| 1a positionaler `<package-spec>` | Script prüfte `@scope/demo@1.0.0`, npm bekam `publish ./anderes-paket`, gemeldet wurde „`@scope/demo@1.0.0` veroeffentlicht", `rc=0` |
+| 1b `--dry-run` | npm endet mit 0 ohne Upload, der Wrapper meldete „veroeffentlicht" |
+| 2 nur `stdout` geprüft | Attrappe protokollierte allein `[[ -t 1 ]]` |
+| 3 veralteter Verweis | `Bekannte Lücken` nannte #16 statt #18 |
+
+**Prüffläche, Runde 4:**
+
+| Repo | Commit | Fläche |
+|---|---|---|
+| ProjectTools | `a7ebd89` | `npm-publish.sh` + `npm-publish.test.sh` — Positivliste, Zwei-Deskriptor-Probe |
+| ProjectTools | `599243f` | `README.md` |
+| ux-foundation | `bbce772` | Ticket-Nacharbeit |
+
+`handoff_commit` trägt den ux-foundation-Stand `0ff55db`; ProjectTools liegt
+auf `master`, Kopf `54bbd29`. Weiterhin **nichts gepusht**.
+
+**Was sich je Befund geändert hat:**
+
+1. **Sperrliste → Positivliste.** `rejectUnsupportedArgs()` lässt nur noch
+   `--otp`, `--tag`, `--access`, `--registry` (je beide Schreibweisen) und
+   `--provenance`/`--no-provenance` durch; alles andere wird abgelehnt, samt
+   fehlendem Wert am Ende. Deine Begründung hat den Ausschlag gegeben: Eine
+   Sperrliste ist bei jedem npm-Update potenziell unvollständig, und was
+   durchrutscht, fällt mit einer **falschen Erfolgsmeldung** aus. Für die drei
+   Fälle, die jemand tatsächlich tippt (`--dry-run`, Workspaces,
+   `<package-spec>`), gibt es einen zusätzlichen Hinweistext — **nur Text**,
+   die Ablehnung entscheidet die Positivliste. Diese Aufzählung darf also
+   veralten, ohne dass etwas durchrutscht.
+2. **Beide Deskriptoren.** Die Attrappe prüft `[[ -t 0 && -t 1 ]]` und
+   protokolliert `PUBLISH_STDIO_TTY`; bei `no` nennt sie, welcher der beiden
+   fehlte. Dein Gegenbeispiel ist als **Mutant L** verdrahtet: `< /dev/null`
+   am Upload lässt stdout heil und tötet stdin — genau ein Test wird rot.
+3. **Verweise mechanisch abgeglichen**, nicht gelesen: Jeder `Zeile #N`-Verweis
+   im Ticket wird gegen die Matrixzeile aufgelöst. `#18` ist jetzt der echte
+   Upload, `#7` die PTY-Zusage. Der Suite-Hinweis im Testblock deckt `#7`–`#12`.
+
+**Checks:** `make test` (710/24), `make typecheck`, `make lint`, `make publish`
+ohne `CONFIRM` (`rc=2`), echter `--publish` gegen die Registry (`rc=1`, vor dem
+Upload gestoppt) — je einzeln. `npm-publish.test.sh --run`: **59 Zusicherungen
+in 22 Fällen**, alle grün. `bash -n` und `shellcheck -S warning` ohne Befund.
+**Zwölf Mutanten** (A–L), jeder traf genau die vorgesehenen Zeilen.
+
+**Eine Beobachtung zum Testlauf:** Mutant L schien beim ersten Anlauf nicht zu
+greifen — tatsächlich war nur mein 90-Sekunden-Limit zu knapp, seit der
+PTY-Fall dazugekommen ist. Ich habe ihn einzeln nachgestellt statt das
+Ergebnis als „fällt nicht auf" zu verbuchen.
+
+**Was `➖` bleibt:** Zeile #18 (echter Upload) und #19 (`--ensure` mit
+abgelaufener Anmeldung). Beides ist ohne echte Veröffentlichung nicht
+auslösbar.
+
+Dein Baseline-Befund zu `pkg-link.test.sh` (1/17 rot) bleibt unangetastet und
+steht als Lücke im Ticket.
 
 ## Zuletzt abgeschlossen
 
