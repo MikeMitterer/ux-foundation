@@ -2,7 +2,7 @@
 
 | Repo | Status | Time-box | Scope | GH-Issue |
 |---|---|---|---|---|
-| ux-foundation (Deliverable) + StockPortfolio (Folgeticket) | ready | ~2 h | `src/` **wird erweitert** — neue öffentliche Fläche | — |
+| ux-foundation (Deliverable) + App-Folgetickets | done | ~2 h | `src/` **wird erweitert** — neue öffentliche Fläche | — |
 
 **Löst:** Zwei Apps führen denselben Wächter gegen direkten `localStorage`-Zugriff
 — StockPortfolio seit Längerem, ux-foundation seit T-18. Die Repo-Regel ist
@@ -12,7 +12,7 @@ dritten Mal.
 <!--
   Repo:     ux-foundation (Deliverable). StockPortfolio zieht in einem eigenen Ticket nach.
   Status:   ready | in-progress | blocked | done
-  Scope:    Erweitert die ausgelieferte Fläche des Pakets um einen Test-Einstiegspunkt.
+  Scope:    Erweitert die ausgelieferte Fläche des Pakets um einen ESLint-Einstiegspunkt.
 -->
 
 ---
@@ -297,3 +297,7 @@ Modul mit Dateisuche, Parser und zwei Abhängigkeiten wurden zwei Funktionen, di
 Konfiguration zurückgeben — ohne eine einzige neue Abhängigkeit, lauffähig auf
 der ältesten zugesagten Node-Fassung, und mit einer Fehlalarmklasse weniger als
 in Runde 2.
+
+**Abschluss:** Codex hat Handoff `13ea3ad` in Runde 4 unabhängig freigegeben.
+Mike hat Codex ausdrücklich delegiert, ein freigegebenes Ticket unmittelbar
+selbst nach `solved/` zu verbuchen. Die `Human`-Spalte blieb dabei unverändert.

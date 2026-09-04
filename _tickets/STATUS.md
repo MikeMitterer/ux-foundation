@@ -19,18 +19,18 @@ zwei Fassungen auseinanderlaufen. Die drei, an denen sich alles entscheidet:
 
 ## Maschinenlesbarer Zustand
 
-- `phase`: `approved`
-- `ticket`: `T-19-waechter-gehoert-ins-fundament.md`
-- `handoff_commit`: `13ea3ad`
-- `review_round`: `4`
-- `owner`: `claude`
+- `phase`: `idle`
+- `ticket`: `—`
+- `handoff_commit`: `—`
+- `review_round`: `0`
+- `owner`: `mike`
 - `updated_at`: `2026-09-04`
 - `last_reviewed_ticket`: `T-19-waechter-gehoert-ins-fundament.md`
 - `last_reviewed_commit`: `13ea3ad`
 - `last_reviewed_round`: `4`
-- `workstream`: `waechter_ins_paket`
-- `priority_chain`: `T-19-waechter-gehoert-ins-fundament.md`
-- `priority_ticket`: `T-19-waechter-gehoert-ins-fundament.md`
+- `workstream`: `—`
+- `priority_chain`: `—`
+- `priority_ticket`: `—`
 
 Erlaubte Phasen: `claude_working` → `ready_for_codex` → `codex_reviewing` →
 `changes_requested` **oder** `approved`; `blocked` nur bei einem echten
@@ -59,36 +59,22 @@ geschätzt.
 
 ## INBOX → Claude
 
-**T-19 · Runde 4 · freigegeben**
-
-Handoff `13ea3ad` ist abgenommen. Keine Findings.
-
-- Unabhängig geprüft: `make test` (24 Dateien / 710 Tests),
-  `make typecheck`, `make lint` und `npm run build` — alle Exit 0.
-- Der öffentliche Subpath lädt unter Node 20.20.2 und Node 26.8.1; der
-  Tarball enthält Runtime-JavaScript und Typdatei.
-- Unabhängige Gegenproben: `Reflect.apply`, `Object.assign` und `Object.is`
-  bleiben grün; `Object.hasOwn` und `Reflect.deleteProperty` werden gemeldet.
-- Mehrere Sperren werden in einem Aufruf zusammengeführt, die Gateway-Ausnahme
-  läuft über `ignores`, und es kommt keine neue Abhängigkeit hinzu.
-- Die bewusst enge Scope-Grenze für lokal überdeckte Wirtsobjekte ist im
-  Vertrag konsistent als nicht zugesagt ausgewiesen. Die Human-Spalte blieb
-  unverändert. Mike hat Codex ausdrücklich ermächtigt, ein freigegebenes Ticket
-  unmittelbar nach `solved/` zu verbuchen.
+*(leer)*
 
 ## OUTBOX → Codex
 
-*(leer — Runde 4 verarbeitet)*
+*(leer)*
 
 ## Zuletzt abgeschlossen
 
-**T-18 · Das Schaufenster greift am Fundament vorbei** — von Codex in Runde 6
+**T-19 · Der Wächter gehört ins Fundament** — von Codex in Runde 4
 freigegeben und mit Mikes ausdrücklicher Delegation nach `solved/` verschoben.
-`useTheme.ts` nutzt nun `safeStorage`; ein syntaktischer Wächter deckt Paket und
-Schaufenster ab. Die unabhängige Gegenprobe mit `Reflect.get(...)` wurde rot und
-nannte die echte Stelle. Alle vier Qualitätstore waren grün.
+Der öffentliche Subpath `@mmit/ux-foundation/eslint` liefert parametrisierte
+ESLint-Konfiguration als Node-20-kompatibles JavaScript mit Typdatei, ohne neue
+Abhängigkeit. Positive und negative Mutanten, beide Node-Fassungen und alle vier
+Qualitätstore sind unabhängig grün.
 
-Das wachsende Fehlerinventar dieses Tickets steht dauerhaft in
+Das wachsende Fehlerinventar der Tickets steht dauerhaft in
 `CLAUDE-REVIEW-PATTERNS.md`; die Mailbox bleibt deshalb leer.
 
 Was daraus offen bleibt — **dieser Abschnitt drainiert nicht mit der INBOX**,
@@ -103,3 +89,6 @@ er hält unabhängigen Kontext:
 - Ein Kandidat für ein eigenes kleines Ticket: Das Schaufenster zeigt keine
   einzige von Naive UI selbst gestellte Zeichenkette, weshalb sich deren
   Locale-Verdrahtung dort nicht ansehen lässt (T-17, Zeile #8).
+- Die App-Integration bleibt bewusst außerhalb dieses Paket-Tickets:
+  StockPortfolio T-36 und StockInfo T-60 warten auf eine installierbare
+  Foundation-Version mit dem neuen ESLint-Subpath.
