@@ -26,47 +26,54 @@ Legende: ✅ live bestätigt · ⚠️ bestätigt mit Einschränkung (Fußnote) 
 | # | Where | Look for | AI | Human |
 |---|---|---|:--:|---|
 | 1 | `make test` · `make typecheck` · `make lint` · `npm run build` | alle vier grün, Exit-Codes einzeln geprüft | ➖¹ | |
-| 2 | `src/testing/` | der Wächter liegt im Paket, nicht mehr nur im Test des Schaufensters | ➖² | |
-| 3 | `package.json` | `./testing` steht in `exports`; `typescript` und `@vue/compiler-sfc` sind **optionale** Peers | ➖³ | |
-| 4 | `tests/storageAccess.spec.ts` | prüft dieses Repo über den **ausgelieferten** Helfer, nicht über eine eigene Kopie | ➖⁴ | |
-| 5 | Mutanten aus T-18, alle vier | Wächter rot, Datei und echte Zeile genannt — die Erkennung hat beim Umzug nichts verloren | ✅⁵ | |
-| 6 | `npm pack --dry-run` | `src/testing/` liegt wirklich im Tarball | ✅⁶ | |
-| 7 | Haupt-Einstiegspunkt und `src/` außerhalb von `testing/` | kein Import von `typescript` oder `@vue/compiler-sfc` — eine App ohne die optionalen Peers lädt weiter | ⚠️⁷ | |
+| 2 | `src/eslint/index.ts` | die Sperre liegt als **Konfiguration** im Paket; nichts wird selbst geprüft | ➖² | |
+| 3 | `package.json` | `./eslint` steht in `exports`; **keine** neuen Peers, keine neue Dev-Abhängigkeit | ➖³ | |
+| 4 | `eslint.config.js` | das Repo bewacht sich selbst über `make lint`, mit `safeStorage.ts` als einziger Ausnahme | ➖⁴ | |
+| 5 | fünf Mutanten gegen `npx eslint` | jeder wird gemeldet — Punktnotation, Klammernotation, `Reflect.get`, `Reflect.deleteProperty`, Template | ✅⁵ | |
+| 6 | `npm pack --dry-run` | `src/eslint/index.ts` liegt im Tarball | ✅⁶ | |
+| 7 | `tests/restrictedGlobals.spec.ts` | die erzeugten Regeln finden am **echten Linter**, was sie sollen — und übersehen, was sie sollen | ✅⁷ | |
+| 8 | derselbe Test, Fall „überdeckter Name" | `function load(localStorage: Storage)` ist **kein** Verstoß | ✅⁸ | |
+| 9 | `node -e "await import('@mmit/ux-foundation/eslint')"` im Paketverzeichnis | der **veröffentlichte** Subpath löst über `exports` auf, nicht nur der interne Alias | ✅⁹ | |
 
-> ¹ **(CC):** 25 Dateien / 688 Tests, Exit-Codes einzeln geprüft:
+> ¹ **(CC):** 24 Dateien / 697 Tests, Exit-Codes einzeln geprüft:
 > `test:0 typecheck:0 lint:0 build:0`.
 >
-> ² **(CC):** gelesen — `src/testing/directAccess.ts` und `src/testing/index.ts`.
-> Keine Live-Verifikation, das ist Struktur.
+> ² **(CC):** gelesen. Der Helfer gibt `rules`-Objekte zurück und importiert
+> nichts — deshalb braucht er keinen Peer.
 >
-> ³ **(CC):** gelesen: `"./testing": "./src/testing/index.ts"` steht in
-> `exports`; `typescript` und `@vue/compiler-sfc` stehen in
-> `peerDependenciesMeta` auf `optional: true`, wie `naive-ui` es vormacht.
+> ³ **(CC):** gelesen: `"./eslint": "./src/eslint/index.ts"`. Die in Runde 1
+> ergänzten Peers `typescript` und `@vue/compiler-sfc` sind **zurückgenommen**,
+> ebenso die Dev-Abhängigkeit; `package.json` und `package-lock.json` sind
+> wieder im Gleichklang.
 >
-> ⁴ **(CC):** gelesen — die Datei importiert `findDirectAccess` aus
-> `@ux/testing` und hält nur noch, was für dieses Repo gilt: die zwei Bäume und
-> die eine erlaubte Datei. Die Semantik der Erkennung prüft
-> `tests/directAccess.spec.ts` über die **öffentliche** Schnittstelle, mit
-> echten Dateien in einem temporären Verzeichnis.
+> ⁴ **(CC):** gelesen — drei Blöcke: Kernregeln für `.ts`, Kernregeln **plus**
+> Vue-Regel für `.vue`, und `allowDirectGlobal()` für
+> `src/composables/safeStorage.ts`.
 >
-> ⁵ **(CC):** alle vier Mutanten aus T-18 ausgeführt, nicht behauptet. Jeder
-> wird rot und nennt die echte Zeile:
-> `useTheme.ts:25 → … window.localStorage?.getItem(…)`,
-> `… window['localStorage']?.getItem(…)`,
-> `… Reflect.get(window, 'localStorage')?.getItem(…)` und
-> `App.vue:141 → $event.view.localStorage.clear()`. Nach jedem Lauf über
+> ⁵ **(CC):** alle fünf ausgeführt, nicht behauptet. Jeder wird von
+> `npx eslint` gemeldet; der Template-Mutant erscheint als
+> `App.vue:141:25 error … vue/no-restricted-syntax`. Nach jedem Lauf über
 > `git checkout --` zurückgenommen und der Arbeitsbaum als sauber geprüft.
+> **`Reflect.deleteProperty` ist neu dabei** — der Scanner aus Runde 1 ließ ihn
+> durch.
 >
-> ⁶ **(CC):** `npm pack --dry-run` listet `src/testing/directAccess.ts` (9.2 kB)
-> und `src/testing/index.ts` (825 B); 29 Dateien insgesamt.
+> ⁶ **(CC):** `npm pack --dry-run` listet `src/eslint/index.ts` (6.6 kB);
+> 28 Dateien insgesamt.
 >
-> ⁷ **(CC):** **bestätigt mit Einschränkung.** Statisch geprüft: `src/index.ts`
-> erwähnt `testing` nicht, und `typescript`/`@vue/compiler-sfc` werden in `src/`
-> **ausschließlich** unter `testing/` importiert. Damit kann der Haupt-Pfad die
-> optionalen Peers nicht anfordern. **Nicht geprüft** ist eine echte
-> Installation ohne die beiden Pakete — dafür bräuchte es eine App, die das
-> Paket frisch zieht. Das gehört in das Folgeticket bei StockPortfolio, wo eine
-> solche Installation ohnehin stattfindet.
+> ⁷ **(CC):** Der Test lintet echte Quelltexte mit den erzeugten Regeln, statt
+> die zurückgegebene Datenstruktur zu vergleichen — eine Zusicherung über das
+> Objekt wäre wertlos. Er stellt zusätzlich sicher, dass keine Meldung ohne
+> Regel-Kennung durchgeht: Ein Parse-Fehler zählte sonst als Fund.
+>
+> ⁸ **(CC):** der Fall, an dem der Ansatz aus Runde 1 scheiterte, und der
+> Grund für den Umbau. Ein Prüfer über den Syntaxbaum meldet den Parameter;
+> ESLint kennt die Sichtbarkeit und schweigt.
+>
+> ⁹ **(CC):** über Nodes Selbstreferenz ausgeführt, also über dieselbe
+> `exports`-Auflösung, die eine fremde App benutzt — nicht über `@ux/eslint`,
+> das nur der interne Alias auf `src/` ist. Ergebnis: die drei Funktionen sind
+> da, und `noDirectGlobal` liefert die drei erwarteten Regel-Kennungen. Der
+> Beleg aus Runde 1 war an dieser Stelle zu schwach.
 
 ### Kurz-Testblock
 
@@ -81,7 +88,9 @@ npm run build    # #1
 Für **#6** — was landet wirklich im Paket:
 
 ```bash
-npm pack --dry-run 2>&1 | grep testing
+npm pack --dry-run 2>&1 | grep eslint          # #6
+node --input-type=module \
+  -e "console.log(Object.keys(await import('@mmit/ux-foundation/eslint')))"   # #9
 ```
 
 ---
@@ -92,8 +101,7 @@ npm pack --dry-run 2>&1 | grep testing
 
 Der Wächter aus T-18 entstand über **acht nachgewiesene Umgehungen**: Textsuche
 gegen Parser, übersprungene Vue-Templates, der Name als Zeichenkette in
-Klammernotation, `Reflect.get`. Das steckt jetzt in einer Testdatei des
-Schaufensters.
+Klammernotation, `Reflect.get`. Er lag als Testdatei im Schaufenster.
 
 StockPortfolio hat denselben Test — und zwar in der **naiven** Fassung, die T-18
 widerlegt hat:
@@ -111,36 +119,85 @@ Der findet nur Methodenaufrufe. Durch fallen `window.localStorage ?? null`
 Es geht also nicht um Aufräumen, sondern darum, dass eine App einen Wächter
 führt, der zu wenig findet, während nebenan der gehärtete liegt.
 
-### Warum ein eigener Einstiegspunkt
+### Runde 1 nahm den falschen Weg — und das ist der Kern dieses Tickets
 
-Der Wächter braucht `typescript` und `@vue/compiler-sfc`. Beide dürfen **nicht**
-in die Laufzeit des Pakets wandern — ein UI-Fundament schleppt keinen Compiler
-mit. Deshalb ein getrennter Einstiegspunkt `@mmit/ux-foundation/testing`, dessen
-Abhängigkeiten **optionale Peers** sind, wie `naive-ui` es schon vormacht: Wer
-den Wächter nicht nutzt, merkt nichts davon.
+Die erste Fassung war ein eigener Scanner: Dateibaum ablaufen, mit dem
+TypeScript-Parser lesen, Vue-Templates selbst traversieren, Fundstellen
+formatieren. Codex hat das in Runde 1 grundsätzlich zurückgewiesen, und die
+Gegenprobe gibt ihm recht.
 
-Jede Vue-App hat beide ohnehin — `typescript` als Dev-Abhängigkeit, den
-SFC-Parser über `vue`.
+**Der entscheidende Fall ist die Sichtbarkeit.** Ein Prüfer, der nur den
+Syntaxbaum liest, kennt keine Bindungen:
 
-### Der Helfer ist allgemeiner als `localStorage`
+```ts
+function load(localStorage: Storage) {
+  return localStorage.getItem('k')   // kein globaler Zugriff — trotzdem gemeldet
+}
+```
 
-Gesucht wird ein **Name**, nicht ausgerechnet dieser eine. Dasselbe Gerüst trägt
-„kein direktes `fetch`" oder „kein `useI18n()` im Paket". Die Signatur nimmt den
-Namen deshalb als Parameter; der Speicher ist nur der erste Anwendungsfall.
+Das ist nicht ein Loch neben anderen, sondern zeigt, dass die API etwas anderes
+tat, als ihr Name versprach: Sie fand **Namensvorkommen**, keine Globalzugriffe.
+Dazu kamen Fehlalarme auf reinen Typknoten und Objektschlüsseln, still
+übersprungene Dateiendungen (`.js`, `.tsx`, `.mts`) und eine unvollständige
+Liste statischer Zugriffsformen — `Reflect.deleteProperty` fehlte.
+
+**Gemessen gegen ESLint**, gleiche Fallmatrix, beide Richtungen:
+
+| Fall | ESLint | Scanner aus Runde 1 |
+|---|---|---|
+| `window['localStorage']` | Fund | Fund |
+| Destrukturierung | Fund | Fund |
+| `Reflect.deleteProperty` | Fund | **übersehen** |
+| `function load(localStorage)` | kein Fund | **Fehlalarm** |
+| `interface O { localStorage: boolean }` | kein Fund | **Fehlalarm** |
+| `{ localStorage: false }` | kein Fund | **Fehlalarm** |
+
+ESLint kann das, weil es eine Sichtbarkeitsanalyse hat. Die nachzubauen wäre
+kein Detail, sondern ein zweiter Linter — und beide Repos führen bereits einen.
+
+### Was jetzt ausgeliefert wird
+
+Kein Prüfer, sondern **Konfiguration**: drei Funktionen, die `rules`-Objekte für
+die Regeln zurückgeben, die ESLint mitbringt.
+
+| Funktion | Wofür |
+|---|---|
+| `noDirectGlobal` | Skripte — `no-restricted-globals`, `no-restricted-properties`, ein Selektor für `Reflect`/`Object` |
+| `noDirectGlobalInTemplate` | Vue-Templates über `vue/no-restricted-syntax`; die Kernregeln greifen dort nicht |
+| `allowDirectGlobal` | die eine Datei, die den Zugang anbietet |
+
+Drei Folgen, die alle in dieselbe Richtung zeigen:
+
+- **Keine neuen Abhängigkeiten.** Der Helfer importiert nichts, er gibt Daten
+  zurück. Die in Runde 1 ergänzten Peers und die Dev-Abhängigkeit sind
+  zurückgenommen.
+- **Der Wächter läuft in der Leitung, die es schon gibt.** `make lint` statt
+  eines eigenen Tests — in jeder App, ohne dass jemand einen Testlauf einrichtet.
+- **Die statischen Formen sind nicht mehr aufgezählt.** Der Selektor nennt das
+  **Wirtsobjekt** (`Reflect`, `Object`), nicht die Methode; `deleteProperty`,
+  `defineProperty` und `getOwnPropertyDescriptor` fallen von selbst mit hinein.
+
+### Die Grenze, unverändert
+
+Ein zur Laufzeit zusammengesetzter Schlüssel (`window['local' + 'Storage']`)
+wird nicht gefunden. Sie steht in der Dokumentation des Moduls — **nicht** als
+Test, aus dem Grund, den T-18 gelernt hat: Ein `toEqual([])` darauf machte die
+heutige Blindstelle zum Vertrag.
 
 ### Akzeptanzkriterien
 
-- [ ] Der Wächter liegt unter `src/testing/` und wird über `./testing`
-      exportiert
-- [ ] `typescript` und `@vue/compiler-sfc` sind optionale Peers; das Paket lädt
-      ohne sie
-- [ ] Die Erkennung ist **unverändert** stark: alle vier Mutanten aus T-18
-      werden weiterhin rot
-- [ ] `tests/storageAccess.spec.ts` nutzt den ausgelieferten Helfer, statt die
-      Logik ein zweites Mal zu führen
-- [ ] Die Semantik des Helfers ist im Paket getestet — er ist jetzt
-      ausgelieferter Code, kein Testbeiwerk
-- [ ] Der Name ist ein Parameter, nicht fest verdrahtet
+- [x] Die Sperre liegt unter `src/eslint/` und wird über `./eslint` exportiert
+- [x] **Keine** neuen Abhängigkeiten — weder Peer noch Dev; Manifest und
+      Lockfile im Gleichklang
+- [x] Erkannt werden nackter Name, Punkt- und Klammernotation, Destrukturierung,
+      `Reflect`/`Object`-Formen und Template-Ausdrücke
+- [x] **Nicht** erkannt werden überdeckte Namen, Typknoten, Objektschlüssel,
+      Zeichenketten und Kommentare
+- [x] Das Repo bewacht sich selbst über `eslint.config.js`, mit genau einer
+      Ausnahme
+- [x] Die erzeugten Regeln sind am echten Linter geprüft, nicht als
+      Datenstruktur verglichen
+- [x] Der Name ist ein Parameter, nicht fest verdrahtet
 
 ### Nicht in diesem Ticket
 
@@ -152,31 +209,16 @@ liegt". Dieses Ticket macht den Umzug nur möglich.
 ### Side-Effects
 
 **Erstmals in dieser Ticketreihe betroffen: die ausgelieferte Fläche.** Bisher
-galt „`src/` bleibt unberührt"; hier kommt bewusst etwas hinzu. Zwei Folgen:
+galt „`src/` bleibt unberührt"; hier kommt bewusst etwas hinzu. Jede einbindende
+App sieht den neuen Einstiegspunkt `./eslint`. Sie muss ihn nicht nutzen, aber
+er ist Teil der öffentlichen Zusage und kann nicht mehr stillschweigend
+verschwinden.
 
-- Jede einbindende App sieht den neuen Einstiegspunkt. Sie muss ihn nicht
-  nutzen, aber er ist Teil der öffentlichen Zusage und kann nicht mehr
-  stillschweigend verschwinden.
-- Zwei neue optionale Peers. Sie dürfen nichts erzwingen — das ist Zeile #7 der
-  Verify-Matrix und der einzige Punkt, an dem dieses Ticket einer App wehtun
-  könnte.
-
-### Was der Umzug am Wächter geändert hat
-
-Nichts an der Erkennung — das ist die Zusicherung, und Zeile #5 belegt sie mit
-allen vier Mutanten. Geändert hat sich die Form:
-
-- **Der Name ist ein Parameter.** Der Wächter hieß bisher implizit
-  „localStorage-Wächter"; er ist keiner. Dasselbe Gerüst trägt „kein direktes
-  `fetch`" oder „kein `useI18n()` im Paket". Ein Test dafür steht dabei.
-- **Zwei Funktionen statt einer.** `findDirectAccess` durchsucht Bäume,
-  `findDirectAccessInFile` eine Datei. Die zweite ist nicht Bequemlichkeit,
-  sondern der **Selbstcheck**: „an der erlaubten Stelle *muss* etwas gefunden
-  werden". Ohne ihn ist ein Wächter grün, der nichts mehr findet — der Fall, der
-  in T-18 drei Fehler verdeckte.
-- **Die Semantik wird über die öffentliche Schnittstelle geprüft.** Der Test
-  legt echte Dateien an und ruft den Einstiegspunkt auf, statt Interna zu
-  greifen. Was dort grün ist, gilt damit auch für eine einbindende App.
+**Was hier ausdrücklich *nicht* passiert**, obwohl Runde 1 es vorsah: Es kommt
+keine Abhängigkeit dazu. Der Helfer gibt Daten zurück und importiert nichts —
+weder `typescript` noch `@vue/compiler-sfc`, weder als Peer noch als
+Dev-Abhängigkeit. Der Punkt, an dem dieses Ticket einer App hätte wehtun können,
+ist damit ersatzlos entfallen.
 
 ### Der Branch hängt an T-18
 
@@ -187,11 +229,17 @@ Integrationsentscheidung für T-18 gehört Mike und wird hier nicht vorweggenomm
 
 ### Auflösung
 
-`ux-foundation` — Handoff-Commit siehe `STATUS.md`. `make test` 25 Dateien /
-688 Tests, dazu `typecheck`, `lint` und `npm run build`; Exit-Codes einzeln
+`ux-foundation` — Handoff-Commit siehe `STATUS.md`. `make test` 24 Dateien /
+697 Tests, dazu `typecheck`, `lint` und `npm run build`; Exit-Codes einzeln
 geprüft (`0/0/0/0`).
 
-Live geprüft sind **#5** (alle vier Mutanten) und **#6** (`npm pack`). **#1 bis
-#4** sind Testlauf und Lesen, also `➖`. **#7** steht auf `⚠️`: Die Trennung ist
-statisch bewiesen, eine echte Installation ohne die optionalen Peers steht aus
-und gehört ins Folgeticket.
+Live geprüft sind **#5** (fünf Mutanten gegen `npx eslint`), **#6**
+(`npm pack`), **#7** und **#8** (die erzeugten Regeln am echten Linter) sowie
+**#9** (der veröffentlichte Subpath über Nodes Selbstreferenz). **#1 bis #4**
+sind Testlauf und Lesen, also `➖`.
+
+**Das Ergebnis ist kleiner als der erste Entwurf und kann mehr.** Aus einem
+Modul mit Dateisuche, Parser-Aufrufen und zwei neuen Abhängigkeiten wurden drei
+Funktionen, die Konfiguration zurückgeben. Sie finden `Reflect.deleteProperty`,
+das der Scanner übersah, und schweigen bei überdeckten Namen, Typknoten und
+Objektschlüsseln, bei denen er Fehlalarm gab.

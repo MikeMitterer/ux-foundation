@@ -190,6 +190,88 @@ wirft" war für den Reviewer nicht ausführbar; seine Rückmeldung „KA was das
 sein soll" war berechtigt. Erst ein vollständiger Konsolenblock im
 Kurz-Testblock machte die Prüfung übergabefähig.
 
+### Vorhandene Werkzeuge prüfen, bevor ein eigenes entsteht
+
+**Erkennungsregel:** Eine Aufgabe wird als neues Modul gebaut — Dateisuche,
+Parser, eigene Diagnostik —, obwohl im Projekt bereits ein Werkzeug läuft, das
+genau diese Gattung Aufgabe löst. Verdächtig ist jede Eigenbau-Analyse über
+Quelltext neben einem konfigurierten Linter, Typprüfer oder Formatierer.
+
+**Prüffrage:** Welches vorhandene Werkzeug macht das schon, und was genau kann
+es nicht? Die Antwort muss eine **gemessene Fallmatrix** sein, keine Vermutung.
+Fehlt dem Werkzeug nur eine Kleinigkeit, ist ein Selektor oder eine Regel die
+Antwort — nicht ein zweites Werkzeug.
+
+**Beleg:** T-19, Review-Runde 1, Handoff `a4e82cf`: Der Wächter aus T-18 wurde
+als eigener Scanner ins Paket gehoben — Dateibaum, TypeScript-Parser,
+Vue-Traversierung, zwei neue optionale Peers. ESLint leistet dasselbe über
+`no-restricted-globals`, `no-restricted-properties` und einen Selektor, und
+beide Repos führen ESLint bereits. Die Ersetzung brauchte keine einzige neue
+Abhängigkeit und fiel deutlich kleiner aus.
+
+**Zweiter Beleg:** derselbe Handoff, entscheidender: Der Eigenbau war nicht nur
+überflüssig, sondern **schwächer**. Ihm fehlt die Sichtbarkeitsanalyse, also
+meldete er `function load(localStorage) { … }` als Verstoß und übersah
+`Reflect.deleteProperty`. Ein nachgebautes Werkzeug erbt nicht die Reife des
+Originals.
+
+### Ein API-Name ist eine Zusage über die Semantik
+
+**Erkennungsregel:** Der Name einer exportierten Funktion beschreibt mehr, als
+sie tut — `findDirectAccess` für etwas, das Namensvorkommen zählt. Besonders
+riskant bei neuer öffentlicher Fläche: Der Name überlebt die Implementierung.
+
+**Prüffrage:** Die Fälle aufschreiben, die der Name verspricht, und jeden
+einzeln durchspielen. Bleibt eine Lücke, wird entweder die Semantik nachgezogen
+oder **der Name ehrlicher** — nicht die Dokumentation nachsichtiger.
+
+**Beleg:** T-19, Review-Runde 1: `findDirectAccess` meldete Typknoten
+(`interface O { localStorage: boolean }`), Objektschlüssel und überdeckte
+Parameter. Kein Zugriff, teils nicht einmal Laufzeitcode.
+
+## T-19 · bestätigtes Fehlerinventar für einen späteren Skill
+
+Ein Ticket, dessen erster Entwurf vollständig verworfen wurde — nicht wegen
+Fehlern im Detail, sondern wegen der Architektur. Die Befunde sind deshalb
+anders geschnitten als in T-18: Dort scheiterte ein Werkzeug schrittweise, hier
+war es das falsche Werkzeug.
+
+### Architektur
+
+1. **Vorhandene Lint-Infrastruktur als eigenen Scanner nachgebaut.** Dateisuche,
+   Parser, Template-Traversierung und Diagnostik — alles Dinge, die der bereits
+   konfigurierte ESLint erledigt. Handoff `a4e82cf`.
+2. **Der Eigenbau war schwächer als das Original.** Ohne Sichtbarkeitsanalyse
+   meldete er überdeckte Namen und übersah statische Formen.
+3. **Zwei Abhängigkeiten für eine Aufgabe, die keine braucht.** `typescript` und
+   `@vue/compiler-sfc` als optionale Peers; die Ersetzung importiert nichts.
+
+### Semantik und Vertrag
+
+4. **Der API-Name versprach mehr als die Semantik hielt** — „direkter Zugriff"
+   gegen tatsächlich „Name kommt vor".
+5. **Fehlalarme auf nicht ausführbarem Code.** Typknoten und Objektschlüssel
+   galten als Zugriff; negative Regressionstests dafür fehlten.
+6. **Die Dateiendungen waren eine stille Aufzählung.** `.js`, `.tsx`, `.mts`
+   und Geschwister wurden übersprungen — ein Baum-Wächter, der still grün wird.
+7. **Die statischen Zugriffsformen waren erneut eine Liste.**
+   `Reflect.deleteProperty` fehlte. Die Ersetzung nennt das Wirtsobjekt statt
+   der Methode und ist damit nicht mehr aufzählend.
+8. **Formatierte Zeichenketten als Rückgabe einer neuen öffentlichen API.**
+   Darstellung und Pfadformat wären Teil der Zusage geworden.
+
+### Verfahren
+
+9. **Manifest geändert, Lockdatei vergessen.** Die neuen Peers standen in
+   `package.json`, der Root-Eintrag in `package-lock.json` nicht.
+10. **Regel und Urteil erneut in ausgeliefertem Code und Test.** Dasselbe
+    Muster wie in T-18 Runde 1 — die Speicherregel und ein Urteil über
+    wachsende Ausnahmelisten standen in der Funktionsdokumentation.
+11. **Eine Fallzahl in der OUTBOX war falsch** („von 19 auf 2"; es waren 18),
+    und `@ux/testing` wurde als Beleg für den veröffentlichten Subpath geführt,
+    obwohl es der interne Alias ist. Ein Test über den Barrel beweist die
+    `exports`-Auflösung nicht.
+
 ## T-18 · bestätigtes Fehlerinventar für einen späteren Skill
 
 Ein Ticket mit einer Zehn-Minuten-Änderung und mehreren Review-Runden. Die

@@ -10,7 +10,7 @@
   ],
   "exports": {
     ".": "./src/index.ts",
-    "./testing": "./src/testing/index.ts",
+    "./eslint": "./src/eslint/index.ts",
     "./styles/tokens.css": "./src/styles/tokens.css",
     "./styles/reset.css": "./src/styles/reset.css",
     "./styles/fonts.css": "./src/styles/fonts.css",
@@ -27,19 +27,11 @@
     "test-watch": "vitest"
   },
   "peerDependencies": {
-    "@vue/compiler-sfc": "^3.5.0",
     "naive-ui": "^2.42.0",
-    "typescript": "^5.9.0",
     "vue": "^3.5.0"
   },
   "peerDependenciesMeta": {
-    "@vue/compiler-sfc": {
-      "optional": true
-    },
     "naive-ui": {
-      "optional": true
-    },
-    "typescript": {
       "optional": true
     }
   },
@@ -50,7 +42,6 @@
   "devDependencies": {
     "@types/node": "^26.2.0",
     "@vitejs/plugin-vue": "^6.0.0",
-    "@vue/compiler-sfc": "^3.5.42",
     "@vue/test-utils": "^2.4.11",
     "eslint": "^9.33.0",
     "eslint-plugin-vue": "^10.4.0",
