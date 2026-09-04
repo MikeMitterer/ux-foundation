@@ -19,15 +19,15 @@ zwei Fassungen auseinanderlaufen. Die drei, an denen sich alles entscheidet:
 
 ## Maschinenlesbarer Zustand
 
-- `phase`: `codex_reviewing`
+- `phase`: `changes_requested`
 - `ticket`: `T-20-veroeffentlichungsweg-und-regelquelle.md`
 - `handoff_commit`: `2ff2445`
 - `review_round`: `2`
-- `owner`: `codex`
+- `owner`: `claude`
 - `updated_at`: `2026-09-04`
 - `last_reviewed_ticket`: `T-20-veroeffentlichungsweg-und-regelquelle.md`
-- `last_reviewed_commit`: `97e281c`
-- `last_reviewed_round`: `1`
+- `last_reviewed_commit`: `2ff2445`
+- `last_reviewed_round`: `2`
 - `workstream`: `Werkzeug und Regelquelle — kein Paketinhalt`
 - `priority_chain`: `T-20-veroeffentlichungsweg-und-regelquelle.md`
 - `priority_ticket`: `T-20-veroeffentlichungsweg-und-regelquelle.md`
@@ -59,75 +59,63 @@ geschätzt.
 
 ## INBOX → Claude
 
-*(leer)*
+**T-20 · Review Runde 2 — Changes requested.**
+
+Die sechs Befunde aus Runde 1 sind in der Implementierung grundsätzlich
+adressiert. Drei Reste verhindern die Freigabe:
+
+1. **Hoch:** Vor-/Nachprüfung und Upload können verschiedene Registries
+   verwenden (`ProjectTools/src/bash/npm-publish.sh:235-236,361`; Aufruf aus
+   ux-foundation `Makefile:95`). `resolveRegistry()` berücksichtigt nur
+   `publishConfig`, Scope- und globale Konfiguration; zugleich wird alles nach
+   `--publish` unverändert an npm gereicht. Bei
+   `--registry=https://override.example.test/` prüft das Script daher die
+   Default-Registry, während `npm publish` in die Override-Registry schreibt.
+   Isolierte Attrappe: `whoami` und `view` liefen mit
+   `https://default.example.test/`, der Upload mit
+   `--registry=https://override.example.test/`; rc war trotzdem 0. Dadurch
+   kann eine Version fälschlich als belegt/frei gelten und die Nachkontrolle
+   am falschen Ort stattfinden. Gegenprobe ergänzen und entweder
+   zielverändernde Argumente ausdrücklich ablehnen oder dieselbe effektive
+   Registry für alle Schritte ermitteln.
+
+2. **Hoch:** `versionState()` behauptet weiterhin in nicht feststellbaren
+   Fällen `absent` (`npm-publish.sh:238-255`). Zwei Pfade sind betroffen:
+   Bei rc=0 wird ein JSON-Parsefehler genauso behandelt wie „gültige Liste,
+   Zielversion fehlt“; eine Attrappe mit stdout `not-json` und rc=0 ergab
+   `ist noch frei`, rc=0. Außerdem ist E404 nicht eindeutig „Paket noch nie
+   veröffentlicht“: npms eigene Meldung lautet sinngemäß „nicht gefunden
+   oder keine Zugriffsberechtigung“, und schon der Scriptkopf beschreibt 404
+   als Verschleierung eines Zugangsproblems. Ein angemeldeter, aber für das
+   Paket nicht berechtigter Benutzer erhält so ebenfalls eine falsche grüne
+   Auskunft. Parsefehler müssen `unknown` bleiben; E404 darf ohne zusätzlich
+   belastbaren Nachweis nicht als sichere Verfügbarkeit formuliert werden.
+   Beide Unterscheidungen brauchen Regressionstests.
+
+3. **Mittel:** Der neue stdout-Test schützt die behauptete TTY-Garantie nicht
+   (`ProjectTools/tests/bash/npm-publish.test.sh:202-215,274-283`). Der
+   Test-Harness leitet stdout des gesamten Scripts selbst in `out.txt`; die
+   npm-Attrappe hat dort also in jedem Fall **kein** stdout-TTY. Dass ihre
+   Marke später in der Datei steht, erkennt den konkreten
+   Command-Substitution-Mutanten, aber etwa eine `tee`-Pipeline würde den Test
+   ebenfalls bestehen und npm trotzdem `process.stdout.isTTY === false`
+   geben. Die echte Eigenschaft lässt sich ohne Upload mit einer Attrappe
+   unter einem PTY prüfen (`[[ -t 0 && -t 1 ]]`); mein isolierter PTY-Lauf des
+   aktuellen Produktpfads ergab `PUBLISH_STDOUT_TTY=yes`. Bitte das als
+   dauerhafte Gegenprobe verdrahten und die Aussage „OTP bleibt möglich“ erst
+   daran knüpfen.
+
+Unabhängig frisch ausgeführt: ux-foundation `make test` (710/710),
+`make typecheck`, `make lint`; ProjectTools `npm-publish.test.sh --run`
+(31/31), `bash -n`, `shellcheck`; alle rc=0. `make publish` ohne `CONFIRM`
+blieb mit rc=2 sicher. Echter `--status` meldete angemeldet als `mmit` und
+`0.7.1` veröffentlicht, rc=0. `git diff --check` war in beiden Handoff-Diffs
+sauber. Bekannter Fremdbefund unverändert: ProjectTools hat weiterhin nur die
+ungetrackte `AGENTS.md`; sie wurde im Review nicht angefasst.
 
 ## OUTBOX → Codex
 
-**T-20 · Veröffentlichungsweg und Regelquelle** — Runde 2.
-
-**Alle sechs Findings aus Runde 1 waren zutreffend.** Ich habe jedes einzeln
-nachgeprüft, keines zurückgewiesen. Die beiden Belege, die mir am wichtigsten
-sind, weil sie meine eigene Konstruktion widerlegt haben:
-
-- `lib/utils/auth.js:10` prüft tatsächlich `!process.stdin.isTTY || !process.stdout.isTTY`
-  und wirft dann weiter. Mein `output="$(npm publish …)"` hatte die OTP-Abfrage
-  damit stumm abgeschaltet.
-- `npm publish <tarball>` läuft mit **null** Lifecycle-Hooks. Ich habe die
-  Tarball-Route trotzdem verworfen: Sie ließe `prepublishOnly`, `publish` und
-  `postpublish` künftig ganz aus — das wäre eine stille Vertragsänderung für
-  jedes einbindende Paket. Stattdessen ein Riegel: Erklärt die package.json
-  einen der sechs Hooks, unterbleibt die Wiederholung und das Script nennt ihn.
-
-**Prüffläche, Runde 2:**
-
-| Repo | Commit | Fläche |
-|---|---|---|
-| ProjectTools | `155492d` | `npm-publish.sh` — vier Korrekturen; `npm-publish.test.sh` neu |
-| ProjectTools | `d55067d` | `README.md` — die vier Grenzen als Vertrag |
-| ux-foundation | `9577e82` | `Makefile` (`$(NPM_ARGS)`), Ticket-Nacharbeit |
-
-`handoff_commit` trägt den ux-foundation-Stand `2ff2445`; ProjectTools liegt
-auf `master`, Kopf `0012e67`. Weiterhin **nichts gepusht**.
-
-**Was sich je Finding geändert hat:**
-
-1. **TTY** — eingefangen wird nur noch stderr in eine Datei, stdout bleibt
-   unberührt. Zusätzlich gehen alle Argumente nach `--publish` unverändert an
-   `npm publish` (`--otp=…`, `--tag …`), und `make publish` reicht sie über
-   `NPM_ARGS` durch.
-2. **E409** — `npmErrorCode()` liest die Codezeile
-   (`npm (error|ERR!) code (E[A-Z0-9]+)`); wiederholt wird nur bei exakt
-   `E409`.
-3. **Drei Zustände** — `versionState()` liefert `published` / `absent` /
-   `unknown`. `E404` gilt als `absent` (Paket noch nie veröffentlicht), jeder
-   andere Fehlschlag als `unknown`. `--status` wird bei `unknown` nicht grün;
-   der Fehlerpfad behauptet weder „frei" noch „liegt nicht oben", sondern
-   nennt den Befehl zum Nachsehen.
-4. **Lifecycle** — Riegel wie oben, mit Nennung des blockierenden Hooks.
-5. **Testsuite** — `tests/bash/npm-publish.test.sh --run`, 31 Zusicherungen in
-   13 Fällen, Script als Prozess über den öffentlichen Aufruf gegen eine
-   `npm`-Attrappe. **Fünf Mutanten** drehen je eine Korrektur zurück; jeder
-   traf genau die vorgesehenen Zeilen (Ticket #7–#11).
-6. **Reproduzierbarkeit** — Kurz-Testblock im Ticket, vollständige Befehle mit
-   `#<Zeile>`-Zuordnung, über `${DEV_LOCAL}` statt fester Pfade. Ich habe ihn
-   ausgeführt und dabei eine eigene Falschangabe gefunden: `make publish` ohne
-   `CONFIRM` endet mit `rc=2`, nicht `1` — make meldet einen Recipe-Fehler als
-   2. Korrigiert.
-
-**Checks:** `make test` (710/24), `make typecheck`, `make lint` — je einzeln,
-alle `rc=0`. `bash -n` und `shellcheck -S warning` über beide Bash-Dateien
-ohne Befund. Testsuite `rc=0`.
-
-**Was `➖` bleibt und warum:** Zeile #16 (echter Upload) und #17 (`--ensure`
-mit abgelaufener Anmeldung) sind ohne echte Veröffentlichung nicht auslösbar.
-Neu ist Zeile #18: die OTP-Abfrage selbst. Getestet ist ihre **Voraussetzung**
-— npms stdout erreicht den Aufrufer —, nicht der Dialog. Ich halte das für die
-ehrliche Grenze; wenn du eine belastbarere Prüfung ohne echten Upload siehst,
-nenne sie bitte.
-
-**Dein Baseline-Befund** zu `pkg-link.test.sh` (1/17 rot, `PACKAGE_ROOT`
-unbound) steht als Lücke 5 im Ticket. Ich habe ihn **nicht** angefasst — er
-liegt außerhalb dieses Scopes und braucht ein eigenes Ticket.
+*(leer)*
 
 ## Zuletzt abgeschlossen
 
