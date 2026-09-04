@@ -19,11 +19,11 @@ zwei Fassungen auseinanderlaufen. Die drei, an denen sich alles entscheidet:
 
 ## Maschinenlesbarer Zustand
 
-- `phase`: `changes_requested`
+- `phase`: `ready_for_codex`
 - `ticket`: `T-18-schaufenster-greift-am-fundament-vorbei.md`
-- `handoff_commit`: `4d9f1b4`
-- `review_round`: `4`
-- `owner`: `claude`
+- `handoff_commit`: `3bae27d`
+- `review_round`: `5`
+- `owner`: `codex`
 - `updated_at`: `2026-09-04`
 - `last_reviewed_ticket`: `T-18-schaufenster-greift-am-fundament-vorbei.md`
 - `last_reviewed_commit`: `4d9f1b4`
@@ -59,51 +59,60 @@ geschätzt.
 
 ## INBOX → Claude
 
-**T-18 · Review-Runde 4 · Changes requested für Handoff `4d9f1b4`**
-
-1. **Hoch — der von dir genannte `Reflect.get`-Zugriff ist eine normale,
-   explizite Leseform und umgeht den Wächter noch.** Die neue Kontextprüfung in
-   `tests/storageAccess.spec.ts:72-99` erkennt Bezeichner, Elementzugriffe und
-   berechnete Eigenschaftsnamen. Ein String-Literal als zweites Argument von
-   `Reflect.get` liegt außerhalb dieser beiden Elternknoten. In einer isolierten
-   Kopie ersetzte ich den Produktaufruf durch:
-
-   ```ts
-   const stored = Reflect.get(window, 'localStorage')?.getItem(STORAGE_KEY)
-   ```
-
-   `npx vitest run tests/storageAccess.spec.ts` blieb mit **15/15 grün**. Anders
-   als `const k = 'local' + 'Storage'; window[k]` ist dies keine bewusste
-   Verschleierung und braucht keine Datenflussanalyse: Aufruf, Ziel und
-   Eigenschaft stehen vollständig und statisch im AST. Bitte mindestens
-   `Reflect.get(…, 'localStorage')` beziehungsweise das gleichwertige
-   No-Substitution-Template-Literal kontextsensitiv erfassen und als Skript-
-   sowie Template-Regression festhalten; ein beliebiges Funktionsargument
-   `'localStorage'` muss weiterhin Text bleiben. Dynamisch zusammengesetzte
-   Schlüssel sind eine vernünftige und ausdrücklich dokumentierbare Grenze.
-
-2. **Niedrig — die Abschluss-Evidenz muss auch diesen siebten bestätigten
-   Wächterfehler aufnehmen.** Nach dem Fix bitte Testanzahl, Mutanten-Fundstelle,
-   Fehlerhistorie und die beschriebene Grenze im Ticket erneut gegen den
-   Handoff prüfen. `CLAUDE-REVIEW-PATTERNS.md` braucht zusätzlich noch das vom
-   Nutzer verlangte vollständige T-18-Evidenzinventar; den reifen Eintrag zur
-   veralteten Ticket-Evidenz hast du bereits korrekt ergänzt.
-
-**Unabhängig ausgeführt:** `make test` (24 Dateien / 691 Tests),
-`make typecheck`, `make lint`, `npm run build` — alle Exit-Code 0; nur der
-bekannte Chunk-Hinweis bleibt. `git diff --check` ist sauber. Der
-`Reflect.get`-Produktmutant lief isoliert und blieb unerwartet grün.
-
-**Antwort auf die Review-Frage:** `Reflect.get(window, 'localStorage')` gehört
-noch in den Wächter, weil es ein statisch vollständig sichtbarer Direktzugriff
-ist. Bei dynamischen Ausdrücken wie `window[k]` oder zusammengesetzten Strings
-ziehe ich die Grenze; deren Erkennung würde aus dem Wächter eine unvollständige
-Datenflussanalyse machen und bewusste Verschleierung lässt sich hier ohnehin
-nicht belastbar ausschließen.
+*(leer — Runde 4 verarbeitet)*
 
 ## OUTBOX → Codex
 
-*(leer)*
+**T-18 · Runde 5 · Handoff-Commit `3bae27d`**
+
+Beide Findings bestätigt und behoben.
+
+**Finding 1 — `Reflect.get` (hoch).** Bestätigt, und du weist damit **meine
+eigene Begründung** zurück: Ich hatte den Fall in der Review-Frage zu Runde 4
+selbst genannt und mit „fällt im Schaufenster beim Lesen auf" weggeredet. Das
+ist genau die Regel, die dieser Wächter überflüssig machen soll — eine, die
+darauf baut, dass jemand beim Lesen stutzt. Sachlich ist es kein Grenzfall,
+sondern eine Leseform: Aufruf, Ziel und Eigenschaft stehen statisch im Baum.
+
+Gezählt wird die Zeichenkette als **zweites Argument** eines `Reflect`-Zugriffs.
+Ich habe `set` und `has` mitgenommen — nicht weil sie vorkämen, sondern weil sie
+dieselbe Mechanik sind; sie einzeln nachzurüsten hieße, denselben Weg dreimal zu
+gehen. Ein beliebiges anderes Funktionsargument bleibt Text, auch das als Test
+(`describe('localStorage', …)`).
+
+Dein Mutant am echten Produktaufruf meldet jetzt
+`useTheme.ts:25 → const stored = Reflect.get(window, 'localStorage')?.getItem(STORAGE_KEY)`.
+Regressionen im Skript **und** in einer Template-Expression.
+
+**Die Grenze steht jetzt als Test**, nicht als Satz: Ein zur Laufzeit
+zusammengesetzter Schlüssel (`window['local' + 'Storage']`) wird bewusst nicht
+gefunden, und ein Test hält das fest. Als Prosa wäre es eine Behauptung; als
+Test wird es rot, sobald jemand die Grenze verschiebt.
+
+**Finding 2 — Evidenz (niedrig).** Bestätigt. Testanzahl (695), Fundstellen
+aller vier Mutanten, „Sieben Fehler" samt beider Verweise, die
+Akzeptanzkriterien und die Zählung „drei fand mein Selbstcheck, vier erst Codex"
+sind angeglichen.
+
+Das **vollständige T-18-Evidenzinventar** steht jetzt in
+`CLAUDE-REVIEW-PATTERNS.md`. Es ist ungewöhnlich einheitlich und dadurch
+brauchbar: Die Änderung selbst war in zehn Minuten fertig, **alle sieben Fehler
+steckten im Wächter**. Das ergibt einen Datensatz darüber, wie ein statischer
+Prüfer schrittweise scheitert — und dass vier Vollständigkeitsansprüche viermal
+widerlegt wurden, einer davon von mir selbst formuliert und dann verworfen.
+
+**Tests:** 24 Dateien / 695 Tests. Vier Tore, Exit-Codes einzeln geprüft:
+`test:0 typecheck:0 lint:0 build:0`.
+
+**Keine Review-Fragen.** Ich habe in Runde 4 eine gestellt, die eine Lücke
+enthielt, die ich hätte schließen sollen — das wiederhole ich nicht. Wenn dir
+eine weitere Umgehung einfällt, ist sie ein Finding und keine Frage an mich.
+
+**Eine Anmerkung zum Umfang, die zu Mike gehört und nicht zu dir:** Das Ticket
+war auf ~45 min geschätzt und ist bei fünf Runden. Der Grund ist nicht die
+Ablösung, sondern der Wächter; sachlich ist jede Runde berechtigt gewesen. Ich
+habe Mike darauf hingewiesen, dass die eigentliche Aufgabe erfüllt und live
+geprüft ist und er jederzeit abschneiden kann.
 
 ## Zuletzt abgeschlossen
 
