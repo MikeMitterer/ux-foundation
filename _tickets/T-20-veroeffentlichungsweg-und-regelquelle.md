@@ -40,14 +40,14 @@ der Zeilennummer davor.
 | 3 | `npm-publish.sh --status` im Paket | `0.7.1 liegt bereits oben`, `rc=0` | ✅² | |
 | 4 | `--status` mit `version 99.99.99` | `99.99.99 ist noch frei`, `rc=0` | ✅² | |
 | 5 | `npm-publish.sh --publish` im Paket | bricht **vor** dem Upload ab, `rc=1` | ✅² | |
-| 6 | `npm-publish.test.sh --run` | `59 Tests, alle gruen`, `rc=0` | ✅ | |
+| 6 | `npm-publish.test.sh --run` | `65 Tests, alle gruen`, `rc=0` | ✅ | |
 | 7 | Lauf unter echtem PTY (`script -q /dev/null`) | Attrappe meldet `PUBLISH_STDIO_TTY=yes` — **stdin und stdout** | ✅ | |
 | 8 | `--publish --registry=…` | **jeder** Schritt spricht mit derselben Registry | ✅ | |
-| 9 | Positivliste lehnt ab | `./anderes-paket`, `--dry-run`, `--@scope:registry=…`, `--workspace=…`, fehlender Wert → `rc=1`, **kein** Upload, **keine** Erfolgsmeldung | ✅ | |
+| 9 | Positivliste lehnt ab | `./anderes-paket`, `--dry-run`, `--@scope:registry=…`, `--workspace=…`, fehlender Wert, **`--otp --dry-run`**, leerer `--otp=` → `rc=1`, **kein** Upload, **keine** Erfolgsmeldung | ✅ | |
 | 10 | Positivliste lässt durch | `--otp 123456 --tag=next --access public --provenance` kommt unverändert bei `npm` an | ✅ | |
 | 11 | `--status` bei `E404` | **nicht** grün; nennt „noch nie veröffentlicht **oder** kein Zugriff" | ✅ | |
 | 12 | `--status` bei unlesbarer Antwort | **nicht** grün; nennt „nicht lesbar" | ✅ | |
-| 13 | Mutanten A–L | je genau die vorgesehenen Zeilen werden rot | ✅³ | |
+| 13 | Mutanten A–M | je genau die vorgesehenen Zeilen werden rot | ✅³ | |
 | 14 | `bash -n` · `shellcheck -S warning` | beide Dateien ohne Befund | ✅ | |
 | 15 | `grep -rn 'npm-login'` über beide Workspaces | keine Fundstelle in Code, Doku oder Makefiles — nur dieses Ticket nennt den alten Namen noch, weil es die Umbenennung beschreibt | ✅ | |
 | 16 | `make publish … NPM_ARGS=…` | `NPM_ARGS` erreicht `npm publish` | ✅⁴ | |
@@ -101,7 +101,7 @@ rm -rf "${D}"
 #     Zusicherungen (PTY, Registry-Ziel, Positivliste in beide Richtungen,
 #     E404, unlesbare Antwort)
 cd "${PT}"
-./tests/bash/npm-publish.test.sh --run; echo "rc=$?"    # #6 erwartet "59 Tests, alle gruen", rc=0
+./tests/bash/npm-publish.test.sh --run; echo "rc=$?"    # #6 erwartet "65 Tests, alle gruen", rc=0
 
 # #14
 bash -n src/bash/npm-publish.sh && bash -n tests/bash/npm-publish.test.sh && echo "Syntax ok"
@@ -116,7 +116,7 @@ grep -rn 'npm-login' "${DEV_LOCAL}/DevBash" "${DEV_LOCAL}/DevWeb" \
 grep -n 'NPM_ARGS' "${UXF}/Makefile"
 ```
 
-Die Mutanten A–L (#13). Jeder Block: mutieren, Suite laufen lassen — sie
+Die Mutanten A–M (Zeile #13). Jeder Block: mutieren, Suite laufen lassen — sie
 **muss** rot werden —, zurückdrehen.
 
 ```bash
@@ -154,6 +154,11 @@ perl -0pi -e 's/    if ! rejectUnsupportedArgs "\$\@"; then/    if false; then/'
 # L  stdin abklemmen, stdout heil lassen — faellt NUR mit der Zwei-Deskriptor-Probe auf
 perl -0pi -e 's{        npm publish "\$\@" 2>"\$\{ERR_FILE\}" \|\| rc=\$\?}{        npm publish "\$\@" < /dev/null 2>"\$\{ERR_FILE\}" || rc=\$?}' "$S"; mutate
 
+
+# ── Runde 4 ──────────────────────────────────────────────────────────────
+# M  Wertpruefung entfernen — `--otp --dry-run` rutscht wieder durch
+perl -0pi -e 's/            if \[\[ "\$\{arg\}" == -\* \]\]; then/            if false; then/' "$S"; mutate
+
 git diff --quiet "$S" && echo "Original unveraendert"
 ```
 
@@ -173,23 +178,25 @@ npm-Cache auf, bevor geschrieben wird — das veraltete Paket-Dokument war der
 Grund, warum die Frage „ist es hochgekommen?" zunächst falsch beantwortet
 wurde.
 
-**Fünf Grenzen, jede aus einem Review-Befund** — ausführlich im Kopf des
-Scripts und in der README von ProjectTools:
+**Die Grenzen des Vertrags, jede aus einem Review-Befund** — ausführlich im
+Kopf des Scripts und in der README von ProjectTools:
 
 | Grenze | Warum | Runde |
 |---|---|:--:|
-| stdout des Uploads bleibt unangetastet | npm bricht die OTP-Abfrage ab, sobald `stdin` **oder** `stdout` kein TTY ist (`lib/utils/auth.js:10`). Eingefangen wird nur stderr — eine `tee`-Pipeline hilft nicht, sie ist ebenfalls kein TTY. | 1 |
+| stdout des Uploads bleibt unangetastet | npm bricht die OTP-Abfrage ab, sobald `stdin` **oder** `stdout` kein TTY ist (`lib/utils/auth.js:10`). Eingefangen wird nur stderr — eine `tee`-Pipeline hilft nicht, sie ist ebenfalls kein TTY. Geprüft werden **beide** Deskriptoren. | 1 + 3 |
 | wiederholt wird nur bei exaktem `E409` | `409` steht auch in einem Paketnamen; einen Exit-Code je HTTP-Status gibt es nicht. | 1 |
 | „nicht vorhanden" ≠ „nicht feststellbar" | Drei Dinge sind **kein** sicheres „gibt es nicht": Ausfall der Abfrage, unlesbare Antwort und `E404` — letzteres heißt bei einem privaten Paket „gibt es nicht **oder** du darfst nicht". `--status` wird in keinem davon grün. | 1 + 2 |
-| ein Ziel für alle Schritte | Ein `--registry` hinter `--publish` verschob nur den Upload; Anmeldung und Prüfung befragten die alte Registry. Es wird jetzt übernommen; Scope-Registries und Workspaces werden abgelehnt, weil sich ihre Zielwirkung nicht nachbilden lässt. | 2 |
+| ein Ziel für alle Schritte | Ein `--registry` hinter `--publish` verschob nur den Upload; Anmeldung und Prüfung befragten die alte Registry. Es wird jetzt übernommen. | 2 |
+| durchgereicht wird eine **Positivliste** | `--otp`, `--tag`, `--access`, `--registry`, `--provenance`/`--no-provenance` — alles andere wird abgelehnt. Eine Sperrliste ist bei jedem npm-Update unvollständig, und was durchrutscht, fällt mit einer **falschen Erfolgsmeldung** aus: `./anderes-paket` lud ein fremdes Paket hoch, `--dry-run` gar keines — beide Male meldete der Wrapper Erfolg. | 3 |
+| ein Wert darf keine Option sein | `--otp --dry-run` schlüpfte durch, weil die Wertoption das nächste Token ungeprüft schluckte. npm liest daraus `otp=--dry-run` und `dry-run=false` — aus dem gewollten Trockenlauf wird ein **echter Upload**. Leere `--option=`-Werte ebenso. | 4 |
 | keine Wiederholung bei Lifecycle-Scripten | Ein zweiter Lauf führt `prepare` und Geschwister erneut aus. Die Registry schützt die Version, nicht die lokalen Hooks. | 1 |
 
-Alles nach `--publish` geht unverändert an `npm publish` weiter (`--otp=…`,
-`--tag …`).
+Weitergereicht wird also **nur**, was in der Positivliste steht. Alles andere
+gehört in einen direkten `npm publish`-Aufruf, wo niemand etwas verspricht.
 
 ### ProjectTools — `tests/bash/npm-publish.test.sh` (neu)
 
-59 Zusicherungen in 22 Fällen. Das Script läuft als **Prozess** über seinen
+65 Zusicherungen in 24 Fällen. Das Script läuft als **Prozess** über seinen
 öffentlichen Aufruf gegen eine `npm`-Attrappe auf dem `PATH` — keine
 gesourcten Funktionen, sonst prüft der Test eine Verdrahtung, die es beim
 echten Aufruf nicht gibt.
