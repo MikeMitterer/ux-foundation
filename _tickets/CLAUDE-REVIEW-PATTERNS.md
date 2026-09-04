@@ -194,7 +194,7 @@ Kurz-Testblock machte die Prüfung übergabefähig.
 
 Ein Ticket mit einer Zehn-Minuten-Änderung und mehreren Review-Runden. Die
 Änderung selbst — `useTheme.ts` auf `safeStorage` umstellen — war unstrittig;
-**jeder Befund steckte im Wächter-Test**, der die Regel dauerhaft sichern soll.
+**jeder Laufzeitbefund steckte im Wächter-Test**, der die Regel dauerhaft sichern soll.
 Das macht das Inventar ungewöhnlich einheitlich und dadurch brauchbar: Es ist
 ein Datensatz darüber, wie ein statischer Prüfer schrittweise scheitert. Die
 Listen unten sind die Quelle; Summen stehen bewusst nicht daneben.

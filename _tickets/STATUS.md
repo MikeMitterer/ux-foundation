@@ -19,18 +19,18 @@ zwei Fassungen auseinanderlaufen. Die drei, an denen sich alles entscheidet:
 
 ## Maschinenlesbarer Zustand
 
-- `phase`: `approved`
-- `ticket`: `T-18-schaufenster-greift-am-fundament-vorbei.md`
-- `handoff_commit`: `e678c54`
-- `review_round`: `6`
-- `owner`: `claude`
+- `phase`: `idle`
+- `ticket`: `—`
+- `handoff_commit`: `—`
+- `review_round`: `0`
+- `owner`: `mike`
 - `updated_at`: `2026-09-04`
 - `last_reviewed_ticket`: `T-18-schaufenster-greift-am-fundament-vorbei.md`
 - `last_reviewed_commit`: `e678c54`
 - `last_reviewed_round`: `6`
-- `workstream`: `showcase_speicher`
-- `priority_chain`: `T-18-schaufenster-greift-am-fundament-vorbei.md`
-- `priority_ticket`: `T-18-schaufenster-greift-am-fundament-vorbei.md`
+- `workstream`: `—`
+- `priority_chain`: `—`
+- `priority_ticket`: `—`
 
 Erlaubte Phasen: `claude_working` → `ready_for_codex` → `codex_reviewing` →
 `changes_requested` **oder** `approved`; `blocked` nur bei einem echten
@@ -59,28 +59,22 @@ geschätzt.
 
 ## INBOX → Claude
 
-**T-18 · Runde 6 · freigegeben**
-
-Handoff `e678c54` ist abgenommen. Keine Findings.
-
-- Unabhängig geprüft: `make test` (24 Dateien / 694 Tests),
-  `make typecheck`, `make lint` und `npm run build` — alle Exit 0.
-- Unabhängiger Mutant in einer isolierten Kopie:
-  `Reflect.get(window, 'localStorage')` machte den Wächter rot und meldete
-  Datei, echte Zeile und Ausdruck.
-- Die Live-Belege #4–#7 stammen aus Claudes Handoff; die Einschränkung bei #7
-  ist im Ticket korrekt ausgewiesen. Mike hat Codex ausdrücklich ermächtigt,
-  ein freigegebenes Ticket unmittelbar selbst nach `solved/` zu verbuchen.
+*(leer)*
 
 ## OUTBOX → Codex
 
-*(leer — Runde 6 verarbeitet)*
+*(leer)*
 
 ## Zuletzt abgeschlossen
 
-**T-17 · Das Schaufenster spricht nur Deutsch** — abgenommen von Mike, liegt in
-`solved/`. Sechs Codex-Runden, dann seine Abnahme; die letzten beiden Befunde
-kamen von ihm und nicht aus dem Review, weil man sie nur beim Bedienen sieht.
+**T-18 · Das Schaufenster greift am Fundament vorbei** — von Codex in Runde 6
+freigegeben und mit Mikes ausdrücklicher Delegation nach `solved/` verschoben.
+`useTheme.ts` nutzt nun `safeStorage`; ein syntaktischer Wächter deckt Paket und
+Schaufenster ab. Die unabhängige Gegenprobe mit `Reflect.get(...)` wurde rot und
+nannte die echte Stelle. Alle vier Qualitätstore waren grün.
+
+Das wachsende Fehlerinventar dieses Tickets steht dauerhaft in
+`CLAUDE-REVIEW-PATTERNS.md`; die Mailbox bleibt deshalb leer.
 
 Was daraus offen bleibt — **dieser Abschnitt drainiert nicht mit der INBOX**,
 er hält unabhängigen Kontext:
@@ -91,8 +85,6 @@ er hält unabhängigen Kontext:
   (springende Spaltenbreiten) ergänzt.
 - **Ein Nebenbefund steht weiter offen** und ist Mikes Entscheidung:
   `AGENTS.md` ist eine byte-gleiche, ungetrackte Kopie von `CLAUDE.md`.
-  *(Der zweite — der direkte `localStorage`-Zugriff in `useTheme.ts` — ist
-  Gegenstand von T-18 und damit erledigt, sobald das Ticket durch ist.)*
 - Ein Kandidat für ein eigenes kleines Ticket: Das Schaufenster zeigt keine
   einzige von Naive UI selbst gestellte Zeichenkette, weshalb sich deren
   Locale-Verdrahtung dort nicht ansehen lässt (T-17, Zeile #8).

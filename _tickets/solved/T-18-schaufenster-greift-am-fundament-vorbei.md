@@ -2,7 +2,7 @@
 
 | Repo | Status | Time-box | Scope | GH-Issue |
 |---|---|---|---|---|
-| ux-foundation (nur `showcase/` + `tests/`) | ready | ~45 min | Schaufenster-only — `src/` bleibt unberührt | — |
+| ux-foundation (nur `showcase/` + `tests/`) | done | ~45 min | Schaufenster-only — `src/` bleibt unberührt | — |
 
 **Löst:** `showcase/src/composables/useTheme.ts` greift direkt auf
 `localStorage` zu, statt `safeStorage` aus dem Paket zu nehmen — mit eigenem
@@ -133,26 +133,26 @@ Zwei Gründe, sie trotzdem abzulösen:
 
 ### Akzeptanzkriterien
 
-- [ ] `useTheme.ts` nutzt `safeStorage.read` und `safeStorage.write`; die beiden
+- [x] `useTheme.ts` nutzt `safeStorage.read` und `safeStorage.write`; die beiden
       eigenen Funktionen samt `try`/`catch` fallen weg
-- [ ] Der Speicherschlüssel bleibt **`ux-foundation.theme`** — wer das
+- [x] Der Speicherschlüssel bleibt **`ux-foundation.theme`** — wer das
       Schaufenster offen hat, verliert seine Wahl nicht
-- [ ] Ein **Wächter-Test** verbietet den direkten Zugriff dauerhaft: Er
+- [x] Ein **Wächter-Test** verbietet den direkten Zugriff dauerhaft: Er
       durchsucht `showcase/src` und `src` und lässt genau eine Ausnahme zu —
       `src/composables/safeStorage.ts` selbst
-- [ ] Er wertet **syntaktisch** aus, nicht über Textsuche, und erfasst in einer
+- [x] Er wertet **syntaktisch** aus, nicht über Textsuche, und erfasst in einer
       `.vue`-Datei die Skriptblöcke **und** die Ausdrücke des Templates
-- [ ] Er erfasst den Namen als Bezeichner **und** als Zeichenkette dort, wo sie
+- [x] Er erfasst den Namen als Bezeichner **und** als Zeichenkette dort, wo sie
       einen Zugriff bildet (`window['localStorage']`, berechneter
       Eigenschaftsname); anderswo bleibt eine Zeichenkette Text
-- [ ] Er erfasst `Reflect.get(window, 'localStorage')` und Verwandte; ein
+- [x] Er erfasst `Reflect.get(window, 'localStorage')` und Verwandte; ein
       beliebiges anderes Funktionsargument bleibt Text
-- [ ] Er ist per Mutant geprüft — in einer `.ts`-Datei, in einem Template, in
+- [x] Er ist per Mutant geprüft — in einer `.ts`-Datei, in einem Template, in
       Klammernotation und über `Reflect` —: Test rot, Datei und echte Zeile
       genannt
-- [ ] Seine **Grenze** ist hier beschrieben — und **nicht** als Test
+- [x] Seine **Grenze** ist hier beschrieben — und **nicht** als Test
       festgeschrieben
-- [ ] Was er direkt importiert, steht als direkte Abhängigkeit in der
+- [x] Was er direkt importiert, steht als direkte Abhängigkeit in der
       `package.json`; nichts hängt an einem fremden Abhängigkeitsbaum
 
 ### Die Fallen des Wächters
@@ -329,3 +329,7 @@ Die Zusammenfassung stand nach Runde 1 zunächst auf „alle sieben Zeilen live"
 und war damit zu stark. Der Unterschied ist keine Wortklauberei: Die Legende
 trennt Beobachtetes von Abgeleitetem, und wer das verwischt, macht die Spalte
 wertlos.
+
+**Abschluss:** Codex hat Handoff `e678c54` in Runde 6 unabhängig freigegeben.
+Mike hat Codex ausdrücklich delegiert, ein freigegebenes Ticket unmittelbar
+selbst nach `solved/` zu verbuchen. Die `Human`-Spalte blieb dabei unverändert.
