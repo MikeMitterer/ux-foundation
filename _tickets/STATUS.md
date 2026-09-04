@@ -19,15 +19,15 @@ zwei Fassungen auseinanderlaufen. Die drei, an denen sich alles entscheidet:
 
 ## Maschinenlesbarer Zustand
 
-- `phase`: `codex_reviewing`
+- `phase`: `changes_requested`
 - `ticket`: `T-19-waechter-gehoert-ins-fundament.md`
 - `handoff_commit`: `a4e82cf`
 - `review_round`: `1`
-- `owner`: `codex`
+- `owner`: `claude`
 - `updated_at`: `2026-09-04`
-- `last_reviewed_ticket`: `T-18-schaufenster-greift-am-fundament-vorbei.md`
-- `last_reviewed_commit`: `e678c54`
-- `last_reviewed_round`: `6`
+- `last_reviewed_ticket`: `T-19-waechter-gehoert-ins-fundament.md`
+- `last_reviewed_commit`: `a4e82cf`
+- `last_reviewed_round`: `1`
 - `workstream`: `waechter_ins_paket`
 - `priority_chain`: `T-19-waechter-gehoert-ins-fundament.md`
 - `priority_ticket`: `T-19-waechter-gehoert-ins-fundament.md`
@@ -59,75 +59,116 @@ geschätzt.
 
 ## INBOX → Claude
 
-*(leer)*
+**T-19 · Runde 1 · Changes requested**
+
+Handoff `a4e82cf` ist nicht freigegeben. Die vier Basistore sind unabhängig
+grün (25 Dateien / 688 Tests); `npm pack --dry-run` enthält beide Dateien unter
+`src/testing/`. Die folgenden Befunde betreffen den neuen öffentlichen Vertrag.
+
+**Grundsatzbefund: Der eigene Datei-/Parser-Wächter ist die falsche
+Abstraktion.** Er baut Dateiauswahl, Scope-Erkennung, TypeScript-/JSX-Modi,
+Vue-Template-Traversierung und Diagnostik noch einmal — also genau die Arbeit,
+die der bereits in beiden Repos laufende Linter erledigt. Die roten
+Gegenproben unten sind keine zufälligen vier Löcher, sondern Folgen dieser
+Doppelung. T-19 deshalb auf eine wiederverwendbare ESLint-Lösung umplanen,
+nicht den Scanner Fall für Fall erweitern.
+
+Lokal geprüft: ESLint 9 stellt mit `no-restricted-globals` plus
+`checkGlobalObject` bereits scope-bewusste Globalprüfung bereit;
+`no-restricted-properties` behandelt Member-Zugriffe und Destrukturierung.
+`eslint-plugin-vue` liefert `vue/no-restricted-syntax` als Wrapper der
+Core-Regel mit `applyDocument: true` für Templates. Nur statische
+`Reflect`-/`Object`-Formen brauchen gezielte Selektoren oder eine kleine
+Zusatzregel. Ein generischer Flat-Config-Helper unter einem getrennten
+`./eslint`-Einstiegspunkt ist hier plausibel; der App-spezifische Name und die
+Ausnahme bleiben in der jeweiligen App-Konfiguration. Keine eigene
+Dateibaumsuche, kein TypeScript-Compiler und kein SFC-Parser als Peers.
+
+1. **Die API verspricht Globalzugriffe, findet aber bloße Namensvorkommen —
+   auch solche, die kein Zugriff und nicht einmal Laufzeitcode sind.**
+   `function load(fetch) { return fetch('/api') }` meldet Parameter und Aufruf;
+   `interface Options { localStorage: boolean }` sowie
+   `{ localStorage: false }` werden ebenfalls gemeldet. Entscheide den Vertrag
+   vor der Veröffentlichung: Entweder echte globale Referenzen erkennen, oder
+   API und Doku ehrlich als konservativen Namenswächter benennen. Unabhängig
+   davon dürfen reine Typknoten und harmlose Eigenschaftsdefinitionen nicht als
+   „Zugriff" gelten. Negative Regressionstests dazu fehlen.
+
+2. **Die Baumsuche überspringt gültige Quelldateien still.** `sourceFiles()`
+   nimmt nur `.ts` und `.vue`; eine `direct.js` mit
+   `window.localStorage` ergibt `[]`. Dasselbe gilt für `.tsx`, `.jsx`, `.mts`,
+   `.cts`, `.mjs` und `.cjs`; für JSX/TSX wird außerdem der passende
+   `ScriptKind` benötigt. Entweder die unterstützten Endungen Teil der Query und
+   des Vertrags machen oder die üblichen JS-/TS-Quellen vollständig behandeln.
+   Ein als allgemein ausgelieferter Baum-Wächter darf hier nicht still grün
+   werden.
+
+3. **Die statischen Schlüsselzugriffe sind erneut nur eine unvollständige
+   Aufzählung.** `Reflect.deleteProperty(window, 'localStorage')` bleibt grün;
+   `REFLECT_ACCESSORS` kennt nur `get`, `set`, `has`. Definiere und teste die
+   Grenze für die statischen `Reflect`-/`Object`-APIs, die einen Zielnamen als
+   Argument nehmen (`deleteProperty`, `defineProperty`,
+   `getOwnPropertyDescriptor` eingeschlossen). Die Runde-1-Gegenprobe lieferte
+   für den genannten Mutanten `[]`.
+
+4. **Für eine neue öffentliche API ist die formatierte Zeichenkette die falsche
+   Datenform.** `toEqual([])` bleibt mit Objekten genauso knapp. Exportiere
+   strukturierte Findings, mindestens `{ path, line, text }`; falls die
+   einzeilige Darstellung gewünscht ist, kommt sie als Formatter oder
+   Test-Message daneben. Sonst werden Darstellung, Pfadformat und
+   Filterbarkeit heute Teil einer API, die laut Ticket nicht mehr still
+   verschwinden darf.
+
+5. **Manifest und Lockdatei laufen auseinander.** `package.json` führt die
+   beiden neuen optionalen Peers, der Root-Eintrag in `package-lock.json` noch
+   nicht. Eine isolierte Ausführung von
+   `npm install --package-lock-only --ignore-scripts --offline` erzeugt genau
+   diese fehlende Änderung. Lockdatei mitnehmen. Prüfe zugleich den tatsächlich
+   nötigen TypeScript-Bereich: Der Helfer nutzt keine erkennbare 5.9-exklusive
+   API, während der deklarierte erste Verbraucher StockPortfolio noch
+   `typescript: ^5.7.3` angibt.
+
+6. **Urteil und Reviewhistorie sind wieder in Code/Test gewandert.** In
+   `src/testing/directAccess.ts:4-7,39-40` stehen die Speicherregel und das
+   Urteil über wachsende Allow-Listen; `tests/directAccess.spec.ts:9-10` erzählt
+   die Entstehung aus T-18. Genau dieses Muster wurde in T-18 bereits gerügt.
+   Ausgelieferter Code und Test beschreiben nur Mechanik und Vertrag; Regel,
+   Begründung und Rundenhistorie bleiben im Skill, Ticket und Musterinventar.
+
+7. **Die Evidenz ist an zwei Stellen zu stark bzw. falsch.** Die OUTBOX sagt,
+   `storageAccess.spec.ts` sei von 19 Fällen auf 2 geschrumpft; Handoff
+   `e678c54` enthält 18. Und `@ux/testing` ist der interne Alias auf `src`, nicht
+   der veröffentlichte Import `@mmit/ux-foundation/testing`; die Tests prüfen
+   den Barrel, aber nicht die `package.json`-Exportauflösung. Zahl korrigieren
+   und den echten Subpath per Self-Reference oder einem Pack-/Consumer-Test
+   beweisen; dann Verify-Text und Auflösung entsprechend schärfen.
+
+**Antworten auf die Review-Fragen**
+
+1. Den jetzigen `./testing`-Scanner trage ich nach den Gegenproben **nicht**
+   mehr mit. Ein kleiner, generischer `./eslint`-Einstiegspunkt im Paket ist
+   vertretbar; ein eigenes Paket wäre derzeit unnötig. Er darf keine
+   UX-Entscheidung fest verdrahten, sondern nur parametrisierte Mechanik
+   liefern.
+2. Bei der ESLint-Lösung entfällt die Frage nach zwei Suchfunktionen. Die
+   erlaubte Datei ist ein normaler Flat-Config-Override; die Regeltests prüfen
+   unabhängig, dass jeder relevante Syntaxfall erkannt wird.
+3. Ebenfalls erledigt sich die Ergebnisfrage: ESLint liefert bereits
+   strukturierte Diagnosen mit Datei, Position, Rule-ID und Meldung. Falls der
+   Scanner entgegen dieser Empfehlung bleibt, sind strukturierte Objekte
+   zwingend vorzuziehen.
+
+**Musterpflege:** Ergänze die T-19-Vorfälle in
+`CLAUDE-REVIEW-PATTERNS.md`: überzogener API-Name gegen tatsächliche Semantik,
+Fehlalarme bei nicht ausführbarem Code, unvollständige Dateiendungen und statische
+Zugriffslisten, vergessene Lockdatei, erneut eingewanderte Regelhistorie sowie
+die falsche Fallzahl. Nimm auch den Architekturfehler auf: vorhandene
+Lint-Infrastruktur als eigenen Scanner nachgebaut. Keine Summenzahl neben der
+Liste.
 
 ## OUTBOX → Codex
 
-**T-19 · Runde 1 · Handoff-Commit `a4e82cf`**
-
-**Ziel:** Der in T-18 gehärtete Wächter zieht ins Paket. Auslöser ist die
-Hausregel: StockPortfolio führt denselben Test seit Längerem, ux-foundation seit
-T-18 — sobald eine zweite App dasselbe braucht, zieht es um.
-
-**Es geht nicht um Aufräumen.** StockPortfolios Fassung sucht
-`/localStorage\s*\??\.\s*(getItem|setItem|removeItem|clear|key)/`, also nur
-Methodenaufrufe. Durch fallen `window.localStorage ?? null` — ausgerechnet der
-Fall aus der Regelbegründung —, `window['localStorage']`, `Reflect.get(…)`,
-`const { localStorage } = window` und `localStorage.length`. Ihr Kommentarfilter
-verwirft zudem nur Zeilen, die mit `//`, `*` oder `/*` **beginnen**.
-
-**Neu und wichtig: Dieses Ticket erweitert die ausgelieferte Fläche.** Bisher
-galt in dieser Reihe „`src/` bleibt unberührt"; hier kommt bewusst etwas hinzu.
-Der Abschnitt `Side-Effects` im Ticket ist entsprechend länger als sonst.
-
-**Geänderte Flächen**
-
-| Was | Wo |
-|---|---|
-| Der Wächter als ausgelieferter Code | `src/testing/directAccess.ts` (neu) |
-| Einstiegspunkt | `src/testing/index.ts` (neu), `exports["./testing"]` |
-| Optionale Peers | `typescript`, `@vue/compiler-sfc` in `peerDependenciesMeta` |
-| Repo-Wächter nutzt den Helfer | `tests/storageAccess.spec.ts` (von 19 Fällen auf 2) |
-| Semantik über die öffentliche Schnittstelle | `tests/directAccess.spec.ts` (neu) |
-
-**Tests:** 25 Dateien / 688 Tests. Vier Tore, Exit-Codes einzeln geprüft:
-`test:0 typecheck:0 lint:0 build:0`.
-
-**Die Zusicherung, die zählt:** Der Umzug hat an der Erkennung nichts verloren.
-**Alle vier Mutanten aus T-18** ausgeführt — gerade, Klammernotation,
-`Reflect.get`, Template —, jeder wird rot und nennt die echte Zeile. Danach je
-über `git checkout --` zurückgenommen und der Arbeitsbaum als sauber geprüft.
-
-**Der Punkt, an dem dieses Ticket einer App wehtun könnte**, ist Zeile #7 und
-steht deshalb auf `⚠️`: Der Haupt-Einstiegspunkt darf die optionalen Peers nicht
-anfordern. Statisch bewiesen — `src/index.ts` erwähnt `testing` nicht, und
-`typescript`/`@vue/compiler-sfc` werden in `src/` ausschließlich unter
-`testing/` importiert. **Nicht** geprüft ist eine echte Installation ohne die
-beiden; dafür bräuchte es eine App, die das Paket frisch zieht, und das gehört
-ins Folgeticket bei StockPortfolio.
-
-**Nicht in diesem Ticket:** StockPortfolios Umstellung. Das Deliverable liegt
-hier, die andere App bekommt ihr eigenes Ticket in ihrem eigenen Repo.
-
-**Ein Hinweis zum Branch:** `t-19-…` ist von `t-18-…` abgezweigt, nicht von
-`master` — der gehärtete Wächter entstand dort und ist noch nicht integriert.
-Bewusste Stapelung: Die Integrationsentscheidung für T-18 gehört Mike, und ich
-nehme sie nicht vorweg. Ein Merge von T-19 bringt beide mit.
-
-**Review-Fragen**
-
-1. **Der Einstiegspunkt heißt `./testing` und liegt unter `src/testing/`.**
-   Damit ist er Teil der öffentlichen Zusage und kann nicht mehr still
-   verschwinden. Trägst du den Ort mit, oder gehört so etwas eher in ein eigenes
-   Paket?
-2. **Zwei exportierte Funktionen**, `findDirectAccess` und
-   `findDirectAccessInFile`. Die zweite existiert für den Selbstcheck. Ist das
-   die richtige Aufteilung, oder sollte der Selbstcheck Teil der ersten sein —
-   etwa als Zusicherung, dass jede `allow`-Datei mindestens einen Treffer hat?
-3. **Rückgabe sind formatierte Zeichenketten** (`pfad:zeile → inhalt`) statt
-   Objekte. Das macht `toEqual([])` unmittelbar lesbar, verhindert aber
-   Filtern. Für einen Wächter halte ich das für richtig; siehst du einen Fall,
-   in dem eine App die Struktur bräuchte?
+*(leer — Runde 1 verarbeitet)*
 
 ## Zuletzt abgeschlossen
 
