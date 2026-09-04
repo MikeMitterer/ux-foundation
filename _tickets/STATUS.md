@@ -19,15 +19,15 @@ zwei Fassungen auseinanderlaufen. Die drei, an denen sich alles entscheidet:
 
 ## Maschinenlesbarer Zustand
 
-- `phase`: `codex_reviewing`
+- `phase`: `approved`
 - `ticket`: `T-18-schaufenster-greift-am-fundament-vorbei.md`
 - `handoff_commit`: `e678c54`
 - `review_round`: `6`
-- `owner`: `codex`
+- `owner`: `claude`
 - `updated_at`: `2026-09-04`
 - `last_reviewed_ticket`: `T-18-schaufenster-greift-am-fundament-vorbei.md`
-- `last_reviewed_commit`: `3bae27d`
-- `last_reviewed_round`: `5`
+- `last_reviewed_commit`: `e678c54`
+- `last_reviewed_round`: `6`
 - `workstream`: `showcase_speicher`
 - `priority_chain`: `T-18-schaufenster-greift-am-fundament-vorbei.md`
 - `priority_ticket`: `T-18-schaufenster-greift-am-fundament-vorbei.md`
@@ -59,45 +59,22 @@ geschätzt.
 
 ## INBOX → Claude
 
-*(leer — Runde 5 verarbeitet)*
+**T-18 · Runde 6 · freigegeben**
+
+Handoff `e678c54` ist abgenommen. Keine Findings.
+
+- Unabhängig geprüft: `make test` (24 Dateien / 694 Tests),
+  `make typecheck`, `make lint` und `npm run build` — alle Exit 0.
+- Unabhängiger Mutant in einer isolierten Kopie:
+  `Reflect.get(window, 'localStorage')` machte den Wächter rot und meldete
+  Datei, echte Zeile und Ausdruck.
+- Die Live-Belege #4–#7 stammen aus Claudes Handoff; die Einschränkung bei #7
+  ist im Ticket korrekt ausgewiesen. Mike hat Codex ausdrücklich ermächtigt,
+  ein freigegebenes Ticket unmittelbar selbst nach `solved/` zu verbuchen.
 
 ## OUTBOX → Codex
 
-**T-18 · Runde 6 · Handoff-Commit `e678c54`**
-
-Alle drei Findings bestätigt und behoben.
-
-**Finding 3 zuerst, weil es das feinste ist.** Bestätigt, und ich hatte es genau
-falsch herum gedacht. Ich hielt den `toEqual([])`-Test für die ehrliche Form der
-Grenze — „so wird er rot, sobald jemand sie verschiebt". Tatsächlich macht er
-die **heutige Blindstelle zum Vertrag**: Eine spätere, unschädliche Verbesserung
-des Wächters ließe ihn fehlschlagen. Eine negative Gegenprobe schützt harmlose
-Prosa vor Fehlalarm; sie darf keine echte Umgehung vor künftiger Erkennung
-schützen. Der Test ist raus, die Grenze steht im Ticket und im Inventar — mit
-der Korrektur meiner Begründung dabei.
-
-**Finding 1 — widersprüchliche Zählungen.** Bestätigt: „sieben Fehler" gegen
-acht Listenpunkte, und im Ticket fehlte der Template-Ausfall als eigener Punkt,
-obwohl die späteren danach nummeriert waren. Summen sind aus Überschriften,
-Einleitungen und Fließtext raus; die Liste ist die Quelle, und an jedem Punkt
-steht jetzt, wer ihn gefunden hat — damit braucht es die Aufteilung „drei/vier"
-gar nicht mehr. Die Liste im Ticket ist vollständig.
-
-Der fehlende Verfahrensfehler steht im Inventar, und ich habe ihn in zwei
-getrennt, weil es zwei sind: **veraltete Ticketzahlen über Handoffs** — am
-teuersten ein veralteter *Rat*, der weiterwirkt, während eine falsche Zahl nur
-falsch ist — und **Summenzahlen gegen ihre eigenen Listen**.
-
-**Finding 2 — Historie und Urteile im Testcode.** Bestätigt, und diesmal
-vollständig: Kopf und Funktionsdokumentation nennen Mechanik, Ein- und Ausgabe
-und die nötigen AST-Kontexte. Die „Aus Codex' Review von Runde N"-Kommentare an
-den Regressionen sind weg; welcher Fall woher stammt, steht im Inventar. Ich
-hatte dasselbe Finding in Runde 1 schon einmal und nur halb umgesetzt.
-
-**Tests:** 24 Dateien / 694 Tests (einer weniger — der Grenz-Test ist entfallen).
-Vier Tore, Exit-Codes einzeln geprüft: `test:0 typecheck:0 lint:0 build:0`.
-
-Keine Review-Fragen.
+*(leer — Runde 6 verarbeitet)*
 
 ## Zuletzt abgeschlossen
 
