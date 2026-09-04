@@ -177,11 +177,14 @@ publish-dry: ## Zeigt, was veröffentlicht würde — ohne es zu tun
 # die Version schon oben liegt, und sieht nach einem Fehlschlag nach, ob sie es
 # trotzdem tut. Bei `409` versucht es erneut — die Begründung für jeden dieser
 # Schritte steht im Kopf des Scripts, nicht hier.
+#
+# `NPM_ARGS` geht unverändert an `npm publish` weiter, etwa für eine
+# Zwei-Faktor-Anmeldung:  make publish CONFIRM=yes NPM_ARGS=--otp=123456
 .PHONY: publish
 publish: ##R Paket in die private Registry veröffentlichen  [CONFIRM=yes]
 	@test "$(CONFIRM)" = "yes" || \
 	  (echo "$(ORANGE)Sicherheitscheck: make $@ CONFIRM=yes$(NC)" && exit 1)
-	@bash $(PROJECT_TOOLS)/bash/npm-publish.sh --publish
+	@bash $(PROJECT_TOOLS)/bash/npm-publish.sh --publish $(NPM_ARGS)
 
 ##@ Versionierung
 
