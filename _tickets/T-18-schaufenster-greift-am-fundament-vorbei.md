@@ -33,7 +33,7 @@ Legende: ✅ live bestätigt · ⚠️ bestätigt mit Einschränkung (Fußnote) 
 | 6 | Konsole: Schreiben werfen lassen (Block unten), dann Theme wechseln | der Anstrich wechselt sichtbar, gespeichert wird nichts, **kein** Absturz | ✅⁵ | |
 | 7 | dasselbe, aber schon den **Zugriff** werfen lassen (nicht erst das Schreiben) | ebenfalls kein Absturz — das ist der Fall, für den `safeStorage` überhaupt existiert | ⚠️⁶ | |
 
-> ¹ **(CC):** 24 Dateien / 695 Tests, Exit-Codes einzeln geprüft:
+> ¹ **(CC):** 24 Dateien / 694 Tests, Exit-Codes einzeln geprüft:
 > `test:0 typecheck:0 lint:0 build:0`.
 >
 > ² **(CC):** **Keine Live-Verifikation** — gelesen und vom Wächter-Test
@@ -44,7 +44,7 @@ Legende: ✅ live bestätigt · ⚠️ bestätigt mit Einschränkung (Fußnote) 
 > ³ **(CC):** Mutant ausgeführt, nicht behauptet: `safeStorage.read(…)` wieder
 > durch `window.localStorage?.getItem(…)` ersetzt → der Test wird rot und meldet
 > `showcase/src/composables/useTheme.ts:22 → …`. Die Zeilenzahl stimmt mit der
-> echten überein; das war beim ersten Anlauf **nicht** so, siehe „Sieben Fehler im
+> echten überein; das war beim ersten Anlauf **nicht** so, siehe „Die Fehler im
 > Wächter" unten. Ebenso gefangen werden seit Runde 2 der Template-Mutant in
 > einer SFC — `showcase/src/App.vue:141 → $event.view.localStorage.clear()` —
 > seit Runde 3 die Klammernotation und seit Runde 4 `Reflect.get` — beide
@@ -150,7 +150,8 @@ Zwei Gründe, sie trotzdem abzulösen:
 - [ ] Er ist per Mutant geprüft — in einer `.ts`-Datei, in einem Template, in
       Klammernotation und über `Reflect` —: Test rot, Datei und echte Zeile
       genannt
-- [ ] Seine **Grenze** ist als Test festgehalten, nicht als Behauptung
+- [ ] Seine **Grenze** ist hier beschrieben — und **nicht** als Test
+      festgeschrieben
 - [ ] Was er direkt importiert, steht als direkte Abhängigkeit in der
       `package.json`; nichts hängt an einem fremden Abhängigkeitsbaum
 
@@ -162,7 +163,7 @@ das Wort dreimal in JSDoc —, und ein Test, der darauf anspringt, ist nach zwei
 Tagen abgeschaltet. Umgekehrt kann er echten Code übersehen.
 
 Hier stand zunächst der Rat, Kommentare vorher zu entfernen und auf die
-Zugriffsform zu prüfen. **Beides ist widerlegt** (siehe „Sieben Fehler im Wächter"):
+Zugriffsform zu prüfen. **Beides ist widerlegt** (siehe „Die Fehler im Wächter"):
 Ein Ausdruck über Text kann Kommentar- und Stringgrenzen nicht kennen, und die
 Zugriffsform trifft weder `window.localStorage ?? null` noch Optional Chaining.
 Richtig ist der **Parser**: TypeScript für Skripte, der SFC-Parser für Vue.
@@ -206,24 +207,26 @@ Ein Verhaltensunterschied bleibt und ist gewollt: `safeStorage.write` gibt
 gilt dann eben nur für diese Sitzung —, aber der Rückgabewert steht ab jetzt
 zur Verfügung, falls jemand darauf reagieren will.
 
-### Sieben Fehler im Wächter, und was sie über Wächter sagen
+### Die Fehler im Wächter, und was sie über Wächter sagen
 
-Der Test war siebenmal falsch, bevor er stimmte — und keiner der Fehler hätte
-sich beim Lesen gezeigt. **Drei fand mein eigener Selbstcheck, vier erst Codex
-mit einem Mutanten.** Die vier von ihm sind die lehrreicheren, weil sie zeigen,
-wo mein Selbstcheck selbst blind war — und weil ich nach jedem einzelnen dachte,
-jetzt sei es vollständig.
+Die Liste unten ist die Quelle; eine Summe steht hier bewusst nicht, sie war
+schon zweimal falsch. Keiner dieser Fehler hätte sich beim Lesen gezeigt, und
+jeder ließ den Wächter **grün** aussehen.
 
-1. **Der Ausdruck schloss den Verstoß aus.** Ich hatte `(?<![\w.])localStorage`
+Wer sie gefunden hat, steht an jedem Punkt. Die von Codex sind die
+lehrreicheren, weil sie zeigen, wo mein Selbstcheck blind war — und weil ich
+nach jedem einzelnen dachte, jetzt sei es vollständig.
+
+1. **Der Ausdruck schloss den Verstoß aus.** *(Selbstcheck.)* Ich hatte `(?<![\w.])localStorage`
    geschrieben, um `safeStorage` nicht zu treffen. Damit fiel ausgerechnet
    `window.localStorage` heraus — der Punkt davor war verboten.
-2. **Er suchte die falsche Form.** Ich hatte auf `localStorage.` oder
+2. **Er suchte die falsche Form.** *(Selbstcheck.)* Ich hatte auf `localStorage.` oder
    `localStorage[` geprüft. `safeStorage` selbst fasst die Referenz aber nackt
    an (`window.localStorage ?? null`), und `useTheme` nutzte Optional Chaining
    (`?.`). Beides fiel durch. Gesucht wird jetzt jede Erwähnung im Code — was
    sachlich auch das Richtige ist: Gefährlich ist der bloße Zugriff, nicht der
    Eigenschaftszugriff.
-3. **Er nannte die falsche Zeile.** Das Entfernen der Kommentare schluckte
+3. **Er nannte die falsche Zeile.** *(Selbstcheck.)* Das Entfernen der Kommentare schluckte
    Zeilenumbrüche, also meldete er Zeile 17 statt 32. Ein Wächter, dessen
    Nutzen das Benennen der Stelle ist, schickt einen damit an die falsche.
 
@@ -233,34 +236,40 @@ Ausnahme überhaupt gesehen wird.
 Damit war er grün, und ich hielt ihn für fertig. Codex zeigte mit einem
 Mutanten, dass er es nicht war:
 
-4. **Ein echter Zugriff blieb unentdeckt.** Zwischen `const a = '/*'` und
+4. **Ein echter Zugriff blieb unentdeckt.** *(Codex, Runde 1.)* Zwischen `const a = '/*'` und
    `const b = '*/'` hielt mein Ausdruck alles für einen Kommentar und
    verschluckte die Zeile dazwischen. Nachgestellt und bestätigt: 2/2 grün,
    obwohl der Zugriff dastand.
-5. **Harmlose Prosa wurde gemeldet.** `const name = 'localStorage'` machte ihn
-   rot.
+5. **Harmlose Prosa wurde gemeldet.** *(Codex, Runde 1.)*
+   `const name = 'localStorage'` machte ihn rot.
 
 Beides ist dieselbe Wurzel: **Ein Ausdruck über Text kann Kommentar- und
 Stringgrenzen nicht kennen.** Er kann sie nur raten, und beim Raten liegt er in
 beide Richtungen falsch. Der Wächter liest den Quelltext seither mit dem
 TypeScript-Parser.
 
-Damit war er wieder grün, und ich hielt ihn wieder für fertig — Runde 2 und
-Runde 3 fanden je einen weiteren Weg daran vorbei:
+Damit war er wieder grün, und ich hielt ihn wieder für fertig. Die folgenden
+Runden fanden je einen weiteren Weg daran vorbei:
 
-6. **Die Klammernotation.** `window['localStorage']` ist dieselbe Eigenschaft;
-   dort steht der Name als *Zeichenkette*, und ich suchte nur Bezeichner. Codex
-   setzte genau das als echten Produktaufruf ein — 11/11 grün.
+6. **Vue-Templates wurden übersprungen.** *(Codex, Runde 2.)* An den Parser
+   gingen nur `script` und `scriptSetup`. Ein Template ist aber ausführbarer
+   Code: `@click="$event.view.localStorage.clear()"` steht in keinem `<script>`.
+   Bei einer SFC ohne Skriptblock prüfte der Wächter damit **gar nichts** und
+   behauptete trotzdem, die Datei sei sauber.
+7. **Die Klammernotation.** *(Codex, Runde 3.)* `window['localStorage']` ist
+   dieselbe Eigenschaft; dort steht der Name als *Zeichenkette*, und ich suchte
+   nur Bezeichner. Als echter Produktaufruf eingesetzt — 11/11 grün.
 
-Das ist der interessanteste der sieben, weil er den Parser nicht widerlegt,
+Das ist der interessanteste, weil er den Parser nicht widerlegt,
 sondern **schärft**: Es genügt nicht zu wissen, dass etwas eine Zeichenkette
 ist. Man muss wissen, **wo sie steht.** `window['localStorage']` und
 `const name = 'localStorage'` enthalten dieselbe Zeichenkette; nur ihr Ort im
 Baum unterscheidet Zugriff von Text. Gezählt wird sie deshalb als Argument einer
 Klammernotation und als berechneter Eigenschaftsname — sonst nicht.
 
-7. **`Reflect.get(window, 'localStorage')`.** Den hatte ich in Runde 4 selbst
-   als Grenzfall genannt — und mit „fällt im Schaufenster beim Lesen auf"
+8. **`Reflect.get(window, 'localStorage')`.** *(Codex, Runde 4.)* Den hatte ich
+   in Runde 4 selbst
+   als Grenzfall genannt und mit „fällt im Schaufenster beim Lesen auf"
    weggeredet. Codex hat die Begründung zurückgewiesen, und zwar zu Recht: Eine
    Regel, die darauf baut, dass jemand beim Lesen stutzt, ist genau die Regel,
    die dieser Wächter ersetzen soll. Aufruf, Ziel und Eigenschaft stehen
@@ -268,11 +277,17 @@ Klammernotation und als berechneter Eigenschaftsname — sonst nicht.
 
 **Und die Grenze, die bleibt:** Ein zur Laufzeit zusammengesetzter Schlüssel
 (`window['local' + 'Storage']`) wird nicht gefunden. Dafür bräuchte es eine
-Datenflussanalyse, die unvollständig bliebe. Diese Grenze steht als **Test**
-im Wächter, nicht als Satz in einer Datei — schlägt er eines Tages fehl, ist
-sie verschoben worden und gehört neu beschrieben.
+Datenflussanalyse, die hier unvollständig bliebe.
 
-**Drei Lehren, und die letzte ist die unbequemste:**
+Sie steht **hier** und nicht als Test im Wächter. Ich hatte sie zunächst als
+`toEqual([])` festgehalten, mit der Begründung, so werde sie rot, sobald jemand
+sie verschiebt. Das ist genau verkehrt herum: Damit wird die heutige
+Blindstelle zum **Vertrag**, und eine spätere, unschädliche Verbesserung des
+Wächters ließe den Test fehlschlagen. Eine negative Gegenprobe schützt harmlose
+Prosa vor Fehlalarm — sie darf keine echte Umgehung vor künftiger Erkennung
+schützen.
+
+**Die Lehren, und die letzte ist die unbequemste:**
 
 - Ein Wächter braucht selbst einen Wächter. Ein Test, der behauptet „an dieser
   Stelle *muss* etwas gefunden werden", kostet vier Zeilen und fängt eine
@@ -280,10 +295,10 @@ sie verschoben worden und gehört neu beschrieben.
 - **Auch der Selbstcheck hat blinde Flecken.** Meiner prüfte nur, *dass*
   gefunden wird — nicht, ob die Erkennung sich täuschen lässt. Dafür braucht es
   jemanden, der versucht, an ihr vorbeizukommen.
-- **„Jetzt ist es vollständig" war viermal falsch.** Nach dem Regex-Fix, nach
+- **„Jetzt ist es vollständig" war jedes Mal falsch.** Nach dem Regex-Fix, nach
   dem Parser-Wechsel, nach den Templates und nach der Klammernotation hielt ich
-  den Wächter jeweils für fertig. Beim vierten Mal habe ich die Lücke sogar
-  selbst benannt und mich dann entschieden, sie nicht zu schließen. Ein Wächter deckt genau die Umgehungen ab, an die jemand gedacht hat;
+  den Wächter für fertig. Beim letzten Mal habe ich die Lücke sogar selbst
+  benannt und mich dann entschieden, sie nicht zu schließen. Ein Wächter deckt genau die Umgehungen ab, an die jemand gedacht hat;
   seine Grenze ist nicht die Technik, sondern die Vorstellungskraft dessen, der
   ihn schreibt. Deshalb ist der Mutant von **außen** die einzige ehrliche Probe,
   und deshalb wird ein Vollständigkeitsanspruch hier nicht mehr behauptet.
@@ -303,7 +318,7 @@ Richtige Reihenfolge, ab jetzt: erst committen, dann mutieren.
 ### Auflösung
 
 `ux-foundation` — Handoff-Commit siehe `STATUS.md`. `make test` 24 Dateien /
-695 Tests, dazu `typecheck`, `lint` und `npm run build`; Exit-Codes einzeln
+694 Tests, dazu `typecheck`, `lint` und `npm run build`; Exit-Codes einzeln
 geprüft (`0/0/0/0`).
 
 **Live geprüft sind die Zeilen #4 bis #6**, #7 mit Einschränkung (der Leseweg

@@ -192,11 +192,12 @@ Kurz-Testblock machte die Prüfung übergabefähig.
 
 ## T-18 · bestätigtes Fehlerinventar für einen späteren Skill
 
-Ein Ticket mit einer Zehn-Minuten-Änderung und vier Review-Runden. Die Änderung
-selbst — `useTheme.ts` auf `safeStorage` umstellen — war unstrittig; **alle
-sieben Fehler steckten im Wächter-Test**, der die Regel dauerhaft sichern soll.
+Ein Ticket mit einer Zehn-Minuten-Änderung und mehreren Review-Runden. Die
+Änderung selbst — `useTheme.ts` auf `safeStorage` umstellen — war unstrittig;
+**jeder Befund steckte im Wächter-Test**, der die Regel dauerhaft sichern soll.
 Das macht das Inventar ungewöhnlich einheitlich und dadurch brauchbar: Es ist
-ein Datensatz darüber, wie ein statischer Prüfer schrittweise scheitert.
+ein Datensatz darüber, wie ein statischer Prüfer schrittweise scheitert. Die
+Listen unten sind die Quelle; Summen stehen bewusst nicht daneben.
 
 ### Der Wächter, in der Reihenfolge seines Scheiterns
 
@@ -228,18 +229,21 @@ ein Datensatz darüber, wie ein statischer Prüfer schrittweise scheitert.
 
 ### Was das über statische Prüfer sagt
 
-9. **Vier Vollständigkeitsansprüche, vier Widerlegungen.** Nach dem Regex-Fix,
-   dem Parser-Wechsel, den Templates und der Klammernotation galt der Wächter
+9. **Jeder Vollständigkeitsanspruch wurde widerlegt.** Nach dem Regex-Fix, dem
+   Parser-Wechsel, den Templates und der Klammernotation galt der Wächter
    jeweils als fertig. Die Grenze eines Prüfers ist nicht seine Technik, sondern
    die Vorstellungskraft dessen, der ihn schreibt.
 10. **Der Selbstcheck fand nur eine Fehlerklasse.** „An dieser Stelle *muss*
     etwas gefunden werden" deckte 1–3 auf und war gegen 4–8 blind: Er prüft,
     *dass* erkannt wird, nicht ob sich die Erkennung **täuschen** lässt. Dafür
     braucht es einen Angreifer von außen.
-11. **Die brauchbare Grenze wurde am Ende als Test festgehalten.** Ein zur
-    Laufzeit zusammengesetzter Schlüssel wird bewusst nicht erkannt; der Test
-    hält das fest, statt es zu behaupten. Verschiebt sich die Grenze, wird der
-    Test rot.
+11. **Die Grenze gehört dokumentiert, nicht per Test konserviert.** Ein zur
+    Laufzeit zusammengesetzter Schlüssel (`window['local' + 'Storage']`) wird
+    nicht erkannt. Ich hatte das als `toEqual([])` festgeschrieben — falsch:
+    Damit wird die heutige Blindstelle zum Vertrag, und eine spätere,
+    unschädliche Verbesserung des Wächters würde rot. Eine negative Gegenprobe
+    schützt harmlose Prosa vor Fehlalarm; sie darf keine echte Umgehung vor
+    künftiger Erkennung schützen. Die Grenze steht deshalb hier und im Ticket.
 
 ### Verfahren
 
@@ -258,6 +262,17 @@ ein Datensatz darüber, wie ein statischer Prüfer schrittweise scheitert.
 16. **Die Mailbox-Umschreibung schnitt unabhängigen Kontext ab.** Der Abschnitt
     „Zuletzt abgeschlossen" verschwand samt zweier offener Hinweise. Drainieren
     gilt für verarbeitete Nachrichten, nicht für Kontext. Review-Runde 2.
+17. **Ticketzahlen, Fundstellen und Rat blieben über Handoffs alt.** Die OUTBOX
+    nannte den neuen Stand, das Ticket den alten: Testanzahl, die Zeile eines
+    Mutanten aus einer früheren Fassung, ein Verweis auf eine umbenannte
+    Überschrift. Am teuersten war ein veralteter **Rat** — ein Abschnitt
+    empfahl weiter den Weg, den die vorige Runde widerlegt hatte. Eine falsche
+    Zahl ist falsch; ein falscher Rat wirkt weiter. Review-Runden 2 und 3.
+18. **Summenzahlen widersprachen ihren eigenen Listen.** Einleitung und
+    Überschriften nannten „sieben Fehler", die Liste führte acht, und im Ticket
+    fehlte der Template-Ausfall als eigener Punkt. Verstoß gegen „Keine Zahl
+    zweimal": Die Liste ist die Quelle, eine Summe daneben veraltet mit der
+    nächsten Runde. Review-Runde 5.
 
 ## T-17 · bestätigtes Fehlerinventar für einen späteren Skill
 

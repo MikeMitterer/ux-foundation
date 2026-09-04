@@ -1,33 +1,18 @@
 /**
  * Bewacht die Speicher-Regel aus dem Skill `ux-standards`, Abschnitt „Speicher".
  *
- * Geprüft wird über den **TypeScript-Parser**, nicht über Textsuche: Nur er
- * unterscheidet Bezeichner von Zeichenkette, Template-Literal, Regex-Literal
- * und Kommentar — und nur er weiß, **wo** eine Zeichenkette steht.
+ * Durchsucht werden `src` und `showcase/src`; erlaubt ist der Zugriff allein in
+ * `safeStorage` selbst. Ausgewertet wird der Syntaxbaum — TypeScript für
+ * Skripte, der SFC-Parser für `.vue` —, und zwar Skriptblöcke **und** die
+ * Ausdrücke des Templates, weil auch die zu Code kompiliert werden.
  *
- * Gefunden wird der Name an zwei Orten: als Bezeichner (`window.localStorage`,
- * `localStorage?.getItem`, `const { localStorage } = window`) und als
- * Zeichenkette **dort, wo sie einen Zugriff bildet** — `window['localStorage']`,
- * `const { ['localStorage']: s } = window`, `Reflect.get(window,
- * 'localStorage')`. Ein Text `'localStorage'` anderswo bleibt Text. Dieselbe
- * Zeichenkette, verschiedener Ort: Genau das kann ein Muster über Text nicht
- * entscheiden.
+ * Als Zugriff zählt der Name in zwei Rollen: als Bezeichner und als
+ * Zeichenkette an den Stellen, an denen sie eine Eigenschaft benennt
+ * (Klammernotation, berechneter Eigenschaftsname, zweites Argument eines
+ * `Reflect`-Zugriffs). Eine Zeichenkette anderswo ist Text.
  *
- * **Die Grenze steht als Test unten**, nicht als Satz: Ein zur Laufzeit
- * zusammengesetzter Schlüssel (`window['local' + 'Storage']`) wird nicht
- * gefunden. Dafür bräuchte es eine Datenflussanalyse, die hier unvollständig
- * bliebe. Ein Wächter deckt die Umgehungen ab, an die jemand gedacht hat —
- * darum ist diese Grenze festgehalten und nicht behauptet, es gäbe keine.
- *
- * Bei einer `.vue`-Datei reichen die Skriptblöcke nicht: **Ein Template ist
- * ausführbarer Code.** `@click="$event.view.localStorage.clear()"` steht in
- * keinem `<script>` und wird trotzdem zu einem Zugriff kompiliert. Geprüft
- * werden deshalb auch die Ausdrücke des Templates — die kennt der SFC-Parser
- * einzeln, samt ihrer Zeile in der Datei. Reiner Text bleibt außen vor, weil er
- * gar kein Ausdruck ist.
- *
- * Die zweite Beschreibung unten hält die Fälle fest, an denen frühere Fassungen
- * nachweislich scheiterten.
+ * Was diese Prüfung nicht leisten kann und warum, steht im Ticket T-18 und in
+ * `CLAUDE-REVIEW-PATTERNS.md`.
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { extname, join, relative } from 'node:path'
@@ -79,20 +64,10 @@ function accessesInScript(code: string, firstLine = 1): Access[] {
 /**
  * Meint dieser Knoten den Speicher — als Name oder als Schlüssel?
  *
- * Der Bezeichner ist der offensichtliche Fall. Der zweite ist es nicht:
- * `window['localStorage']` ist dieselbe Eigenschaft in Klammernotation, und
- * dort steht der Name als **Zeichenkette**. Eine Fassung, die nur Bezeichner
- * sah, ließ ihn durch.
- *
- * Deshalb zählt eine Zeichenkette **nur an den beiden Stellen, an denen sie
- * einen Zugriff bildet** — als Argument einer Klammernotation und als
- * berechneter Eigenschaftsname, letzteres deckt
- * `const { ['localStorage']: s } = window` mit ab. Überall sonst bleibt sie,
- * was sie ist: Text. `const storageApiName = 'localStorage'` ist damit
- * weiterhin kein Fund.
- *
- * Genau diese Unterscheidung kann nur ein Baum treffen, kein Muster über Text:
- * Es ist dieselbe Zeichenkette, und nur ihr Ort entscheidet.
+ * Ein Bezeichner zählt immer. Eine Zeichenkette nur dort, wo sie eine
+ * Eigenschaft benennt: als Argument einer Klammernotation, als berechneter
+ * Eigenschaftsname (`const { ['localStorage']: s } = window`) und als zweites
+ * Argument eines `Reflect`-Zugriffs. Anderswo ist sie Text.
  *
  * @param node Der zu prüfende Knoten.
  */
@@ -112,16 +87,7 @@ function refersToStorage(node: ts.Node): boolean {
 const REFLECT_ACCESSORS = ['get', 'set', 'has']
 
 /**
- * Ist das ein `Reflect.get(…)` und Verwandtes?
- *
- * `Reflect.get(window, 'localStorage')` ist ein vollständig sichtbarer
- * Direktzugriff — Aufruf, Ziel und Eigenschaft stehen statisch da. Er braucht
- * keine Datenflussanalyse und zählt deshalb mit; ein beliebiges anderes
- * Funktionsargument `'localStorage'` bleibt dagegen Text.
- *
- * `set` und `has` stehen daneben, weil sie dieselbe Mechanik sind und nicht,
- * weil sie hier vorkämen — die Familie einzeln nachzurüsten hieße, denselben
- * Weg dreimal zu gehen.
+ * Ist das ein `Reflect.get(…)` oder eine seiner Geschwisterformen?
  *
  * @param call Der Aufrufknoten.
  */
@@ -250,15 +216,12 @@ describe('Zugriff auf den Speicher', () => {
   })
 
   it('sieht die Ausnahme wirklich an, statt sie nur zu behaupten', () => {
-    // Ohne diesen Fall liefe der Test auch dann grün, wenn er gar nichts
-    // fände — er hat in dieser Datei schon drei Fehler aufgedeckt.
+    // Ohne diesen Fall liefe der Test auch dann grün, wenn er gar nichts fände.
     expect(accessesInFile(join(ROOT, ALLOWED)).length).toBeGreaterThan(0)
   })
 })
 
 describe('Der Wächter unterscheidet Code von Text', () => {
-  // Beide Fälle stammen aus Codex' Review von Runde 1 und waren mit der
-  // Regex-Fassung nachweislich falsch — der erste grün, der zweite rot.
 
   it('findet einen Zugriff zwischen zwei Strings, die wie Kommentarmarken aussehen', () => {
     const code = [
@@ -291,9 +254,6 @@ describe('Der Wächter unterscheidet Code von Text', () => {
   })
 
   it('erfasst die Klammernotation, in der der Name eine Zeichenkette ist', () => {
-    // Aus Codex' Review von Runde 3. `window['localStorage']` ist dieselbe
-    // Eigenschaft wie `window.localStorage`; die Fassung davor sah nur
-    // Bezeichner und blieb bei diesem Produktaufruf grün.
     const code = "const stored = window['localStorage']?.getItem(KEY)"
 
     expect(accessesInScript(code)).toEqual([{ line: 1, text: code }])
@@ -312,15 +272,12 @@ describe('Der Wächter unterscheidet Code von Text', () => {
   })
 
   it('erfasst `Reflect.get` als das, was es ist — ein Direktzugriff', () => {
-    // Aus Codex' Review von Runde 4. Aufruf, Ziel und Eigenschaft stehen
-    // statisch da; das ist keine Verschleierung, sondern eine Leseform.
     const code = "const stored = Reflect.get(window, 'localStorage')?.getItem(KEY)"
 
     expect(accessesInScript(code)).toEqual([{ line: 1, text: code }])
   })
 
   it('meldet ein beliebiges anderes Funktionsargument nicht', () => {
-    // Die Kehrseite: Nur die zweite Stelle eines `Reflect`-Zugriffs zählt.
     const code = ["describe('localStorage', () => {})", "t('localStorage')"].join('\n')
 
     expect(accessesInScript(code)).toEqual([])
@@ -338,17 +295,6 @@ describe('Der Wächter unterscheidet Code von Text', () => {
     ])
   })
 
-  it('findet einen dynamisch zusammengesetzten Schlüssel bewusst nicht', () => {
-    // **Die dokumentierte Grenze**, absichtlich als Test festgehalten statt als
-    // Satz in einer Datei: Wer den Namen zur Laufzeit zusammensetzt, verlangt
-    // eine Datenflussanalyse. Die wäre hier unvollständig, und gegen bewusste
-    // Verschleierung schützt ohnehin kein Wächter. Schlägt dieser Test eines
-    // Tages fehl, ist die Grenze verschoben worden — dann gehört sie neu
-    // beschrieben, nicht stillschweigend erweitert.
-    const code = ["const key = 'local' + 'Storage'", 'window[key]'].join('\n')
-
-    expect(accessesInScript(code)).toEqual([])
-  })
 
   it('nennt in einer SFC die Zeile der Datei, nicht die des Skriptblocks', () => {
     const sfc = [
@@ -377,8 +323,6 @@ describe('Der Wächter unterscheidet Code von Text', () => {
   })
 
   it('findet einen Zugriff im Template, auch ohne jeden Skriptblock', () => {
-    // Aus Codex' Review von Runde 2. Ein Template ist ausführbarer Code; die
-    // Fassung davor sah nur `<script>` an und blieb bei diesem SFC grün.
     const sfc = [
       '<template>',
       '  <button @click="$event.view.localStorage.clear()">Mutant</button>',
