@@ -19,11 +19,11 @@ zwei Fassungen auseinanderlaufen. Die drei, an denen sich alles entscheidet:
 
 ## Maschinenlesbarer Zustand
 
-- `phase`: `claude_working`
+- `phase`: `ready_for_codex`
 - `ticket`: `T-19-waechter-gehoert-ins-fundament.md`
-- `handoff_commit`: `—`
-- `review_round`: `0`
-- `owner`: `claude`
+- `handoff_commit`: `a4e82cf`
+- `review_round`: `1`
+- `owner`: `codex`
 - `updated_at`: `2026-09-04`
 - `last_reviewed_ticket`: `T-18-schaufenster-greift-am-fundament-vorbei.md`
 - `last_reviewed_commit`: `e678c54`
@@ -63,7 +63,71 @@ geschätzt.
 
 ## OUTBOX → Codex
 
-*(leer)*
+**T-19 · Runde 1 · Handoff-Commit `a4e82cf`**
+
+**Ziel:** Der in T-18 gehärtete Wächter zieht ins Paket. Auslöser ist die
+Hausregel: StockPortfolio führt denselben Test seit Längerem, ux-foundation seit
+T-18 — sobald eine zweite App dasselbe braucht, zieht es um.
+
+**Es geht nicht um Aufräumen.** StockPortfolios Fassung sucht
+`/localStorage\s*\??\.\s*(getItem|setItem|removeItem|clear|key)/`, also nur
+Methodenaufrufe. Durch fallen `window.localStorage ?? null` — ausgerechnet der
+Fall aus der Regelbegründung —, `window['localStorage']`, `Reflect.get(…)`,
+`const { localStorage } = window` und `localStorage.length`. Ihr Kommentarfilter
+verwirft zudem nur Zeilen, die mit `//`, `*` oder `/*` **beginnen**.
+
+**Neu und wichtig: Dieses Ticket erweitert die ausgelieferte Fläche.** Bisher
+galt in dieser Reihe „`src/` bleibt unberührt"; hier kommt bewusst etwas hinzu.
+Der Abschnitt `Side-Effects` im Ticket ist entsprechend länger als sonst.
+
+**Geänderte Flächen**
+
+| Was | Wo |
+|---|---|
+| Der Wächter als ausgelieferter Code | `src/testing/directAccess.ts` (neu) |
+| Einstiegspunkt | `src/testing/index.ts` (neu), `exports["./testing"]` |
+| Optionale Peers | `typescript`, `@vue/compiler-sfc` in `peerDependenciesMeta` |
+| Repo-Wächter nutzt den Helfer | `tests/storageAccess.spec.ts` (von 19 Fällen auf 2) |
+| Semantik über die öffentliche Schnittstelle | `tests/directAccess.spec.ts` (neu) |
+
+**Tests:** 25 Dateien / 688 Tests. Vier Tore, Exit-Codes einzeln geprüft:
+`test:0 typecheck:0 lint:0 build:0`.
+
+**Die Zusicherung, die zählt:** Der Umzug hat an der Erkennung nichts verloren.
+**Alle vier Mutanten aus T-18** ausgeführt — gerade, Klammernotation,
+`Reflect.get`, Template —, jeder wird rot und nennt die echte Zeile. Danach je
+über `git checkout --` zurückgenommen und der Arbeitsbaum als sauber geprüft.
+
+**Der Punkt, an dem dieses Ticket einer App wehtun könnte**, ist Zeile #7 und
+steht deshalb auf `⚠️`: Der Haupt-Einstiegspunkt darf die optionalen Peers nicht
+anfordern. Statisch bewiesen — `src/index.ts` erwähnt `testing` nicht, und
+`typescript`/`@vue/compiler-sfc` werden in `src/` ausschließlich unter
+`testing/` importiert. **Nicht** geprüft ist eine echte Installation ohne die
+beiden; dafür bräuchte es eine App, die das Paket frisch zieht, und das gehört
+ins Folgeticket bei StockPortfolio.
+
+**Nicht in diesem Ticket:** StockPortfolios Umstellung. Das Deliverable liegt
+hier, die andere App bekommt ihr eigenes Ticket in ihrem eigenen Repo.
+
+**Ein Hinweis zum Branch:** `t-19-…` ist von `t-18-…` abgezweigt, nicht von
+`master` — der gehärtete Wächter entstand dort und ist noch nicht integriert.
+Bewusste Stapelung: Die Integrationsentscheidung für T-18 gehört Mike, und ich
+nehme sie nicht vorweg. Ein Merge von T-19 bringt beide mit.
+
+**Review-Fragen**
+
+1. **Der Einstiegspunkt heißt `./testing` und liegt unter `src/testing/`.**
+   Damit ist er Teil der öffentlichen Zusage und kann nicht mehr still
+   verschwinden. Trägst du den Ort mit, oder gehört so etwas eher in ein eigenes
+   Paket?
+2. **Zwei exportierte Funktionen**, `findDirectAccess` und
+   `findDirectAccessInFile`. Die zweite existiert für den Selbstcheck. Ist das
+   die richtige Aufteilung, oder sollte der Selbstcheck Teil der ersten sein —
+   etwa als Zusicherung, dass jede `allow`-Datei mindestens einen Treffer hat?
+3. **Rückgabe sind formatierte Zeichenketten** (`pfad:zeile → inhalt`) statt
+   Objekte. Das macht `toEqual([])` unmittelbar lesbar, verhindert aber
+   Filtern. Für einen Wächter halte ich das für richtig; siehst du einen Fall,
+   in dem eine App die Struktur bräuchte?
 
 ## Zuletzt abgeschlossen
 
