@@ -10,9 +10,10 @@ import pluginVue from 'eslint-plugin-vue'
 import tseslint from 'typescript-eslint'
 import { describe, expect, it } from 'vitest'
 
-import { allowDirectGlobal, noDirectGlobal, noDirectGlobalInTemplate } from '@ux/eslint'
+import { noDirectGlobals, noDirectGlobalsInTemplates } from '@ux/eslint'
 
 const STORAGE = { name: 'localStorage', message: 'Nutze safeStorage.' }
+const FETCH = { name: 'fetch', message: 'Nutze den HTTP-Client.' }
 
 const linter = new Linter()
 
@@ -22,7 +23,7 @@ const linter = new Linter()
  * @param code  Der Quelltext.
  * @param rules Die zu prüfenden Regeln; Vorgabe ist die Speicher-Sperre.
  */
-function lintScript(code: string, rules = noDirectGlobal(STORAGE)): number {
+function lintScript(code: string, rules: Record<string, unknown> = noDirectGlobals([STORAGE])): number {
   const messages = linter.verify(
     code,
     [{ files: ['**/*.ts'], languageOptions: { parser: tseslint.parser }, rules }],
@@ -47,7 +48,7 @@ function lintSfc(code: string): number {
       {
         files: ['**/*.vue'],
         languageOptions: { parserOptions: { parser: tseslint.parser } },
-        rules: { ...noDirectGlobal(STORAGE), ...noDirectGlobalInTemplate(STORAGE) },
+        rules: { ...noDirectGlobals([STORAGE]), ...noDirectGlobalsInTemplates([STORAGE]) },
       },
     ],
     'a.vue',
@@ -63,7 +64,7 @@ describe('Direkter Zugriff wird gefunden', () => {
     ['Klammernotation', "const a = window['localStorage']"],
     ['Destrukturierung', 'const { localStorage } = window'],
     ['globalThis', 'const a = globalThis.localStorage'],
-    ['Reflect.get', "Reflect.get(window, 'localStorage')"],
+    ['Reflect.get am Wirtsobjekt', "Reflect.get(window, 'localStorage')"],
     ['Reflect.deleteProperty', "Reflect.deleteProperty(window, 'localStorage')"],
     ['Object.getOwnPropertyDescriptor', "Object.getOwnPropertyDescriptor(window, 'localStorage')"],
   ])('%s', (_label, code) => {
@@ -82,10 +83,19 @@ describe('Was kein Zugriff ist, bleibt unbehelligt', () => {
     expect(lintScript(code)).toBe(0)
   })
 
-  it('ein überdeckter Name — der Fall, den nur die Sichtbarkeitsanalyse kennt', () => {
+  it('ein überdeckter Name — das kann nur die Sichtbarkeitsanalyse', () => {
     // Hier ist `localStorage` ein Parameter und meint nicht den globalen.
-    // Ein Prüfer, der nur den Syntaxbaum liest, meldet das fälschlich.
     expect(lintScript('function load(localStorage: Storage) { return localStorage.getItem("k") }')).toBe(0)
+  })
+
+  it.each([
+    ['Reflect an einem lokalen Wert', "Reflect.get(config, 'localStorage')"],
+    ['Object an einem lokalen Wert', "Object.defineProperty(config, 'localStorage', {})"],
+    ['ein anderer Eigenschaftsname', "Reflect.get(window, 'sessionStorage')"],
+  ])('%s', (_label, code) => {
+    // Der Selektor prüft beide Argumentpositionen: Wirtsobjekt **und**
+    // Zeichenkette. Ohne die erste Bedingung schlüge jeder `Reflect`-Aufruf an.
+    expect(lintScript(code)).toBe(0)
   })
 })
 
@@ -109,22 +119,28 @@ describe('Eine SFC wird ganz gelesen', () => {
   it('lässt sichtbaren Text und statische Attribute in Ruhe', () => {
     expect(lintSfc('<template><p title="localStorage">localStorage ist ein Wort</p></template>')).toBe(0)
   })
+
+  it('lässt `Reflect` an einem lokalen Wert auch im Template in Ruhe', () => {
+    expect(lintSfc(`<template><button @click="Reflect.get(config, 'localStorage')">x</button></template>`)).toBe(0)
+  })
 })
 
-describe('Die Ausnahme und die Parametrisierung', () => {
-  it('`allowDirectGlobal` hebt dieselben Regeln wieder auf', () => {
-    expect(lintScript('const a = window.localStorage', allowDirectGlobal())).toBe(0)
+describe('Mehrere Sperren gehören in einen Aufruf', () => {
+  it('verliert keine, wenn sie zusammen übergeben werden', () => {
+    const rules = noDirectGlobals([STORAGE, FETCH])
+
+    expect(lintScript('const a = window.localStorage', rules)).toBeGreaterThan(0)
+    expect(lintScript('await fetch(url)', rules)).toBeGreaterThan(0)
   })
 
-  it('sperrt den Namen, der gefragt ist — nicht ausgerechnet den Speicher', () => {
-    const rules = noDirectGlobal({ name: 'fetch', message: 'Nutze den HTTP-Client.' })
+  it('trifft nur die Namen, die gefragt sind', () => {
+    const rules = noDirectGlobals([FETCH])
 
-    expect(lintScript('await fetch(url)', rules)).toBeGreaterThan(0)
     expect(lintScript('const a = window.localStorage', rules)).toBe(0)
   })
 
   it('nimmt ein eigenes Wirtsobjekt entgegen', () => {
-    const rules = noDirectGlobal({ ...STORAGE, via: ['host'] })
+    const rules = noDirectGlobals([{ ...STORAGE, via: ['host'] }])
 
     expect(lintScript('const a = host.localStorage', rules)).toBeGreaterThan(0)
   })

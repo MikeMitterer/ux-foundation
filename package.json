@@ -10,7 +10,10 @@
   ],
   "exports": {
     ".": "./src/index.ts",
-    "./eslint": "./src/eslint/index.ts",
+    "./eslint": {
+      "types": "./src/eslint/index.d.ts",
+      "default": "./src/eslint/index.js"
+    },
     "./styles/tokens.css": "./src/styles/tokens.css",
     "./styles/reset.css": "./src/styles/reset.css",
     "./styles/fonts.css": "./src/styles/fonts.css",

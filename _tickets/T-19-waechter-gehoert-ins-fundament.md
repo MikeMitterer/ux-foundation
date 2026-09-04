@@ -25,73 +25,89 @@ Legende: ✅ live bestätigt · ⚠️ bestätigt mit Einschränkung (Fußnote) 
 
 | # | Where | Look for | AI | Human |
 |---|---|---|:--:|---|
-| 1 | `make test` · `make typecheck` · `make lint` · `npm run build` | alle vier grün, Exit-Codes einzeln geprüft | ➖¹ | |
-| 2 | `src/eslint/index.ts` | die Sperre liegt als **Konfiguration** im Paket; nichts wird selbst geprüft | ➖² | |
-| 3 | `package.json` | `./eslint` steht in `exports`; **keine** neuen Peers, keine neue Dev-Abhängigkeit | ➖³ | |
-| 4 | `eslint.config.js` | das Repo bewacht sich selbst über `make lint`, mit `safeStorage.ts` als einziger Ausnahme | ➖⁴ | |
-| 5 | fünf Mutanten gegen `npx eslint` | jeder wird gemeldet — Punktnotation, Klammernotation, `Reflect.get`, `Reflect.deleteProperty`, Template | ✅⁵ | |
-| 6 | `npm pack --dry-run` | `src/eslint/index.ts` liegt im Tarball | ✅⁶ | |
-| 7 | `tests/restrictedGlobals.spec.ts` | die erzeugten Regeln finden am **echten Linter**, was sie sollen — und übersehen, was sie sollen | ✅⁷ | |
-| 8 | derselbe Test, Fall „überdeckter Name" | `function load(localStorage: Storage)` ist **kein** Verstoß | ✅⁸ | |
-| 9 | `node -e "await import('@mmit/ux-foundation/eslint')"` im Paketverzeichnis | der **veröffentlichte** Subpath löst über `exports` auf, nicht nur der interne Alias | ✅⁹ | |
+| 1 | `make test` · `make typecheck` · `make lint` · `npm run build` | alle vier grün, Exit-Codes einzeln geprüft | ✅¹ | |
+| 2 | `src/eslint/index.js` + `index.d.ts` | der Runtime-Export ist **JavaScript**, die Typen liegen daneben | ➖² | |
+| 3 | `package.json` | `./eslint` mit `types`/`default`; **keine** neuen Abhängigkeiten | ➖³ | |
+| 4 | `eslint.config.js` | das Repo bewacht sich über `make lint`; die Ausnahme läuft über `ignores`, nicht über abgeschaltete Regeln | ➖⁴ | |
+| 5 | vier Skript-Mutanten + Template-Mutant gegen `npx eslint` | jeder wird gemeldet, mit Datei und Zeile | ✅⁵ | |
+| 6 | `src/composables/safeStorage.ts` gegen `npx eslint` | **kein** Fund — die Ausnahme greift | ✅⁵ | |
+| 7 | `npm pack --dry-run` | beide Dateien liegen im Tarball | ✅⁶ | |
+| 8 | `tests/restrictedGlobals.spec.ts` | die erzeugten Regeln finden und übersehen am echten Linter, was sie sollen | ✅⁷ | |
+| 9 | Selbstimport unter **Node 20 und Node 26** | der veröffentlichte Subpath lädt in **beiden** | ✅⁸ | |
+| 10 | derselbe Test, Abschnitt „Mehrere Sperren" | zwei Sperren in einem Aufruf verlieren einander nicht | ✅⁹ | |
 
-> ¹ **(CC):** 24 Dateien / 697 Tests, Exit-Codes einzeln geprüft:
+> ¹ **(CC):** 24 Dateien / 701 Tests, Exit-Codes einzeln geprüft:
 > `test:0 typecheck:0 lint:0 build:0`.
 >
-> ² **(CC):** gelesen. Der Helfer gibt `rules`-Objekte zurück und importiert
-> nichts — deshalb braucht er keinen Peer.
+> ² **(CC):** gelesen. Der Grund steht im Kopf der Datei: Eine
+> `eslint.config.js` lädt Node direkt, und ältere Fassungen führen kein
+> TypeScript aus.
 >
-> ³ **(CC):** gelesen: `"./eslint": "./src/eslint/index.ts"`. Die in Runde 1
-> ergänzten Peers `typescript` und `@vue/compiler-sfc` sind **zurückgenommen**,
-> ebenso die Dev-Abhängigkeit; `package.json` und `package-lock.json` sind
-> wieder im Gleichklang.
+> ³ **(CC):** gelesen: `"./eslint": { "types": …d.ts, "default": …js }`. Es
+> kommt keine Abhängigkeit dazu — der Helfer gibt Daten zurück und importiert
+> nichts.
 >
-> ⁴ **(CC):** gelesen — drei Blöcke: Kernregeln für `.ts`, Kernregeln **plus**
-> Vue-Regel für `.vue`, und `allowDirectGlobal()` für
-> `src/composables/safeStorage.ts`.
+> ⁴ **(CC):** gelesen — zwei Regelblöcke (Skripte, SFC) und `ignores` für den
+> geschützten Zugang. **Kein** `allowDirectGlobal` mehr: Das schaltete drei
+> ESLint-Regeln vollständig ab und hätte auch Einschränkungen getroffen, die
+> eine App unabhängig gesetzt hat.
 >
-> ⁵ **(CC):** alle fünf ausgeführt, nicht behauptet. Jeder wird von
-> `npx eslint` gemeldet; der Template-Mutant erscheint als
-> `App.vue:141:25 error … vue/no-restricted-syntax`. Nach jedem Lauf über
-> `git checkout --` zurückgenommen und der Arbeitsbaum als sauber geprüft.
-> **`Reflect.deleteProperty` ist neu dabei** — der Scanner aus Runde 1 ließ ihn
-> durch.
+> ⁵ **(CC):** alle fünf Mutanten ausgeführt, nicht behauptet — Punktnotation,
+> Klammernotation, `Reflect.get`, `Reflect.deleteProperty`, Template. Jeder
+> ergibt genau einen Fund; der Template-Mutant erscheint als
+> `App.vue:141:25 … vue/no-restricted-syntax`. `safeStorage.ts` bleibt im selben
+> Lauf ohne Fund. Danach über `git checkout --` zurückgenommen, Arbeitsbaum
+> sauber. **Ein erster Durchlauf meldete fälschlich null Funde** — mein
+> `grep`-Muster übersah die Backticks in der Meldung. Der Wächter war in
+> Ordnung, meine Prüfung nicht.
 >
-> ⁶ **(CC):** `npm pack --dry-run` listet `src/eslint/index.ts` (6.6 kB);
-> 28 Dateien insgesamt.
+> ⁶ **(CC):** `npm pack --dry-run` listet `src/eslint/index.js` (5.1 kB) und
+> `src/eslint/index.d.ts` (1.3 kB); 29 Dateien insgesamt.
 >
-> ⁷ **(CC):** Der Test lintet echte Quelltexte mit den erzeugten Regeln, statt
-> die zurückgegebene Datenstruktur zu vergleichen — eine Zusicherung über das
-> Objekt wäre wertlos. Er stellt zusätzlich sicher, dass keine Meldung ohne
-> Regel-Kennung durchgeht: Ein Parse-Fehler zählte sonst als Fund.
+> ⁷ **(CC):** 25 Fälle über den echten Linter — darunter die drei Fehlalarme
+> aus Runde 2: `Reflect.get(config, …)`, `Object.defineProperty(config, …)` und
+> ein anderer Eigenschaftsname melden jetzt **nichts**. Der Test stellt zudem
+> sicher, dass keine Meldung ohne Regel-Kennung durchgeht; ein Parse-Fehler
+> zählte sonst als Fund.
 >
-> ⁸ **(CC):** der Fall, an dem der Ansatz aus Runde 1 scheiterte, und der
-> Grund für den Umbau. Ein Prüfer über den Syntaxbaum meldet den Parameter;
-> ESLint kennt die Sichtbarkeit und schweigt.
+> ⁸ **(CC):** unter `/opt/homebrew/Cellar/node@20/20.20.2/bin/node` **und**
+> unter Node 26.8.1 ausgeführt, beide über Nodes Selbstreferenz. Vor dem Umbau
+> war der Import unter Node 20 mit `ERR_UNKNOWN_FILE_EXTENSION: .ts`
+> abgebrochen — meine Zeile in Runde 2 war nur wegen der lokalen Fassung grün.
 >
-> ⁹ **(CC):** über Nodes Selbstreferenz ausgeführt, also über dieselbe
-> `exports`-Auflösung, die eine fremde App benutzt — nicht über `@ux/eslint`,
-> das nur der interne Alias auf `src/` ist. Ergebnis: die drei Funktionen sind
-> da, und `noDirectGlobal` liefert die drei erwarteten Regel-Kennungen. Der
-> Beleg aus Runde 1 war an dieser Stelle zu schwach.
+> ⁹ **(CC):** `noDirectGlobals([storage, fetch])` meldet beide. Vor dem Umbau
+> überschrieb ein zweiter Aufruf den ersten still, und die Speicher-Sperre war
+> weg.
 
 ### Kurz-Testblock
 
 ```bash
 cd "${DEV_LOCAL}/DevWeb/Production/ux-foundation"
-make test        # #1, #4, #5
+make test        # #1, #8, #10
 make typecheck   # #1
-make lint        # #1
+make lint        # #1, #4 — hier läuft der Wächter
 npm run build    # #1
 ```
 
 Für **#6** — was landet wirklich im Paket:
 
 ```bash
-npm pack --dry-run 2>&1 | grep eslint          # #6
-node --input-type=module \
-  -e "console.log(Object.keys(await import('@mmit/ux-foundation/eslint')))"   # #9
+npm pack --dry-run 2>&1 | grep eslint          # #7
 ```
+
+Für **#9** unter **beiden** Node-Fassungen — die neuere allein beweist nichts:
+
+```bash
+node --input-type=module \
+  -e "console.log(Object.keys(await import('@mmit/ux-foundation/eslint')))"
+/opt/homebrew/Cellar/node@20/20.20.2/bin/node --input-type=module \
+  -e "console.log(Object.keys(await import('@mmit/ux-foundation/eslint')))"
+```
+
+Für **#5** und **#6** von Hand: einen Zugriff in `useTheme.ts` einbauen,
+`npx eslint showcase/src/composables/useTheme.ts --no-cache` laufen lassen,
+danach `git checkout --`. `npx eslint src/composables/safeStorage.ts` muss
+stumm bleiben.
 
 ---
 
@@ -157,47 +173,69 @@ kein Detail, sondern ein zweiter Linter — und beide Repos führen bereits eine
 
 ### Was jetzt ausgeliefert wird
 
-Kein Prüfer, sondern **Konfiguration**: drei Funktionen, die `rules`-Objekte für
+Kein Prüfer, sondern **Konfiguration**: zwei Funktionen, die `rules`-Objekte für
 die Regeln zurückgeben, die ESLint mitbringt.
 
 | Funktion | Wofür |
 |---|---|
-| `noDirectGlobal` | Skripte — `no-restricted-globals`, `no-restricted-properties`, ein Selektor für `Reflect`/`Object` |
-| `noDirectGlobalInTemplate` | Vue-Templates über `vue/no-restricted-syntax`; die Kernregeln greifen dort nicht |
-| `allowDirectGlobal` | die eine Datei, die den Zugang anbietet |
+| `noDirectGlobals` | Skripte — `no-restricted-globals`, `no-restricted-properties`, Selektoren für `Reflect`/`Object` |
+| `noDirectGlobalsInTemplates` | Vue-Templates über `vue/no-restricted-syntax`; die Kernregeln greifen dort nicht |
 
-Drei Folgen, die alle in dieselbe Richtung zeigen:
+Beide nehmen die **vollständige Liste** der Sperren entgegen. Das ist kein
+Geschmack, sondern nötig: Die Funktionen belegen feste Regel-Kennungen, und zwei
+Aufrufe nebeneinander überschrieben einander — die erste Sperre verschwand
+lautlos.
 
-- **Keine neuen Abhängigkeiten.** Der Helfer importiert nichts, er gibt Daten
-  zurück. Die in Runde 1 ergänzten Peers und die Dev-Abhängigkeit sind
-  zurückgenommen.
-- **Der Wächter läuft in der Leitung, die es schon gibt.** `make lint` statt
-  eines eigenen Tests — in jeder App, ohne dass jemand einen Testlauf einrichtet.
-- **Die statischen Formen sind nicht mehr aufgezählt.** Der Selektor nennt das
-  **Wirtsobjekt** (`Reflect`, `Object`), nicht die Methode; `deleteProperty`,
-  `defineProperty` und `getOwnPropertyDescriptor` fallen von selbst mit hinein.
+Eine Datei vom Verbot auszunehmen geschieht über `ignores` im
+Konfigurationsblock, **nicht** über abgeschaltete Regeln. Der frühere
+`allowDirectGlobal`-Weg setzte drei ESLint-Regeln auf `off` und traf damit auch
+Einschränkungen, die eine App unabhängig gesetzt hatte.
 
-### Die Grenze, unverändert
+### Runde 2 hatte drei Löcher im Vertrag
 
-Ein zur Laufzeit zusammengesetzter Schlüssel (`window['local' + 'Storage']`)
-wird nicht gefunden. Sie steht in der Dokumentation des Moduls — **nicht** als
-Test, aus dem Grund, den T-18 gelernt hat: Ein `toEqual([])` darauf machte die
-heutige Blindstelle zum Vertrag.
+Der Ansatz stimmte, die Umsetzung nicht. Alle drei sind nachgestellt worden:
+
+1. **Der Export lief nur auf meiner Node-Fassung.** `exports` zeigte auf eine
+   `.ts`-Datei; Node führt TypeScript erst ab Fassung 22 aus. Unter Node 20 —
+   lokal vorhanden — brach der Import mit `ERR_UNKNOWN_FILE_EXTENSION` ab. Und
+   eine `eslint.config.js` lädt **Node**, nicht ein Bündler. Ausgeliefert wird
+   jetzt JavaScript, die Typen liegen daneben.
+2. **Die statischen Selektoren prüften nur die Zeichenkette.**
+   `Reflect.get(config, 'localStorage')` schlug an, obwohl `config` ein
+   beliebiger lokaler Wert ist. Der Selektor prüft jetzt **beide**
+   Argumentpositionen — erstes Argument das Wirtsobjekt, zweites die
+   Zeichenkette.
+3. **Die Konfiguration war nicht komponierbar.** Zwei Sperren nebeneinander
+   überschrieben sich; die Ausnahme schaltete fremde Regeln mit ab.
+
+### Die Grenzen, benannt statt behauptet
+
+- **Nur der nackte Name wird über die Sichtbarkeit aufgelöst.** Ein lokal
+  überdecktes *Wirtsobjekt* — `function read(window) { return window.x }` —
+  meldet ESLint weiterhin, weil `no-restricted-properties` syntaktisch
+  arbeitet. Das steht im Kopf des Moduls und ist **nicht** als Test
+  festgeschrieben: Ein `toBe(1)` darauf machte die Schwäche zum Vertrag, ein
+  `toBe(0)` wäre schlicht falsch.
+- **Ein zur Laufzeit zusammengesetzter Schlüssel** (`window['local' + 'Storage']`)
+  wird nicht gefunden.
+- **`no-restricted-syntax` ist eine geteilte Regel-Kennung.** Nutzt die App sie
+  selbst, muss sie ihre Einträge mit den erzeugten zusammenführen — das gilt für
+  jedes `rules`-Objekt und steht in der Moduldokumentation.
 
 ### Akzeptanzkriterien
 
 - [x] Die Sperre liegt unter `src/eslint/` und wird über `./eslint` exportiert
-- [x] **Keine** neuen Abhängigkeiten — weder Peer noch Dev; Manifest und
-      Lockfile im Gleichklang
+- [x] Der Runtime-Export ist **ausführbares JavaScript**; der Subpath lädt unter
+      Node 20 **und** Node 26
+- [x] **Keine** neuen Abhängigkeiten — weder Peer noch Dev
 - [x] Erkannt werden nackter Name, Punkt- und Klammernotation, Destrukturierung,
-      `Reflect`/`Object`-Formen und Template-Ausdrücke
+      `Reflect`/`Object` **am Wirtsobjekt** und Template-Ausdrücke
 - [x] **Nicht** erkannt werden überdeckte Namen, Typknoten, Objektschlüssel,
-      Zeichenketten und Kommentare
-- [x] Das Repo bewacht sich selbst über `eslint.config.js`, mit genau einer
-      Ausnahme
-- [x] Die erzeugten Regeln sind am echten Linter geprüft, nicht als
-      Datenstruktur verglichen
-- [x] Der Name ist ein Parameter, nicht fest verdrahtet
+      Zeichenketten, Kommentare und statische Formen an lokalen Werten
+- [x] Mehrere Sperren in einem Aufruf verlieren einander nicht; die Ausnahme
+      läuft über `ignores` und schaltet keine fremden Regeln ab
+- [x] Das Repo bewacht sich selbst über `make lint`
+- [x] Die erzeugten Regeln sind am echten Linter geprüft
 
 ### Nicht in diesem Ticket
 
@@ -230,16 +268,14 @@ Integrationsentscheidung für T-18 gehört Mike und wird hier nicht vorweggenomm
 ### Auflösung
 
 `ux-foundation` — Handoff-Commit siehe `STATUS.md`. `make test` 24 Dateien /
-697 Tests, dazu `typecheck`, `lint` und `npm run build`; Exit-Codes einzeln
+701 Tests, dazu `typecheck`, `lint` und `npm run build`; Exit-Codes einzeln
 geprüft (`0/0/0/0`).
 
-Live geprüft sind **#5** (fünf Mutanten gegen `npx eslint`), **#6**
-(`npm pack`), **#7** und **#8** (die erzeugten Regeln am echten Linter) sowie
-**#9** (der veröffentlichte Subpath über Nodes Selbstreferenz). **#1 bis #4**
-sind Testlauf und Lesen, also `➖`.
+Live geprüft sind **#1**, **#5** bis **#10**. **#2 bis #4** sind Lesen, also
+`➖`.
 
-**Das Ergebnis ist kleiner als der erste Entwurf und kann mehr.** Aus einem
-Modul mit Dateisuche, Parser-Aufrufen und zwei neuen Abhängigkeiten wurden drei
-Funktionen, die Konfiguration zurückgeben. Sie finden `Reflect.deleteProperty`,
-das der Scanner übersah, und schweigen bei überdeckten Namen, Typknoten und
-Objektschlüsseln, bei denen er Fehlalarm gab.
+**Das Ergebnis ist kleiner als beide Vorentwürfe und kann mehr.** Aus einem
+Modul mit Dateisuche, Parser und zwei Abhängigkeiten wurden zwei Funktionen, die
+Konfiguration zurückgeben — ohne eine einzige neue Abhängigkeit, lauffähig auf
+der ältesten zugesagten Node-Fassung, und mit einer Fehlalarmklasse weniger als
+in Runde 2.

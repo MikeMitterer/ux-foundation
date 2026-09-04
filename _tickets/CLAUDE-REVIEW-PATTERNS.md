@@ -260,6 +260,27 @@ war es das falsche Werkzeug.
 8. **Formatierte Zeichenketten als Rückgabe einer neuen öffentlichen API.**
    Darstellung und Pfadformat wären Teil der Zusage geworden.
 
+### Öffentlicher Vertrag
+
+12. **Der Ladeweg wurde nur auf der eigenen Runtime geprüft.** `exports` zeigte
+    auf eine `.ts`-Datei. Unter der lokalen Node-26 grün, unter der ebenfalls
+    installierten Node-20 `ERR_UNKNOWN_FILE_EXTENSION`. Verschärfend: Eine
+    `eslint.config.js` lädt **Node**, nicht den Bündler, auf den sich das übrige
+    Paket verlässt. Ein Selbsttest auf der neuesten verfügbaren Fassung belegt
+    nichts über die zugesagte älteste.
+13. **Ein Selektor prüfte nur die halbe Bedingung.**
+    `Reflect.get(config, 'localStorage')` schlug an, weil nur die Zeichenkette
+    geprüft wurde und nicht, ob das erste Argument das Wirtsobjekt ist. Bei
+    positionsbehafteten APIs gehört **jede** Position in die Bedingung.
+14. **Eine parametrisierte Konfiguration war nicht komponierbar.** Zwei Aufrufe
+    belegten dieselben Regel-Kennungen; der zweite überschrieb den ersten
+    lautlos. Wer eine `rules`-Fabrik veröffentlicht, muss die vollständige Liste
+    in **einem** Aufruf zusammenführen.
+15. **Eine Ausnahme schaltete fremde Regeln mit ab.** `allowDirectGlobal` setzte
+    drei ESLint-Regeln auf `off` und traf damit auch Einschränkungen, die die
+    App unabhängig gesetzt hatte. Ausnahmen gehören über den Geltungsbereich
+    (`ignores`), nicht über das Abschalten geteilter Regel-Kennungen.
+
 ### Verfahren
 
 9. **Manifest geändert, Lockdatei vergessen.** Die neuen Peers standen in
@@ -271,6 +292,11 @@ war es das falsche Werkzeug.
     und `@ux/testing` wurde als Beleg für den veröffentlichten Subpath geführt,
     obwohl es der interne Alias ist. Ein Test über den Barrel beweist die
     `exports`-Auflösung nicht.
+16. **Eine Prüfung meldete null Funde, und das Werkzeug war in Ordnung.** Beim
+    Mutantenlauf zählte ein `grep` die Meldung nicht, weil das Muster die
+    Backticks im Text nicht enthielt. Die Fehlersuche begann folgerichtig am
+    Wächter — obwohl der Fehler in der Prüfung steckte. Merksatz: Bei „null
+    Funde" zuerst die **Rohausgabe** ansehen, nicht das Geprüfte.
 
 ## T-18 · bestätigtes Fehlerinventar für einen späteren Skill
 
