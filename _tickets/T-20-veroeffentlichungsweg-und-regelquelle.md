@@ -83,7 +83,7 @@ PT="${DEV_LOCAL}/DevBash/Production/ProjectTools"
 PUB="${PT}/src/bash/npm-publish.sh"
 
 cd "${UXF}"
-make test;      echo "rc=$?"    # #1  erwartet rc=0, 710/710 Tests
+make test;      echo "rc=$?"    # #1  erwartet rc=0 (Zahlen: Fussnote 1)
 make typecheck; echo "rc=$?"    # #1  erwartet rc=0
 make lint;      echo "rc=$?"    # #1  erwartet rc=0
 make publish;   echo "rc=$?"    # #2  erwartet Hinweis auf CONFIRM=yes, rc=2 (make meldet Recipe-Fehler als 2)
@@ -101,7 +101,7 @@ rm -rf "${D}"
 #     Zusicherungen (PTY, Registry-Ziel, Positivliste in beide Richtungen,
 #     E404, unlesbare Antwort)
 cd "${PT}"
-./tests/bash/npm-publish.test.sh --run; echo "rc=$?"    # #6 erwartet "65 Tests, alle gruen", rc=0
+./tests/bash/npm-publish.test.sh --run; echo "rc=$?"    # #6 erwartet "alle gruen", rc=0
 
 # #14
 bash -n src/bash/npm-publish.sh && bash -n tests/bash/npm-publish.test.sh && echo "Syntax ok"
@@ -171,7 +171,8 @@ git diff --quiet "$S" && echo "Original unveraendert"
 Das Script verantwortet den ganzen Vorgang und ersetzt das nackte
 `npm publish` im Makefile: anmelden → **vorher ungecacht prüfen**, ob die
 Version schon oben liegt → hochladen → **nach einem Fehlschlag nachsehen**, ob
-sie es trotzdem tut → bei `E409` bis zu dreimal erneut (5 s, 15 s Pause).
+sie es trotzdem tut → bei `E409` erneut, so oft und mit den Pausen, die
+`MAX_ATTEMPTS` und `RETRY_DELAYS` im Script führen.
 
 Die Vorprüfung liest mit `--prefer-online` und frischt damit zugleich den
 npm-Cache auf, bevor geschrieben wird — das veraltete Paket-Dokument war der
@@ -196,7 +197,8 @@ gehört in einen direkten `npm publish`-Aufruf, wo niemand etwas verspricht.
 
 ### ProjectTools — `tests/bash/npm-publish.test.sh` (neu)
 
-65 Zusicherungen in 24 Fällen. Das Script läuft als **Prozess** über seinen
+Wie viele Zusicherungen es sind, führt Zeile #6; hier steht, wie sie
+zustande kommen. Das Script läuft als **Prozess** über seinen
 öffentlichen Aufruf gegen eine `npm`-Attrappe auf dem `PATH` — keine
 gesourcten Funktionen, sonst prüft der Test eine Verdrahtung, die es beim
 echten Aufruf nicht gibt.
@@ -263,7 +265,7 @@ dem Zehnerfenster geschoben.
    bleiben unter einem PTY ein TTY), nicht der Dialog.
 2. **`0.7.0` ist verbrannt.** Die Registry geht von `0.6.0` direkt auf
    `0.7.1`; die Nummer lässt sich nicht mehr vergeben.
-3. Die Wartezeiten der Wiederholung (5 s, 15 s) sind nicht gemessen — die
+3. Die Wartezeiten der Wiederholung (`RETRY_DELAYS`) sind nicht gemessen — die
    Testsuite stellt `sleep` ab, sonst dauerte sie 40 s.
 4. Beides ist **nicht gepusht** — weder ux-foundation noch ProjectTools.
 5. **Nicht von T-20 verursacht, aber offen:** `pkg-link.test.sh --run` hat
