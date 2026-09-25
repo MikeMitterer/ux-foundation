@@ -1,6 +1,6 @@
 {
   "name": "@mmit/ux-foundation",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Shared UI foundation with design tokens, styles, icons, Vue components, and a Naive UI bridge",
   "license": "MIT",
   "author": "Mike Mitterer <office@mangolila.at>",
