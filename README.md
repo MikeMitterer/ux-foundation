@@ -1,50 +1,35 @@
-# ux-foundation
+# @mmit/ux-foundation
 
-Gemeinsames Fundament der Oberflächen — Farb-Token, Skalen, Reset, Schriften,
-Symbole und die Naive-UI-Brücke.
+Shared UI building blocks for Vue apps: design tokens, styles, icons,
+components, composables, and a bridge to Naive UI.
 
-## Übersicht
+## Contents
 
-- [Wofür das Paket da ist](#wofür-das-paket-da-ist)
-- [Einbinden](#einbinden)
-- [Was drin ist](#was-drin-ist)
-- [Schaufenster](#schaufenster)
-- [Themes prüfen](#themes-prüfen)
-- [Veröffentlichen](#veröffentlichen)
-
----
-
-## Wofür das Paket da ist
-
-Hier liegt, was **kein Urteil enthält** und deshalb in keiner App ein zweites
-Mal entstehen darf: die Farbpaletten, die Skalen, der Reset, die
-Schrifteinbindung, die wiederkehrenden Navigationssymbole und die Brücke, die
-aus den Token die Naive-UI-Overrides baut.
-
-Der Anlass war konkret. Dieselben Werte lagen als Prosa in einem Skill und
-wurden von jeder App nachgebaut — und alles, was nachgebaut wird, zieht ein
-Ticket, einen Plan, ein Review und neue Fehler nach sich. Beim ersten Messen
-verfehlten **neun** Paletten die eigene Kontrastregel, und die
-Referenz war von der geprüften Datei weggelaufen, während beide dieselbe Zahl
-behaupteten.
-
-**Was hier ausdrücklich nicht liegt: Entscheidungen.** Warum die Einstellungen
-links stehen, warum es keinen Hamburger gibt, wie sich ein Dialog verhält — das
-steht im `ux-standards`-Skill und braucht einen Menschen, der es liest.
-
-[↑ Übersicht](#übersicht)
+- [Install](#install)
+- [Use](#use)
+- [What's included](#whats-included)
+- [Showcase](#showcase)
+- [Check themes](#check-themes)
+- [Publish](#publish)
 
 ---
 
-## Einbinden
+## Install
 
 ```bash
-npm i @mmit/ux-foundation
+npm install @mmit/ux-foundation
 ```
 
-Stylesheets einzeln importieren, damit eine App auch nur Teile übernehmen kann.
-Die Reihenfolge ist nicht beliebig — Schriften und Token zuerst, dann der
-Reset:
+Vue is a peer dependency. Naive UI is an optional peer dependency; install it
+only if your app uses `buildNaiveOverrides` or another Naive UI integration.
+
+[↑ Contents](#contents)
+
+---
+
+## Use
+
+Import the stylesheets you need. Load fonts and tokens before the reset:
 
 ```ts
 // main.ts
@@ -53,9 +38,8 @@ import '@mmit/ux-foundation/styles/tokens.css'
 import '@mmit/ux-foundation/styles/reset.css'
 ```
 
-Die SCSS-Helfer (`token()`, `up()`, `below()`, `muted()`, `truncate`,
-`stack()`, `row()`, `trend`, `card-surface`) stehen über die Vite-Konfiguration
-in jeder Komponente zur Verfügung:
+To make the SCSS helpers available in Vue components, add the shared module
+to your Vite configuration:
 
 ```ts
 // vite.config.ts
@@ -66,145 +50,79 @@ css: {
 },
 ```
 
-Das Paket liefert **Quellen aus, kein Bündel** — `.ts`, `.vue`, `.scss` direkt.
-Für Vite-Apps ist das der bequemere Weg: kein Build-Schritt hier, und der
-Typecheck der App prüft das Fundament gleich mit. Dafür braucht es eine Zeile,
-sonst versucht Vite das Paket vorzubündeln und stolpert über die
-`.vue`-Dateien:
+The package ships source files, including `.ts`, `.vue`, and `.scss`. Exclude
+it from Vite dependency prebundling so Vite can process the Vue files:
 
 ```ts
 optimizeDeps: { exclude: ['@mmit/ux-foundation'] },
 ```
 
-Naive UI ist eine **optionale** Peer-Dependency. Wer die Brücke nicht braucht,
-installiert es nicht und importiert `buildNaiveOverrides` nicht.
-
-[↑ Übersicht](#übersicht)
+[↑ Contents](#contents)
 
 ---
 
-## Was drin ist
+## What's included
 
-| Pfad | Inhalt |
+| Source | Contents |
 |---|---|
-| `src/styles/tokens.css` | die Paletten — `THEME_IDS` führt sie —, Skalen, Marken-Token |
-| `src/styles/reset.css` | ersetzt Tailwinds Preflight — knapp gehalten, damit Naive UI nicht streitet |
-| `src/styles/fonts.css` | Inter und Space Grotesk, variabel, nur `latin` |
-| `src/styles/_shared.scss` | Mixins und Farb-Helfer; erzeugt selbst **kein** CSS |
-| `src/theme/themes.ts` | `THEME_IDS`, `THEMES`, `isThemeId`, Vorgaben |
-| `src/theme/naive.ts` | Token → `GlobalThemeOverrides` |
-| `src/icons/` | die wiederkehrenden Navigationssymbole |
-| `src/components/` | Rahmen, Kopf- und Statuszeile, Menüpunkt, Theme-Auswahl, Erklärung am Begriff, Zahl im Fließtext |
-| `src/composables/` | Umschaltpunkte, Sprach-Erkennung, Speicher-Zugriff, Meldungen, relative Zeit |
+| `src/styles/tokens.css` | Theme palettes, scales, and brand tokens |
+| `src/styles/reset.css` | A compact CSS reset |
+| `src/styles/fonts.css` | Variable Inter and Space Grotesk fonts |
+| `src/styles/_shared.scss` | SCSS functions and mixins; emits no CSS on its own |
+| `src/theme/` | Theme IDs and token-based Naive UI overrides |
+| `src/icons/` | Navigation icons |
+| `src/components/` | App shell, bars, navigation, theme picker, and display helpers |
+| `src/composables/` | Breakpoints, locale detection, storage, notifications, and relative time |
 
-Was davon nach außen geht, steht in `src/index.ts` — die Liste dort ist die
-Auslieferung, nicht diese Tabelle.
+See [`src/index.ts`](src/index.ts) for the public JavaScript and TypeScript
+exports. Stylesheets are available through the paths shown above.
 
-**Zur Richtung der Naive-Brücke:** Die Token sind die Quelle, Naive UI der
-Verbraucher — nicht umgekehrt. `useThemeVars()` funktioniert nur innerhalb
-einer Vue-Setup-Funktion und erreicht nur Naive-Komponenten; eigene SFCs,
-globale Stylesheets und das Prüfskript kommen nicht daran. Dass die Brücke zur
-Laufzeit per `getComputedStyle` liest, ist erzwungen: Naive berechnet Hover-
-und Pressed-Zustände selbst aus der Grundfarbe und braucht dafür einen
-konkreten Wert — ein `var(--accent)` kann es nicht auflösen.
-
-[↑ Übersicht](#übersicht)
+[↑ Contents](#contents)
 
 ---
 
-## Schaufenster
+## Showcase
 
-Eine kleine App unter `showcase/` zeigt alles, was das Paket mitbringt, und
-färbt es beim Theme-Wechsel gleichzeitig um. Genau darin liegt ihr Nutzen: Ein
-Fehler in einer Palette fällt hier in Sekunden auf, in einer echten App erst
-Wochen später.
+The app in `showcase/` displays the components and themes together. It is a
+development tool and is not included in the published package.
 
 ```bash
-make setup     # Symlinks + Abhängigkeiten
+make setup
 make dev       # http://localhost:5177
 ```
 
-Sie ist Werkzeug, kein Bestandteil der Auslieferung — `files` in der
-`package.json` enthält nur `src/`.
-
-[↑ Übersicht](#übersicht)
+[↑ Contents](#contents)
 
 ---
 
-## Themes prüfen
+## Check themes
 
-**Der Kontrast-Check läuft in `make test` mit.** `tests/themeContrast.spec.ts`
-ruft `theme-tokens.py check` auf und liest dessen Exit-Code; gerechnet wird
-weiterhin nur im Skript, eine zweite Formel in TypeScript gibt es bewusst
-nicht.
-
-Er hing früher an einem eigenen Target und lief damit nur auf Zuruf — die
-Verstöße, die T-14 zutage förderte, standen so monatelang unbemerkt in der
-Datei. Ein zweiter Test prüft zusätzlich, dass **jedes** Theme gemessen wurde:
-Exit-Code 0 heißt „nichts gerissen", nicht „alles geprüft", und ein Parser-
-Fehler hatte genau darin schon einmal ein Theme verschluckt.
-
-Von Hand nachsehen kann man weiterhin — die ausführliche Fassung mit den
-Zonen-Abständen gibt es nur dort:
+`make test` runs the palette contrast checks along with the other tests. For a
+detailed report, run:
 
 ```bash
 python3 scripts/theme-tokens.py check src/styles/tokens.css --zonen
 ```
 
-Zwei weitere Unterbefehle laufen selten und haben deshalb **kein**
-Make-Target — sie haben eine eigene Kommandozeile:
+To inspect the available commands or export the palettes:
 
 ```bash
 python3 scripts/theme-tokens.py --help
-python3 scripts/theme-tokens.py repair src/styles/tokens.css     # Probelauf
-python3 scripts/theme-tokens.py export src/styles/tokens.css     # alle Paletten lesen
+python3 scripts/theme-tokens.py export src/styles/tokens.css
 ```
 
-`build` und `repair` lösen absichtlich verschieden: Beim Erzeugen werden beide
-leisen Textstufen gegen die hellste Fläche gelöst (6:1 und 4.5:1), beim
-Reparieren steht `--text-secondary` schon fest und nur `--text-muted` bewegt
-sich. Gegen `--surface-raised` zu lösen würde die beiden Stufen dort
-ineinanderlaufen lassen — gemessen auf acht Prozent Abstand bei `forest` und
-rund vier bei `slate`.
-
-[↑ Übersicht](#übersicht)
+[↑ Contents](#contents)
 
 ---
 
-## Veröffentlichen
+## Publish
 
-Das Paket liegt **privat auf npmjs.org** — der Standard-Registry, ohne
-`registry`-Eintrag in der `package.json`. Privat macht es allein diese Zeile:
-
-```json
-"publishConfig": { "access": "restricted" }
-```
-
-Ohne sie legt npm bei einem `@scope` standardmäßig ein **öffentliches** Paket
-an.
-
-Die Wahl fiel bewusst gegen GitHub Packages, obwohl das Repo dort liegt: Eine
-einbindende App braucht bei npmjs nur einen Lese-Token für die Standard-
-Registry. Bei GitHub Packages käme in jeder App zusätzlich eine
-`@mmit:registry=…`-Zeile dazu — mehr Teile, die je App richtig stehen
-müssen.
-
-**Der Scope muss dem npm-Konto entsprechen.** `@mmit` ist der Benutzer-Scope
-von `mmit` — nachzusehen mit `npm whoami`. Genau daran scheiterte der erste
-Versuch: Das Paket hieß `@mikemitterer/…`, angemeldet war aber `mmit`, und npm
-antwortete mit `402 Payment Required — You must sign up for private packages`.
-
-**Der Preis ist ein npm-Abo.** Ein privates Paket unter einem Benutzer-Scope
-verlangt auf npmjs.org einen bezahlten Plan für **dieses Konto** (npm Pro). Ein
-bezahlter GitHub-Plan hilft dort nicht — anderer Anbieter, andere Rechnung.
+This is a public scoped package on npmjs.org. `publishConfig.access` is set to
+`public` in `package.json` for future releases.
 
 ```bash
-make publish-dry              # zeigt, was hochginge
-make publish CONFIRM=yes
+make publish-dry              # inspect the package contents
+make publish CONFIRM=yes      # publish a new version
 ```
 
-**Beim Einbinden in einen Docker-Build:** Das Registry-Token gehört über einen
-BuildKit-Secret-Mount hinein, **nie** als `ARG` oder `ENV` — sonst steht es für
-immer in einem Image-Layer, auch wenn eine spätere Zeile es löscht.
-
-[↑ Übersicht](#übersicht)
+[↑ Contents](#contents)

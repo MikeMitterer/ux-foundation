@@ -86,18 +86,14 @@ Wer die Werte im Zusammenhang lesen will, erzeugt sie sich mit
 
 ## Veröffentlichen
 
-Privat auf **npmjs.org**, also ohne `registry` in `publishConfig` — die
-Standard-Registry. Privat macht allein `access: restricted`; ohne die Angabe
-legt npm bei einem `@scope` standardmäßig ein **öffentliches** Paket an.
+Öffentlich auf **npmjs.org**. `publishConfig.access` steht ausdrücklich auf
+`public`, weil Pakete mit `@scope` bei der ersten Veröffentlichung sonst
+standardmäßig eingeschränkt sind. Ein `registry`-Eintrag ist nicht nötig;
+npmjs.org ist die Standard-Registry.
 
-Gegen GitHub Packages entschieden, obwohl das Repo dort liegt: Bei npmjs
-genügt einer einbindenden App ein Lese-Token für die Standard-Registry, bei
-GitHub Packages käme je App eine `@scope:registry`-Zeile dazu.
+Die npm-Seite zeigt die `README.md` und die `description` aus `package.json`.
+Beides wird für Paketnutzer auf Englisch gepflegt. Die internen Arbeitsregeln
+hier bleiben deutsch.
 
-Das setzt ein npm-Abo für **dieses Konto** voraus. Fehlt es, endet
-`npm publish` mit `402 Payment Required`; ein GitHub-Plan hilft dort nicht,
-und ein Org-Plan deckt nur den Org-Scope ab.
-
-Ein Registry-Token gehört in einem Docker-Build über einen
-BuildKit-Secret-Mount hinein, **nie** als `ARG` oder `ENV`: Sonst steht es für
-immer in einem Image-Layer, auch wenn eine spätere Zeile es löscht.
+Zum Installieren des öffentlichen Pakets ist kein Registry-Token nötig.
+Für `make publish` muss das veröffentlichende Konto angemeldet sein.

@@ -181,7 +181,7 @@ publish-dry: ## Zeigt, was veröffentlicht würde — ohne es zu tun
 # `NPM_ARGS` geht unverändert an `npm publish` weiter, etwa für eine
 # Zwei-Faktor-Anmeldung:  make publish CONFIRM=yes NPM_ARGS=--otp=123456
 .PHONY: publish
-publish: ##R Paket in die private Registry veröffentlichen  [CONFIRM=yes]
+publish: ##R Paket auf npmjs.org veröffentlichen  [CONFIRM=yes]
 	@test "$(CONFIRM)" = "yes" || \
 	  (echo "$(ORANGE)Sicherheitscheck: make $@ CONFIRM=yes$(NC)" && exit 1)
 	@bash $(PROJECT_TOOLS)/bash/npm-publish.sh --publish $(NPM_ARGS)
